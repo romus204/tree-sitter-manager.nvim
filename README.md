@@ -2,9 +2,11 @@
 
 A lightweight Tree-sitter parser manager for Neovim.
 
+<img width="560" height="573" alt="изображение" src="https://github.com/user-attachments/assets/8ec50e9a-6c5a-4484-b231-5c13e069b1fc" />
+
 ## 📜 Why this plugin?
 
-This plugin was created following the **archival of the [nvim-treesitter/nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) repository** in April 2026. This marked the end of convenient one-plugin parser management.
+Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a built-in parser installer. With [nvim-treesitter/nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) now archived, this plugin provides a lightweight, actively maintained alternative that makes installing parsers and adding new languages effortless.
 
 **tree-sitter-manager.nvim** provides a minimal alternative for:
 - Installing and removing Tree-sitter parsers
