@@ -239,6 +239,7 @@ function M.open()
     vim.keymap.set("n", "r", function() render(buf) end, { buffer = buf, noremap = true, silent = true })
     vim.keymap.set("n", "i", function() M._act("install") end, { buffer = buf, noremap = true, silent = true })
     vim.keymap.set("n", "x", function() M._act("remove") end, { buffer = buf, noremap = true, silent = true })
+    vim.keymap.set("n", "u", function() M._act("update") end, { buffer = buf, noremap = true, silent = true })
 end
 
 function M._act(action)
@@ -248,6 +249,9 @@ function M._act(action)
         install(lang)
     elseif action == "remove" then
         remove(lang)
+    elseif action == "update" then
+        remove(lang)
+        install(lang)
     end
     render(vim.api.nvim_get_current_buf())
 end

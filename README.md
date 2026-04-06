@@ -55,6 +55,7 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
 	
 `i` - Install parser under cursor  
 `x` - Remove parser under cursor  
+`u` - Update parser under cursor  
 `r` - Refresh installation status  
 `q / <Esc>` - Close window  
 
@@ -76,7 +77,7 @@ Your contributions help keep this plugin reliable for everyone. 🙏
 
 - Unix-first development: Primarily tested on macOS/Linux. Windows support may require additional testing.
 - Requires tree-sitter CLI: Ensure tree-sitter is available in your $PATH.
-- No auto-updates: To update a parser, remove it (x) and reinstall (i).
+- No auto-updates: To update a parser, update it manually (u) or remove (x) and reinstall (i) it.
 
 ## 🤝 Contributing
 Pull requests are welcome! Especially for:
