@@ -7,7 +7,7 @@ local src = debug.getinfo(1, "S").source
 local abs = src:sub(1, 1) == "@" and vim.fn.fnamemodify(src:sub(2), ":p") or ""
 local PLUGIN_ROOT = abs ~= "" and vim.fn.fnamemodify(abs, ":h:h:h") or vim.fn.stdpath("config")
 
-local footer = " [i] Install  [x] Remove  [r] Refresh  [q] Close "
+local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 
 local cfg = {
     parser_dir = vim.fn.stdpath("data") .. "/site/parser",
