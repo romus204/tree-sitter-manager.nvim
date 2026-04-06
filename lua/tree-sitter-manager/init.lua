@@ -20,6 +20,7 @@ local function ext()
 end
 
 local function ppath(l) return cfg.parser_dir .. "/" .. l .. ext() end
+local function qpath(l) return cfg.query_dir .. "/" .. l end
 
 local function run_cmd(cmd)
     local res = vim.system({ "sh", "-c", cmd }, { text = true }):wait()
@@ -65,9 +66,23 @@ local function install_with_deps(lang, installing)
     return M._install_single(lang)
 end
 
+local function copy_queries(lang, location)
+    local s = PLUGIN_ROOT .. "/runtime/queries/" .. location
+    local d = cfg.query_dir .. "/" .. lang
+    if vim.uv.fs_stat(s) then
+        vim.fn.mkdir(d, "p")
+        local cp = run_cmd(string.format('cp -a "%s/." "%s/" 2>&1', s, d))
+        if not cp.ok then vim.notify("⚠ cp failed:\n" .. cp.output:sub(1, 200), 2) end
+    end
+end
+
 function M._install_single(lang)
     local info = get_repo_info(lang)
-    if not info or not info.url then return vim.notify("Unknown: " .. lang, 3), false end
+    if not info or not info.url then
+        copy_queries(lang, lang) -- if only queries require
+        vim.notify("✓ " .. lang .. " installed")
+        return true
+    end
 
     local tmp = vim.fn.tempname()
     local location = info.location or lang
@@ -111,13 +126,8 @@ function M._install_single(lang)
     end
     vim.fn.delete(tmp, "rf")
 
-    local s = PLUGIN_ROOT .. "/runtime/queries/" .. location
-    local d = cfg.query_dir .. "/" .. lang
-    if vim.uv.fs_stat(s) then
-        vim.fn.mkdir(d, "p")
-        local cp = run_cmd(string.format('cp -a "%s/." "%s/" 2>&1', s, d))
-        if not cp.ok then vim.notify("⚠ cp failed:\n" .. cp.output:sub(1, 200), 2) end
-    end
+    copy_queries(lang, location)
+
     vim.notify("✓ " .. lang .. " installed")
     return true
 end
@@ -131,11 +141,27 @@ local function remove(lang)
     vim.notify("✕ " .. lang)
 end
 
+local function is_only_query(lang)
+    local info = get_repo_info(lang)
+    return not info or not info.url
+end
+
+--TODO: DO REFACTOR
 local function get_status_icon(lang)
-    if not vim.uv.fs_stat(ppath(lang)) then return "❌" end
-    for _, dep in ipairs(get_requires(lang)) do
-        if not vim.uv.fs_stat(ppath(dep)) then return "⚠️ " end
+    if is_only_query(lang) then
+        if not vim.uv.fs_stat(qpath(lang)) then return "❌" end
+    else
+        if not vim.uv.fs_stat(ppath(lang)) then return "❌" end
     end
+
+    for _, dep in ipairs(get_requires(lang)) do
+        if is_only_query(dep) then
+            if not vim.uv.fs_stat(qpath(dep)) then return "⚠️" end
+        else
+            if not vim.uv.fs_stat(ppath(dep)) then return "⚠️" end
+        end
+    end
+
     return "✅"
 end
 

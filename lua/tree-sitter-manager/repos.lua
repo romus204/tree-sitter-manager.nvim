@@ -736,6 +736,8 @@ return {
         },
         requires = { 'html_tags' },
     },
+    html_tags = {
+    },
     htmldjango = {
         install_info = {
             revision = '3a643167ad9afac5d61e092f08ff5b054576fadf',
