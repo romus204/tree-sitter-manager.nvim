@@ -19,6 +19,7 @@ local cfg = {
     auto_install = false,
     debug_msg = false,
     enable_folding = false,
+    ensure_installed = {},
 }
 
 local function ext()
@@ -85,6 +86,7 @@ local function copy_queries(lang, location)
         vim.fn.mkdir(d, "p")
         local cp = run_cmd(string.format('cp -a "%s/." "%s/" 2>&1', s, d))
         if not cp.ok then vim.notify("⚠ cp failed:\n" .. cp.output:sub(1, 200), 2) end
+        vim.notify("✓ " .. lang .. " queries installed")
     end
 end
 
@@ -92,7 +94,6 @@ function M._install_single(lang)
     local info = get_repo_info(lang)
     if not info or not info.url or not info.revision then
         copy_queries(lang, lang) -- if only queries require
-        vim.notify("✓ " .. lang .. " installed")
         return true
     end
 
@@ -143,9 +144,10 @@ function M._install_single(lang)
         return false
     end
 
+    vim.notify("✓ " .. lang .. " parser installed")
+
     copy_queries(lang, location)
 
-    vim.notify("✓ " .. lang .. " installed")
     return true
 end
 
@@ -256,6 +258,12 @@ function M.setup(opts)
             end
         end,
     })
+
+    for _, lang in ipairs(cfg.ensure_installed) do
+        if not is_installed(lang) then
+            queue_install(lang)
+        end
+    end
 
     if cfg.auto_install then
         vim.api.nvim_create_autocmd("FileType", {
