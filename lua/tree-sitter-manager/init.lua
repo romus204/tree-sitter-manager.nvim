@@ -18,6 +18,7 @@ local cfg = {
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
     auto_install = false,
     debug_msg = false,
+    enable_folding = false,
 }
 
 local function ext()
@@ -228,6 +229,10 @@ local function queue_install(lang, buf)
     end
 end
 
+local function is_installed(lang)
+    return vim.uv.fs_stat(ppath(lang)) or vim.uv.fs_stat(qpath(lang))
+end
+
 function M.setup(opts)
     cfg = vim.tbl_deep_extend("force", cfg, opts or {})
     vim.fn.mkdir(cfg.parser_dir, "p")
@@ -243,24 +248,21 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("TSManager", function() M.open() end,
         { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
 
-    local installed_ft = {}
-    for _, lang in ipairs(languages) do
-        if vim.uv.fs_stat(ppath(lang)) then table.insert(installed_ft, lang) end
-    end
-    if #installed_ft > 0 then
-        vim.api.nvim_create_autocmd('FileType', {
-            pattern = installed_ft,
-            callback = function() vim.treesitter.start() end,
-            desc = 'Auto-enable treesitter for installed parsers'
-        })
-    end
+    vim.api.nvim_create_autocmd('FileType', {
+        callback = function()
+            if pcall(vim.treesitter.start) and cfg.enable_folding then
+                vim.wo[0][0].foldmethod = 'expr'
+                vim.wo[0][0].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+            end
+        end,
+    })
 
     if cfg.auto_install then
         vim.api.nvim_create_autocmd("FileType", {
             callback = function(e)
                 local lang = e.match
 
-                if repos[lang] and not vim.tbl_contains(installed_ft, lang) then
+                if repos[lang] and not is_installed(lang) then
                     queue_install(lang)
                 end
             end
