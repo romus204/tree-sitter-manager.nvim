@@ -110,11 +110,14 @@ function M._install_single(lang)
 
     vim.notify("🔨 Building " .. lang)
     local build = {}
+    local out_path = ppath(lang)
+    local out_dir = vim.fn.fnamemodify(out_path, ":h")
     if info.generate then
-        build = run_cmd(string.format('cd "%s" && tree-sitter generate && tree-sitter build -o "%s"', build_dir,
-            ppath(lang)))
+        build = run_cmd(string.format('mkdir -p "%s" && cd "%s" && tree-sitter generate && tree-sitter build -o "%s"',
+            out_dir, build_dir, out_path))
     else
-        build = run_cmd(string.format('cd "%s" && tree-sitter build -o "%s"', build_dir, ppath(lang)))
+        build = run_cmd(string.format('mkdir -p "%s" && cd "%s" && tree-sitter build -o "%s"', out_dir, build_dir,
+            out_path))
     end
 
     if not build.ok then
@@ -187,6 +190,8 @@ end
 
 function M.setup(opts)
     cfg = vim.tbl_deep_extend("force", cfg, opts or {})
+    cfg.parser_dir = vim.fs.normalize(vim.fn.fnamemodify(vim.fn.expand(cfg.parser_dir), ":p"))
+    cfg.query_dir = vim.fs.normalize(vim.fn.fnamemodify(vim.fn.expand(cfg.query_dir), ":p"))
     vim.fn.mkdir(cfg.parser_dir, "p")
     vim.fn.mkdir(cfg.query_dir, "p")
 
