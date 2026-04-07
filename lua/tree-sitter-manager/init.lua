@@ -10,6 +10,9 @@ local PLUGIN_ROOT = abs ~= "" and vim.fn.fnamemodify(abs, ":h:h:h") or vim.fn.st
 
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 
+local queue   = {}
+local queue_flag = false
+
 local cfg = {
     parser_dir = vim.fn.stdpath("data") .. "/site/parser",
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
@@ -24,9 +27,14 @@ local function ppath(l) return cfg.parser_dir .. "/" .. l .. ext() end
 local function qpath(l) return cfg.query_dir .. "/" .. l end
 
 local function run_cmd(cmd)
-    local res = vim.system({ "sh", "-c", cmd }, { text = true }):wait()
-    local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
-    return { ok = res.code == 0, output = out }
+    local cr = coroutine.running()
+    vim.system({ "sh", "-c", cmd }, { text = true }, function(res)
+        local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
+        vim.schedule(function()
+            coroutine.resume(cr, { ok = res.code == 0, output = out })
+        end)
+    end)
+    return coroutine.yield()
 end
 
 local function get_repo_info(lang)
@@ -138,8 +146,6 @@ function M._install_single(lang)
     return true
 end
 
-local function install(lang) install_with_deps(lang) end
-
 local function remove(lang)
     if vim.uv.fs_stat(ppath(lang)) then vim.uv.fs_unlink(ppath(lang)) end
     local qd = cfg.query_dir .. "/" .. lang
@@ -189,6 +195,35 @@ local function render(buf)
     vim.bo[buf].modifiable = true
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
     vim.bo[buf].modifiable = false
+end
+
+local function dequeue_install()
+    if #queue == 0 then
+        queue_flag = false
+        return
+    end
+
+    local args = table.remove(queue, 1)
+
+    coroutine.wrap(function()
+        local ok, err = pcall(install_with_deps, args.lang)
+        if not ok then
+            vim.notify("Install failed: " .. tostring(err), vim.log.levels.ERROR)
+        end
+        if args.buf and vim.api.nvim_buf_is_valid(args.buf) then
+            render(args.buf)
+        end
+        dequeue_install()
+    end)()
+end
+
+local function queue_install(lang, buf)
+    table.insert(queue, { lang = lang, buf = buf })
+
+    if not queue_flag then
+        queue_flag = true
+        dequeue_install()
+    end
 end
 
 function M.setup(opts)
@@ -251,15 +286,17 @@ end
 function M._act(action)
     local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
     if not lang or not repos[lang] then return end
+    local buf = vim.api.nvim_get_current_buf()
     if action == "install" then
-        install(lang)
+        queue_install(lang, buf)
     elseif action == "remove" then
         remove(lang)
+        render(buf)
     elseif action == "update" then
         remove(lang)
-        install(lang)
+        render(buf)
+        queue_install(lang, buf)
     end
-    render(vim.api.nvim_get_current_buf())
 end
 
 return M
