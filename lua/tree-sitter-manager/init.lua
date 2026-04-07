@@ -16,6 +16,8 @@ local queue_flag = false
 local cfg = {
     parser_dir = vim.fn.stdpath("data") .. "/site/parser",
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
+    auto_install = false,
+    debug_msg = false,
 }
 
 local function ext()
@@ -68,7 +70,7 @@ local function install_with_deps(lang, installing)
 
     for _, dep in ipairs(get_requires(lang)) do
         if not vim.uv.fs_stat(ppath(dep)) then
-            vim.notify("📦 Installing dependency: " .. dep, vim.log.levels.INFO)
+            if cfg.debug_msg then vim.notify("📦 Installing dependency: " .. dep, vim.log.levels.INFO) end
             if not install_with_deps(dep, vim.deepcopy(installing)) then return false end
         end
     end
@@ -99,13 +101,13 @@ function M._install_single(lang)
     local location = info.location or lang
 
     if not vim.uv.fs_stat(repo_dir) then
-        vim.notify("⬇ Preparing repo " .. lang)
+        if cfg.debug_msg then vim.notify("⬇ Preparing repo " .. lang) end
         local prepare = run_cmd(string.format('git init "%s" && cd "%s" && git remote add origin "%s"', repo_dir, repo_dir, info.url))
         if not prepare.ok then
             return vim.notify("Repository setup failed:\n" .. prepare.output:sub(1, 300), 3), false
         end
 
-        vim.notify("🔖 Fetching revision " .. info.revision)
+        if cfg.debug_msg then vim.notify("🔖 Fetching revision " .. info.revision) end
         local checkout = run_cmd(string.format('cd "%s" && git fetch origin "%s" --depth 1 && git checkout FETCH_HEAD', repo_dir, info.revision))
         if not checkout.ok then
             vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
@@ -114,11 +116,11 @@ function M._install_single(lang)
 
     local build_dir = repo_dir
     if repos[lang].install_info.location then
-        vim.notify("LOCATION " .. info.location)
+        if cfg.debug_msg then vim.notify("LOCATION " .. info.location) end
         build_dir = build_dir .. "/" .. location
     end
 
-    vim.notify("🔨 Building " .. lang)
+    if cfg.debug_msg then vim.notify("🔨 Building " .. lang) end
     local build = {}
     if info.generate then
         build = run_cmd(string.format('cd "%s" && tree-sitter generate && tree-sitter build -o "%s"', build_dir,
@@ -150,7 +152,7 @@ local function remove(lang)
     if vim.uv.fs_stat(ppath(lang)) then vim.uv.fs_unlink(ppath(lang)) end
     local qd = cfg.query_dir .. "/" .. lang
     if vim.uv.fs_stat(qd) then vim.fn.delete(qd, "rf") end
-    vim.notify("✕ " .. lang)
+    if cfg.debug_msg then vim.notify("✕ " .. lang) end
 end
 
 local function is_only_query(lang)
@@ -253,15 +255,17 @@ function M.setup(opts)
         })
     end
 
-    vim.api.nvim_create_autocmd("FileType", {
-        callback = function(e)
-            local lang = e.match
+    if cfg.auto_install then
+        vim.api.nvim_create_autocmd("FileType", {
+            callback = function(e)
+                local lang = e.match
 
-            if repos[lang] and not vim.tbl_contains(installed_ft, lang) then
-                queue_install(lang)
+                if repos[lang] and not vim.tbl_contains(installed_ft, lang) then
+                    queue_install(lang)
+                end
             end
-        end
-    })
+        })
+    end
 end
 
 function M.open()
