@@ -252,6 +252,16 @@ function M.setup(opts)
             desc = 'Auto-enable treesitter for installed parsers'
         })
     end
+
+    vim.api.nvim_create_autocmd("FileType", {
+        callback = function(e)
+            local lang = e.match
+
+            if repos[lang] and not vim.tbl_contains(installed_ft, lang) then
+                queue_install(lang)
+            end
+        end
+    })
 end
 
 function M.open()
