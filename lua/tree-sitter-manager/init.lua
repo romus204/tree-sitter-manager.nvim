@@ -1,6 +1,7 @@
 local M = {}
 local repos = require("tree-sitter-manager.repos")
 local languages = vim.tbl_keys(repos)
+local workdir = vim.fn.tempname()
 table.sort(languages)
 
 local src = debug.getinfo(1, "S").source
@@ -78,34 +79,35 @@ end
 
 function M._install_single(lang)
     local info = get_repo_info(lang)
-    if not info or not info.url then
+    if not info or not info.url or not info.revision then
         copy_queries(lang, lang) -- if only queries require
         vim.notify("✓ " .. lang .. " installed")
         return true
     end
 
-    local tmp = vim.fn.tempname()
+    local repo_name = info.url:match("([^/]+)$"):gsub("%.git$", "")
+    local repo_dir = workdir .. "/" .. repo_name .. "-" .. info.revision:sub(1,7)
+
     local location = info.location or lang
 
-    vim.notify("⬇ Cloning " .. lang)
-    local clone = run_cmd(string.format('git clone "%s" "%s"', info.url, tmp))
-    if not clone.ok then
-        return vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3), false
-    end
+    if not vim.uv.fs_stat(repo_dir) then
+        vim.notify("⬇ Preparing repo " .. lang)
+        local prepare = run_cmd(string.format('git init "%s" && cd "%s" && git remote add origin "%s"', repo_dir, repo_dir, info.url))
+        if not prepare.ok then
+            return vim.notify("Repository setup failed:\n" .. prepare.output:sub(1, 300), 3), false
+        end
 
-    local ref = info.revision or info.branch
-    if ref then
-        vim.notify("🔖 Checkout " .. ref)
-        local checkout = run_cmd(string.format('cd "%s" && git checkout "%s"', tmp, ref))
+        vim.notify("🔖 Fetching revision " .. info.revision)
+        local checkout = run_cmd(string.format('cd "%s" && git fetch origin "%s" --depth 1 && git checkout FETCH_HEAD', repo_dir, info.revision))
         if not checkout.ok then
             vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
         end
     end
 
-    local build_dir = tmp
+    local build_dir = repo_dir
     if repos[lang].install_info.location then
         vim.notify("LOCATION " .. info.location)
-        build_dir = tmp .. "/" .. location
+        build_dir = build_dir .. "/" .. location
     end
 
     vim.notify("🔨 Building " .. lang)
@@ -121,10 +123,14 @@ function M._install_single(lang)
         local err = build.output
         if #err > 500 then err = err:sub(-500) end
         vim.notify("Build failed for " .. lang .. ":\n" .. err, 3)
-        vim.fn.delete(tmp, "rf")
+
+        local cleanup = run_cmd(string.format('cd "%s" && git clean -f . && git restore .', build_dir))
+        if not cleanup.ok then
+            vim.fn.delete(repo_dir, "rf")
+        end
+
         return false
     end
-    vim.fn.delete(tmp, "rf")
 
     copy_queries(lang, location)
 
