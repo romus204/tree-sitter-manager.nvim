@@ -18,6 +18,8 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
 - 🎯 Install parsers directly from Tree-sitter repositories
 - ⚡ Dynamic FileType autocmd registration for installed parsers
 - 🔧 Works with any plugin manager (lazy, packer, vim-plug, native packages)
+- 🔀 **Custom/fork repositories**: Override any language or add new ones via `setup()`
+- 📂 **Repository queries**: Use `use_repo_queries` to use query files bundled in the grammar repo itself
 
 ## 📋 Requirements
 
@@ -46,6 +48,56 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
   end
 }
 ```
+
+## 🔀 Custom / Fork Repositories
+
+You can override built-in language definitions or add entirely new ones via the `languages`
+option in `setup()`. This keeps `repos.lua` clean — no changes to the plugin repository are
+needed.
+
+### Override a built-in language with a fork
+
+```lua
+require("tree-sitter-manager").setup({
+  languages = {
+    cpp = {
+      install_info = {
+        url = "https://github.com/myfork/tree-sitter-cpp",
+        revision = "abc1234",
+        -- Use the query files that ship with the forked repo instead of
+        -- the bundled queries. The parser's queries/ directory is copied
+        -- automatically during installation.
+        use_repo_queries = true,
+      },
+    },
+  },
+})
+```
+
+### Add a language not in the built-in list
+
+```lua
+require("tree-sitter-manager").setup({
+  languages = {
+    mylang = {
+      install_info = {
+        url = "https://github.com/someone/tree-sitter-mylang",
+        use_repo_queries = true, -- copy queries/ from the cloned repo
+      },
+    },
+  },
+})
+```
+
+### `use_repo_queries` behaviour
+
+| Value | Query source |
+|-------|-------------|
+| `false` (default) | Queries bundled in `runtime/queries/<lang>/` of this plugin |
+| `true` | `queries/` directory inside the cloned grammar repository |
+
+If `use_repo_queries = true` but the repo has no `queries/` directory, a warning is shown
+and the plugin falls back to the bundled queries automatically.
 
 ## 🚀 Usage
 

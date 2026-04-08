@@ -1,7 +1,5 @@
 local M = {}
 local repos = require("tree-sitter-manager.repos")
-local languages = vim.tbl_keys(repos)
-table.sort(languages)
 
 local src = debug.getinfo(1, "S").source
 local abs = src:sub(1, 1) == "@" and vim.fn.fnamemodify(src:sub(2), ":p") or ""
@@ -12,7 +10,15 @@ local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 local cfg = {
     parser_dir = vim.fn.stdpath("data") .. "/site/parser",
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
+    ---@type table<string, string|{install_info?: {url: string, location?: string, revision?: string, branch?: string, generate?: boolean, use_repo_queries?: boolean}, requires?: string[]}>
+    languages = {},
 }
+
+-- Effective repos: built-in repos merged with user-defined overrides from cfg.languages.
+-- Recomputed in setup() after merging user config.
+local effective_repos = repos
+local languages = vim.tbl_keys(repos)
+table.sort(languages)
 
 local function ext()
     local sys = vim.uv.os_uname().sysname
@@ -22,14 +28,36 @@ end
 local function ppath(l) return cfg.parser_dir .. "/" .. l .. ext() end
 local function qpath(l) return cfg.query_dir .. "/" .. l end
 
-local function run_cmd(cmd)
-    local res = vim.system({ "sh", "-c", cmd }, { text = true }):wait()
+-- Runs a command given as an argument array, optionally in a working directory.
+-- Avoids shell invocation so this works on Windows, macOS, and Linux.
+local function run_cmd(args, cwd)
+    local opts = { text = true }
+    if cwd then opts.cwd = cwd end
+    local res = vim.system(args, opts):wait()
     local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
     return { ok = res.code == 0, output = out }
 end
 
+-- Recursively copies all files from src directory into dst directory.
+local function copy_dir(src, dst)
+    vim.fn.mkdir(dst, "p")
+    local handle = vim.uv.fs_scandir(src)
+    if not handle then return end
+    while true do
+        local name, ftype = vim.uv.fs_scandir_next(handle)
+        if not name then break end
+        local s = src .. "/" .. name
+        local d = dst .. "/" .. name
+        if ftype == "directory" then
+            copy_dir(s, d)
+        else
+            vim.uv.fs_copyfile(s, d)
+        end
+    end
+end
+
 local function get_repo_info(lang)
-    local entry = repos[lang]
+    local entry = effective_repos[lang]
     if not entry then return nil end
     if type(entry) == "string" then return { url = entry, location = lang } end
     if entry.install_info then
@@ -39,13 +67,14 @@ local function get_repo_info(lang)
             revision = entry.install_info.revision,
             branch = entry.install_info.branch,
             generate = entry.install_info.generate,
+            use_repo_queries = entry.install_info.use_repo_queries,
         }
     end
     return nil
 end
 
 local function get_requires(lang)
-    local entry = repos[lang]
+    local entry = effective_repos[lang]
     return (type(entry) == "table" and entry.requires) or {}
 end
 
@@ -70,10 +99,19 @@ local function copy_queries(lang, location)
     local s = PLUGIN_ROOT .. "/runtime/queries/" .. location
     local d = cfg.query_dir .. "/" .. lang
     if vim.uv.fs_stat(s) then
-        vim.fn.mkdir(d, "p")
-        local cp = run_cmd(string.format('cp -a "%s/." "%s/" 2>&1', s, d))
-        if not cp.ok then vim.notify("⚠ cp failed:\n" .. cp.output:sub(1, 200), 2) end
+        copy_dir(s, d)
     end
+end
+
+-- Copies query files from the cloned grammar repository into query_dir.
+-- Expects queries at <build_dir>/queries/ (standard tree-sitter layout).
+local function copy_queries_from_repo(lang, build_dir)
+    local qs = build_dir .. "/queries"
+    if vim.uv.fs_stat(qs) then
+        copy_dir(qs, cfg.query_dir .. "/" .. lang)
+        return true
+    end
+    return false
 end
 
 function M._install_single(lang)
@@ -88,7 +126,7 @@ function M._install_single(lang)
     local location = info.location or lang
 
     vim.notify("⬇ Cloning " .. lang)
-    local clone = run_cmd(string.format('git clone "%s" "%s"', info.url, tmp))
+    local clone = run_cmd({ "git", "clone", info.url, tmp })
     if not clone.ok then
         return vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3), false
     end
@@ -96,26 +134,29 @@ function M._install_single(lang)
     local ref = info.revision or info.branch
     if ref then
         vim.notify("🔖 Checkout " .. ref)
-        local checkout = run_cmd(string.format('cd "%s" && git checkout "%s"', tmp, ref))
+        local checkout = run_cmd({ "git", "checkout", ref }, tmp)
         if not checkout.ok then
             vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
         end
     end
 
     local build_dir = tmp
-    if repos[lang].install_info.location then
-        vim.notify("LOCATION " .. info.location)
+    if location ~= lang then
+        vim.notify("LOCATION " .. location)
         build_dir = tmp .. "/" .. location
     end
 
     vim.notify("🔨 Building " .. lang)
     local build = {}
     if info.generate then
-        build = run_cmd(string.format('cd "%s" && tree-sitter generate && tree-sitter build -o "%s"', build_dir,
-            ppath(lang)))
-    else
-        build = run_cmd(string.format('cd "%s" && tree-sitter build -o "%s"', build_dir, ppath(lang)))
+        local gen = run_cmd({ "tree-sitter", "generate" }, build_dir)
+        if not gen.ok then
+            vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
+            vim.fn.delete(tmp, "rf")
+            return false
+        end
     end
+    build = run_cmd({ "tree-sitter", "build", "-o", ppath(lang) }, build_dir)
 
     if not build.ok then
         local err = build.output
@@ -124,9 +165,22 @@ function M._install_single(lang)
         vim.fn.delete(tmp, "rf")
         return false
     end
+
+    -- Copy queries from the cloned repo when use_repo_queries is set.
+    -- Must happen before tmp is deleted.
+    local used_repo_queries = false
+    if info.use_repo_queries then
+        used_repo_queries = copy_queries_from_repo(lang, build_dir)
+        if not used_repo_queries then
+            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
+        end
+    end
+
     vim.fn.delete(tmp, "rf")
 
-    copy_queries(lang, location)
+    if not used_repo_queries then
+        copy_queries(lang, location)
+    end
 
     vim.notify("✓ " .. lang .. " installed")
     return true
@@ -187,6 +241,13 @@ end
 
 function M.setup(opts)
     cfg = vim.tbl_deep_extend("force", cfg, opts or {})
+
+    -- Merge built-in repos with user-defined language overrides.
+    -- User entries take precedence, allowing custom forks and new languages.
+    effective_repos = vim.tbl_deep_extend("force", vim.deepcopy(repos), cfg.languages)
+    languages = vim.tbl_keys(effective_repos)
+    table.sort(languages)
+
     vim.fn.mkdir(cfg.parser_dir, "p")
     vim.fn.mkdir(cfg.query_dir, "p")
 
@@ -205,10 +266,10 @@ function M.setup(opts)
         if vim.uv.fs_stat(ppath(lang)) then table.insert(installed_ft, lang) end
     end
     if #installed_ft > 0 then
-        vim.api.nvim_create_autocmd('FileType', {
+        vim.api.nvim_create_autocmd("FileType", {
             pattern = installed_ft,
             callback = function() vim.treesitter.start() end,
-            desc = 'Auto-enable treesitter for installed parsers'
+            desc = "Auto-enable treesitter for installed parsers",
         })
     end
 end
@@ -229,7 +290,7 @@ function M.open()
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
         title = footer,
-        title_pos = "center"
+        title_pos = "center",
     })
     render(buf)
 
@@ -244,7 +305,7 @@ end
 
 function M._act(action)
     local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
-    if not lang or not repos[lang] then return end
+    if not lang or not effective_repos[lang] then return end
     if action == "install" then
         install(lang)
     elseif action == "remove" then
