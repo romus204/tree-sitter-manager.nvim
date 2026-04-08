@@ -12,6 +12,8 @@ local cfg = {
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
     ---@type table<string, string|{install_info?: {url: string, location?: string, revision?: string, branch?: string, generate?: boolean, use_repo_queries?: boolean}, requires?: string[]}>
     languages = {},
+    ensure_installed = {},
+
 }
 
 -- Effective repos: built-in repos merged with user-defined overrides from cfg.languages.
@@ -257,6 +259,20 @@ function M.setup(opts)
 
     if not vim.tbl_contains(rtp, parser_parent) then vim.opt.rtp:prepend(parser_parent) end
     if not vim.tbl_contains(rtp, query_parent) then vim.opt.rtp:prepend(query_parent) end
+
+    for _, lang in ipairs(cfg.ensure_installed or {}) do
+        if not repos[lang] then
+            vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
+        else
+            local installed = false
+            if is_only_query(lang) then
+                installed = vim.uv.fs_stat(qpath(lang)) ~= nil
+            else
+                installed = vim.uv.fs_stat(ppath(lang)) ~= nil
+            end
+            if not installed then install(lang) end
+        end
+    end
 
     vim.api.nvim_create_user_command("TSManager", function() M.open() end,
         { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
