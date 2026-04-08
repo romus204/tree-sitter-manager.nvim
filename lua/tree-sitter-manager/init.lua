@@ -12,7 +12,7 @@ local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 local cfg = {
     parser_dir = vim.fn.stdpath("data") .. "/site/parser",
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
-    auto_install = {},
+    ensure_installed = {},
 }
 
 local function ext()
@@ -198,7 +198,7 @@ function M.setup(opts)
     if not vim.tbl_contains(rtp, parser_parent) then vim.opt.rtp:prepend(parser_parent) end
     if not vim.tbl_contains(rtp, query_parent) then vim.opt.rtp:prepend(query_parent) end
 
-    for _, lang in ipairs(cfg.auto_install or {}) do
+    for _, lang in ipairs(cfg.ensure_installed or {}) do
         if not repos[lang] then
             vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
         else
