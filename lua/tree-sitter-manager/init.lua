@@ -22,10 +22,32 @@ end
 local function ppath(l) return cfg.parser_dir .. "/" .. l .. ext() end
 local function qpath(l) return cfg.query_dir .. "/" .. l end
 
-local function run_cmd(cmd)
-    local res = vim.system({ "sh", "-c", cmd }, { text = true }):wait()
+-- Runs a command given as an argument array, optionally in a working directory.
+-- Avoids shell invocation so this works on Windows, macOS, and Linux.
+local function run_cmd(args, cwd)
+    local opts = { text = true }
+    if cwd then opts.cwd = cwd end
+    local res = vim.system(args, opts):wait()
     local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
     return { ok = res.code == 0, output = out }
+end
+
+-- Recursively copies all files from src directory into dst directory.
+local function copy_dir(src, dst)
+    vim.fn.mkdir(dst, "p")
+    local handle = vim.uv.fs_scandir(src)
+    if not handle then return end
+    while true do
+        local name, ftype = vim.uv.fs_scandir_next(handle)
+        if not name then break end
+        local s = src .. "/" .. name
+        local d = dst .. "/" .. name
+        if ftype == "directory" then
+            copy_dir(s, d)
+        else
+            vim.uv.fs_copyfile(s, d)
+        end
+    end
 end
 
 local function get_repo_info(lang)
@@ -70,9 +92,7 @@ local function copy_queries(lang, location)
     local s = PLUGIN_ROOT .. "/runtime/queries/" .. location
     local d = cfg.query_dir .. "/" .. lang
     if vim.uv.fs_stat(s) then
-        vim.fn.mkdir(d, "p")
-        local cp = run_cmd(string.format('cp -a "%s/." "%s/" 2>&1', s, d))
-        if not cp.ok then vim.notify("⚠ cp failed:\n" .. cp.output:sub(1, 200), 2) end
+        copy_dir(s, d)
     end
 end
 
@@ -88,7 +108,7 @@ function M._install_single(lang)
     local location = info.location or lang
 
     vim.notify("⬇ Cloning " .. lang)
-    local clone = run_cmd(string.format('git clone "%s" "%s"', info.url, tmp))
+    local clone = run_cmd({ "git", "clone", info.url, tmp })
     if not clone.ok then
         return vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3), false
     end
@@ -96,26 +116,29 @@ function M._install_single(lang)
     local ref = info.revision or info.branch
     if ref then
         vim.notify("🔖 Checkout " .. ref)
-        local checkout = run_cmd(string.format('cd "%s" && git checkout "%s"', tmp, ref))
+        local checkout = run_cmd({ "git", "checkout", ref }, tmp)
         if not checkout.ok then
             vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
         end
     end
 
     local build_dir = tmp
-    if repos[lang].install_info.location then
-        vim.notify("LOCATION " .. info.location)
+    if location ~= lang then
+        vim.notify("LOCATION " .. location)
         build_dir = tmp .. "/" .. location
     end
 
     vim.notify("🔨 Building " .. lang)
     local build = {}
     if info.generate then
-        build = run_cmd(string.format('cd "%s" && tree-sitter generate && tree-sitter build -o "%s"', build_dir,
-            ppath(lang)))
-    else
-        build = run_cmd(string.format('cd "%s" && tree-sitter build -o "%s"', build_dir, ppath(lang)))
+        local gen = run_cmd({ "tree-sitter", "generate" }, build_dir)
+        if not gen.ok then
+            vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
+            vim.fn.delete(tmp, "rf")
+            return false
+        end
     end
+    build = run_cmd({ "tree-sitter", "build", "-o", ppath(lang) }, build_dir)
 
     if not build.ok then
         local err = build.output
