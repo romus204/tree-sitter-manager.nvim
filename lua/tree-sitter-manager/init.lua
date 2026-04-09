@@ -197,6 +197,27 @@ local function remove(lang)
     vim.notify("✕ " .. lang)
 end
 
+vim.api.nvim_create_user_command("TSInstall",
+    function (event)
+        for _, lang in ipairs(event.fargs) do install(lang) end
+    end,
+{ nargs = "+"})
+
+vim.api.nvim_create_user_command("TSRemove",
+    function (event)
+        for _, lang in ipairs(event.fargs) do remove(lang) end
+    end,
+{ nargs = "+"})
+
+vim.api.nvim_create_user_command("TSUpdate",
+    function (event)
+        for _, lang in ipairs(event.fargs) do
+            remove(lang)
+            install(lang)
+        end
+    end,
+{ nargs = "+"})
+
 local function is_only_query(lang)
     local info = get_repo_info(lang)
     return not info or not info.url
