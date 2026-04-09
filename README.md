@@ -94,7 +94,7 @@ and the plugin falls back to the bundled queries automatically.
 ## Usage
 `:TSManager` - Open the parser management interface
 
-## ⌨️ Keybindings
+## Keybindings
 `i` - Install parser under cursor  
 `x` - Remove parser under cursor  
 `u` - Update parser under cursor  
