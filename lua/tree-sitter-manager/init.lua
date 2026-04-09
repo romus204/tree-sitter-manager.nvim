@@ -88,7 +88,7 @@ end
 local function install_with_deps(lang, installing)
     if not repos[lang] then
         vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
-        return
+        return false
     end
 
     local installed = false
@@ -231,7 +231,7 @@ local function install(lang) install_with_deps(lang) end
 local function remove(lang)
     if not is_installed(lang) then
         vim.notify("⚠ Parser " .. lang .. " not installed", vim.log.levels.WARN)
-        return
+        return false
     end
     if vim.uv.fs_stat(ppath(lang)) then vim.uv.fs_unlink(ppath(lang)) end
     local qd = cfg.query_dir .. "/" .. lang
@@ -245,7 +245,7 @@ vim.api.nvim_create_user_command("TSInstall",
     end,
 { nargs = "+"})
 
-vim.api.nvim_create_user_command("TSRemove",
+vim.api.nvim_create_user_command("TSUninstall",
     function (event)
         for _, lang in ipairs(event.fargs) do remove(lang) end
     end,
@@ -254,7 +254,7 @@ vim.api.nvim_create_user_command("TSRemove",
 vim.api.nvim_create_user_command("TSUpdate",
     function (event)
         for _, lang in ipairs(event.fargs) do
-            remove(lang)
+            if not remove(lang) then return end
             install(lang)
         end
     end,
