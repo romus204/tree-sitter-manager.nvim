@@ -80,7 +80,25 @@ local function get_requires(lang)
     return (type(entry) == "table" and entry.requires) or {}
 end
 
+local function is_only_query(lang)
+    local info = get_repo_info(lang)
+    return not info or not info.url
+end
+
 local function install_with_deps(lang, installing)
+    if not repos[lang] then
+        vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
+        return
+    end
+
+    local installed = false
+    if is_only_query(lang) then
+        installed = vim.uv.fs_stat(qpath(lang)) ~= nil
+    else
+        installed = vim.uv.fs_stat(ppath(lang)) ~= nil
+    end
+    if not installed then return false end
+
     installing = installing or {}
     if installing[lang] then
         vim.notify("⚠ Circular dependency: " .. lang, vim.log.levels.WARN)
@@ -188,9 +206,33 @@ function M._install_single(lang)
     return true
 end
 
+local function is_installed(lang)
+    if is_only_query(lang) then
+        if not vim.uv.fs_stat(qpath(lang)) then return false end
+    else
+        if not vim.uv.fs_stat(ppath(lang)) then return false end
+    end
+    return true
+end
+
+local function is_deps_installed(lang)
+    for _, dep in ipairs(get_requires(lang)) do
+        if is_only_query(dep) then
+            if not vim.uv.fs_stat(qpath(dep)) then return false end
+        else
+            if not vim.uv.fs_stat(ppath(dep)) then return false end
+        end
+    end
+    return true
+end
+
 local function install(lang) install_with_deps(lang) end
 
 local function remove(lang)
+    if not is_installed(lang) then
+        vim.notify("⚠ Parser " .. lang .. " not installed", vim.log.levels.WARN)
+        return
+    end
     if vim.uv.fs_stat(ppath(lang)) then vim.uv.fs_unlink(ppath(lang)) end
     local qd = cfg.query_dir .. "/" .. lang
     if vim.uv.fs_stat(qd) then vim.fn.delete(qd, "rf") end
@@ -218,27 +260,10 @@ vim.api.nvim_create_user_command("TSUpdate",
     end,
 { nargs = "+"})
 
-local function is_only_query(lang)
-    local info = get_repo_info(lang)
-    return not info or not info.url
-end
-
 --TODO: DO REFACTOR
 local function get_status_icon(lang)
-    if is_only_query(lang) then
-        if not vim.uv.fs_stat(qpath(lang)) then return "❌" end
-    else
-        if not vim.uv.fs_stat(ppath(lang)) then return "❌" end
-    end
-
-    for _, dep in ipairs(get_requires(lang)) do
-        if is_only_query(dep) then
-            if not vim.uv.fs_stat(qpath(dep)) then return "⚠️" end
-        else
-            if not vim.uv.fs_stat(ppath(dep)) then return "⚠️" end
-        end
-    end
-
+    if not is_installed(lang) then return "❌" end
+    if not is_deps_installed(lang) then return "⚠️" end
     return "✅"
 end
 
@@ -281,22 +306,10 @@ function M.setup(opts)
     if not vim.tbl_contains(rtp, parser_parent) then vim.opt.rtp:prepend(parser_parent) end
     if not vim.tbl_contains(rtp, query_parent) then vim.opt.rtp:prepend(query_parent) end
 
-    for _, lang in ipairs(cfg.ensure_installed or {}) do
-        if not repos[lang] then
-            vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
-        else
-            local installed = false
-            if is_only_query(lang) then
-                installed = vim.uv.fs_stat(qpath(lang)) ~= nil
-            else
-                installed = vim.uv.fs_stat(ppath(lang)) ~= nil
-            end
-            if not installed then install(lang) end
-        end
-    end
+    for _, lang in ipairs(cfg.ensure_installed or {}) do install(lang) end
 
     vim.api.nvim_create_user_command("TSManager", function() M.open() end,
-        { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
+    { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
 
     local installed_ft = {}
     for _, lang in ipairs(languages) do
