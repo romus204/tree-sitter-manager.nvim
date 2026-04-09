@@ -97,7 +97,10 @@ local function install_with_deps(lang, installing)
     else
         installed = vim.uv.fs_stat(ppath(lang)) ~= nil
     end
-    if not installed then return false end
+    if installed then
+        vim.notify("⚠ Parser " .. lang .. " already installed.", vim.log.levels.WARN)
+        return false
+    end
 
     installing = installing or {}
     if installing[lang] then
