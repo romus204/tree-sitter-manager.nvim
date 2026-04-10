@@ -91,6 +91,25 @@ require("tree-sitter-manager").setup({
 If `use_repo_queries = true` but the repo has no `queries/` directory, a warning is shown
 and the plugin falls back to the bundled queries automatically.
 
+## Treesitter Highlighting
+Treesitter highlighting is enabled by default. If you prefer to use standard regex highlighting for specific languages, use the `nohighlight` option.
+```lua
+require("tree-sitter-manager").setup({
+  -- Use regex highlighting for these languages
+  nohighlight = { "yaml", "zsh" },
+})
+```
+Alternatively, if you prefer an "opt-in" approach, use the `highlight` option.
+```lua
+require("tree-sitter-manager").setup({
+  -- Only enable treesitter highlighting for these languages
+  highlight = { "lua", "c" },
+
+  -- Disable treesitter highlighting
+  -- highlight = {},
+})
+```
+
 ## Usage
 `:TSManager` - Open the parser management interface
 
