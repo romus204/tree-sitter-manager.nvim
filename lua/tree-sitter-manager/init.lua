@@ -128,8 +128,14 @@ function M._install_single(lang)
     local tmp = vim.fn.tempname()
     local location = info.location or lang
 
+    local working_dir = tmp
+    if location then
+        vim.notify("LOCATION " .. location)
+        working_dir = tmp .. "/" .. location
+    end
+
     vim.notify("⬇ Cloning " .. lang)
-    local clone = run_cmd({ "git", "clone", info.url, tmp })
+    local clone = run_cmd({ "git", "clone", info.url, working_dir})
     if not clone.ok then
         return vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3), false
     end
@@ -137,29 +143,23 @@ function M._install_single(lang)
     local ref = info.revision or info.branch
     if ref then
         vim.notify("🔖 Checkout " .. ref)
-        local checkout = run_cmd({ "git", "checkout", ref }, tmp)
+        local checkout = run_cmd({ "git", "checkout", ref}, working_dir)
         if not checkout.ok then
             vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
         end
     end
 
-    local build_dir = tmp
-    if info.location then
-        vim.notify("LOCATION " .. location)
-        build_dir = tmp .. "/" .. location
-    end
-
     vim.notify("🔨 Building " .. lang)
     local build = {}
     if info.generate then
-        local gen = run_cmd({ "tree-sitter", "generate" }, build_dir)
+        local gen = run_cmd({ "tree-sitter", "generate" }, working_dir)
         if not gen.ok then
             vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
             vim.fn.delete(tmp, "rf")
             return false
         end
     end
-    build = run_cmd({ "tree-sitter", "build", "-o", ppath(lang) }, build_dir)
+    build = run_cmd({ "tree-sitter", "build", "-o", ppath(lang) }, working_dir)
 
     if not build.ok then
         local err = build.output
@@ -173,7 +173,7 @@ function M._install_single(lang)
     -- Must happen before tmp is deleted.
     local used_repo_queries = false
     if info.use_repo_queries then
-        used_repo_queries = copy_queries_from_repo(lang, build_dir)
+        used_repo_queries = copy_queries_from_repo(lang, working_dir)
         if not used_repo_queries then
             vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
         end
