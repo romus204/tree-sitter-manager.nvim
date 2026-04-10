@@ -65,7 +65,7 @@ local function get_repo_info(lang)
     if entry.install_info then
         return {
             url = entry.install_info.url,
-            location = entry.install_info.location or lang,
+            location = entry.install_info.location,
             revision = entry.install_info.revision,
             branch = entry.install_info.branch,
             generate = entry.install_info.generate,
