@@ -31,14 +31,16 @@ end
 local function ppath(l) return cfg.parser_dir .. "/" .. l .. ext() end
 local function qpath(l) return cfg.query_dir .. "/" .. l end
 
--- Runs a command given as an argument array, optionally in a working directory.
--- Avoids shell invocation so this works on Windows, macOS, and Linux.
-local function run_cmd(args, cwd)
+-- Runs a command asynchronously. Calls callback({ ok, output }) on the main thread when done.
+local function run_cmd(args, cwd, callback)
     local opts = { text = true }
     if cwd then opts.cwd = cwd end
-    local res = vim.system(args, opts):wait()
-    local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
-    return { ok = res.code == 0, output = out }
+    vim.system(args, opts, function(res)
+        local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
+        vim.schedule(function()
+            callback({ ok = res.code == 0, output = out })
+        end)
+    end)
 end
 
 -- Recursively copies all files from src directory into dst directory.
@@ -81,21 +83,34 @@ local function get_requires(lang)
     return (type(entry) == "table" and entry.requires) or {}
 end
 
-local function install_with_deps(lang, installing)
+local function install_with_deps(lang, callback, installing)
+    callback = callback or function() end
     installing = installing or {}
     if installing[lang] then
         vim.notify("⚠ Circular dependency: " .. lang, vim.log.levels.WARN)
-        return false
+        callback(false)
+        return
     end
     installing[lang] = true
 
-    for _, dep in ipairs(get_requires(lang)) do
+    local deps = get_requires(lang)
+    local function install_deps(i)
+        if i > #deps then
+            M._install_single(lang, callback)
+            return
+        end
+        local dep = deps[i]
         if not vim.uv.fs_stat(ppath(dep)) then
             vim.notify("📦 Installing dependency: " .. dep, vim.log.levels.INFO)
-            if not install_with_deps(dep, vim.deepcopy(installing)) then return false end
+            install_with_deps(dep, function(ok)
+                if not ok then callback(false) return end
+                install_deps(i + 1)
+            end, vim.deepcopy(installing))
+        else
+            install_deps(i + 1)
         end
     end
-    return M._install_single(lang)
+    install_deps(1)
 end
 
 local function copy_queries(lang, location)
@@ -117,79 +132,97 @@ local function copy_queries_from_repo(lang, build_dir)
     return false
 end
 
-function M._install_single(lang)
+function M._install_single(lang, callback)
+    callback = callback or function() end
     local info = get_repo_info(lang)
     if not info or not info.url then
-        copy_queries(lang, lang) -- if only queries require
+        copy_queries(lang, lang)
         vim.notify("✓ " .. lang .. " installed")
-        return true
+        callback(true)
+        return
     end
 
     local tmp = vim.fn.tempname()
     local location = info.location or lang
 
     vim.notify("⬇ Cloning " .. lang)
-    local clone = run_cmd({ "git", "clone", info.url, tmp })
-    if not clone.ok then
-        return vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3), false
-    end
-
-    local ref = info.revision or info.branch
-    if ref then
-        vim.notify("🔖 Checkout " .. ref)
-        local checkout = run_cmd({ "git", "checkout", ref }, tmp)
-        if not checkout.ok then
-            vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
+    run_cmd({ "git", "clone", info.url, tmp }, nil, function(clone)
+        if not clone.ok then
+            vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3)
+            callback(false)
+            return
         end
-    end
 
-    local build_dir = tmp
-    if info.location then
-        vim.notify("LOCATION " .. location)
-        build_dir = tmp .. "/" .. location
-    end
+        local function after_checkout()
+            local build_dir = tmp
+            if info.location then
+                build_dir = tmp .. "/" .. location
+            end
 
-    vim.notify("🔨 Building " .. lang)
-    local build = {}
-    if info.generate then
-        local gen = run_cmd({ "tree-sitter", "generate" }, build_dir)
-        if not gen.ok then
-            vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
-            vim.fn.delete(tmp, "rf")
-            return false
+            local function do_build()
+                vim.notify("🔨 Building " .. lang)
+                run_cmd({ "tree-sitter", "build", "-o", ppath(lang) }, build_dir, function(build)
+                    if not build.ok then
+                        local err = build.output
+                        if #err > 500 then err = err:sub(-500) end
+                        vim.notify("Build failed for " .. lang .. ":\n" .. err, 3)
+                        vim.fn.delete(tmp, "rf")
+                        callback(false)
+                        return
+                    end
+
+                    -- Copy queries from the cloned repo when use_repo_queries is set.
+                    -- Must happen before tmp is deleted.
+                    local used_repo_queries = false
+                    if info.use_repo_queries then
+                        used_repo_queries = copy_queries_from_repo(lang, build_dir)
+                        if not used_repo_queries then
+                            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
+                        end
+                    end
+
+                    vim.fn.delete(tmp, "rf")
+
+                    if not used_repo_queries then
+                        copy_queries(lang, location)
+                    end
+
+                    vim.notify("✓ " .. lang .. " installed")
+                    callback(true)
+                end)
+            end
+
+            if info.generate then
+                run_cmd({ "tree-sitter", "generate" }, build_dir, function(gen)
+                    if not gen.ok then
+                        vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
+                        vim.fn.delete(tmp, "rf")
+                        callback(false)
+                        return
+                    end
+                    do_build()
+                end)
+            else
+                do_build()
+            end
         end
-    end
-    build = run_cmd({ "tree-sitter", "build", "-o", ppath(lang) }, build_dir)
 
-    if not build.ok then
-        local err = build.output
-        if #err > 500 then err = err:sub(-500) end
-        vim.notify("Build failed for " .. lang .. ":\n" .. err, 3)
-        vim.fn.delete(tmp, "rf")
-        return false
-    end
-
-    -- Copy queries from the cloned repo when use_repo_queries is set.
-    -- Must happen before tmp is deleted.
-    local used_repo_queries = false
-    if info.use_repo_queries then
-        used_repo_queries = copy_queries_from_repo(lang, build_dir)
-        if not used_repo_queries then
-            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
+        local ref = info.revision or info.branch
+        if ref then
+            vim.notify("🔖 Checkout " .. ref)
+            run_cmd({ "git", "checkout", ref }, tmp, function(checkout)
+                if not checkout.ok then
+                    vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
+                end
+                after_checkout()
+            end)
+        else
+            after_checkout()
         end
-    end
-
-    vim.fn.delete(tmp, "rf")
-
-    if not used_repo_queries then
-        copy_queries(lang, location)
-    end
-
-    vim.notify("✓ " .. lang .. " installed")
-    return true
+    end)
 end
 
-local function install(lang) install_with_deps(lang) end
+local function install(lang, callback) install_with_deps(lang, callback) end
 
 local function remove(lang)
     if vim.uv.fs_stat(ppath(lang)) then vim.uv.fs_unlink(ppath(lang)) end
@@ -329,15 +362,16 @@ end
 function M._act(action)
     local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
     if not lang or not effective_repos[lang] then return end
+    local buf = vim.api.nvim_get_current_buf()
     if action == "install" then
-        install(lang)
+        install(lang, function() render(buf) end)
     elseif action == "remove" then
         remove(lang)
+        render(buf)
     elseif action == "update" then
         remove(lang)
-        install(lang)
+        install(lang, function() render(buf) end)
     end
-    render(vim.api.nvim_get_current_buf())
 end
 
 return M
