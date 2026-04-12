@@ -239,7 +239,6 @@ end
 
 -- Only install if not present
 local function install_new(lang, verbose)
-    callback = callback or function() end
     if not repos[lang] then
         if verbose then
             vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
