@@ -13,6 +13,7 @@ local cfg = {
     ---@type table<string, string|{install_info?: {url: string, location?: string, revision?: string, branch?: string, generate?: boolean, use_repo_queries?: boolean}, requires?: string[]}>
     languages = {},
     ensure_installed = {},
+    auto_install = false,
     highlight = true,
     nohighlight = {},
 }
@@ -236,6 +237,25 @@ local function is_only_query(lang)
     return not info or not info.url
 end
 
+-- Only install if not present
+local function install_new(lang, verbose)
+    callback = callback or function() end
+    if not repos[lang] then
+        if verbose then
+            vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
+        end
+        return
+    end
+
+    local installed = false
+    if is_only_query(lang) then
+        installed = vim.uv.fs_stat(qpath(lang)) ~= nil
+    else
+        installed = vim.uv.fs_stat(ppath(lang)) ~= nil
+    end
+    if not installed then install(lang) end
+end
+
 --TODO: DO REFACTOR
 local function get_status_icon(lang)
     if is_only_query(lang) then
@@ -295,17 +315,13 @@ function M.setup(opts)
     if not vim.tbl_contains(rtp, query_parent) then vim.opt.rtp:prepend(query_parent) end
 
     for _, lang in ipairs(cfg.ensure_installed or {}) do
-        if not repos[lang] then
-            vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
-        else
-            local installed = false
-            if is_only_query(lang) then
-                installed = vim.uv.fs_stat(qpath(lang)) ~= nil
-            else
-                installed = vim.uv.fs_stat(ppath(lang)) ~= nil
-            end
-            if not installed then install(lang) end
-        end
+        install_new(lang, true)
+    end
+
+    if cfg.auto_install then
+        vim.api.nvim_create_autocmd('FileType', {
+            callback = function(a) install_new(a.match) end,
+        })
     end
 
     vim.api.nvim_create_user_command("TSManager", function() M.open() end,

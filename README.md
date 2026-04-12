@@ -36,8 +36,11 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
   dependencies = {}, -- tree-sitter CLI must be installed system-wide
   config = function()
     require("tree-sitter-manager").setup({
-      -- ensure_installed = { "bash", "lua", "python" }, -- list of parsers to install automatically
-      -- Optional: custom paths
+      -- Default Options
+      -- ensure_installed = {}, -- list of parsers to install at the start of a neovim session
+      -- auto_install = false, -- if enabled, install missing parsers when editing a new file
+      -- highlight = true, -- treesitter highlighting is enabled by default
+      -- languages = {}, -- override or add new parser sources
       -- parser_dir = vim.fn.stdpath("data") .. "/site/parser",
       -- query_dir = vim.fn.stdpath("data") .. "/site/queries",
     })
