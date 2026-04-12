@@ -38,6 +38,7 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
     require("tree-sitter-manager").setup({
       -- Default Options
       -- ensure_installed = {}, -- list of parsers to install at the start of a neovim session
+      -- border = nil, -- border style for the window (e.g. "rounded", "single"), if nil, use the default border style defined by 'vim.o.winborder'
       -- auto_install = false, -- if enabled, install missing parsers when editing a new file
       -- highlight = true, -- treesitter highlighting is enabled by default
       -- languages = {}, -- override or add new parser sources

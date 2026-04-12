@@ -13,6 +13,7 @@ local cfg = {
     ---@type table<string, string|{install_info?: {url: string, location?: string, revision?: string, branch?: string, generate?: boolean, use_repo_queries?: boolean}, requires?: string[]}>
     languages = {},
     ensure_installed = {},
+    border = nil,
     auto_install = false,
     highlight = true,
     nohighlight = {},
@@ -357,7 +358,7 @@ function M.open()
         width = w,
         height = h,
         style = "minimal",
-        border = "rounded",
+        border = cfg.border,
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
         title = footer,
