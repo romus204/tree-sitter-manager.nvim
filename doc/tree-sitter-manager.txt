@@ -1,0 +1,306 @@
+*tree-sitter-manager.txt*  Lightweight Tree-sitter parser manager for Neovim
+
+Author:   romus204 <https://github.com/romus204>
+License:  MIT
+Homepage: https://github.com/romus204/tree-sitter-manager.nvim
+
+==============================================================================
+CONTENTS                                       *tree-sitter-manager-contents*
+
+  1. Introduction .............. |tree-sitter-manager-introduction|
+  2. Requirements .............. |tree-sitter-manager-requirements|
+  3. Installation .............. |tree-sitter-manager-installation|
+  4. Setup ...................... |tree-sitter-manager-setup|
+  5. Options ................... |tree-sitter-manager-options|
+  6. Commands .................. |tree-sitter-manager-commands|
+  7. Keybindings ............... |tree-sitter-manager-keybindings|
+  8. Custom Repositories ........ |tree-sitter-manager-custom-repos|
+  9. Highlighting .............. |tree-sitter-manager-highlighting|
+ 10. API ........................ |tree-sitter-manager-api|
+ 11. Known Limitations .......... |tree-sitter-manager-limitations|
+
+==============================================================================
+1. INTRODUCTION                           *tree-sitter-manager-introduction*
+
+tree-sitter-manager.nvim is a lightweight Tree-sitter parser manager for
+Neovim. It provides a minimal TUI interface for installing, removing, and
+updating Tree-sitter parsers without depending on nvim-treesitter.
+
+Features:~
+  - Install parsers directly from Tree-sitter repositories
+  - Automatic query file management for syntax highlighting
+  - Custom/fork repository support via `setup()`
+  - Auto-install parsers on FileType events
+  - Works with any plugin manager
+
+==============================================================================
+2. REQUIREMENTS                           *tree-sitter-manager-requirements*
+
+Mandatory:~
+  - Neovim 0.12+
+  - tree-sitter CLI  (must be in $PATH)
+  - git
+  - C compiler (gcc or clang)
+
+Optional:~
+  - Nerd Font (for icons ✅ ❌ 📦)
+
+==============================================================================
+3. INSTALLATION                           *tree-sitter-manager-installation*
+
+lazy.nvim: >lua
+  {
+    "romus204/tree-sitter-manager.nvim",
+    config = function()
+      require("tree-sitter-manager").setup({})
+    end
+  }
+<
+
+vim-plug: >vim
+  Plug 'romus204/tree-sitter-manager.nvim'
+<
+  Then in your `init.lua`: >lua
+  require("tree-sitter-manager").setup({})
+<
+
+==============================================================================
+4. SETUP                                       *tree-sitter-manager-setup*
+
+                                               *tree-sitter-manager.setup()*
+>lua
+  require("tree-sitter-manager").setup({
+    parser_dir     = vim.fn.stdpath("data") .. "/site/parser",
+    query_dir      = vim.fn.stdpath("data") .. "/site/queries",
+    languages      = {},
+    ensure_installed = {},
+    border         = nil,
+    auto_install   = false,
+    highlight      = true,
+    nohighlight    = {},
+  })
+<
+
+`setup()` must be called once before using the plugin.
+
+==============================================================================
+5. OPTIONS                                     *tree-sitter-manager-options*
+
+All options are passed as a table to |tree-sitter-manager.setup()|.
+
+------------------------------------------------------------------------------
+                                          *tree-sitter-manager-opt-parser_dir*
+parser_dir ~
+  Type: `string`
+  Default: `vim.fn.stdpath("data") .. "/site/parser"`
+
+  Directory where compiled parser `.so`/`.dll` files are stored.
+  The parent directory is automatically prepended to 'runtimepath'.
+
+------------------------------------------------------------------------------
+                                           *tree-sitter-manager-opt-query_dir*
+query_dir ~
+  Type: `string`
+  Default: `vim.fn.stdpath("data") .. "/site/queries"`
+
+  Directory where query files (`highlights.scm`, etc.) are stored.
+  The parent directory is automatically prepended to 'runtimepath'.
+
+------------------------------------------------------------------------------
+                                           *tree-sitter-manager-opt-languages*
+languages ~
+  Type: `table`
+  Default: `{}`
+
+  Override built-in language definitions or add new ones.
+  See |tree-sitter-manager-custom-repos| for details.
+
+------------------------------------------------------------------------------
+                                    *tree-sitter-manager-opt-ensure_installed*
+ensure_installed ~
+  Type: `string[]`
+  Default: `{}`
+
+  List of parsers to install automatically at startup (if not already
+  installed). >lua
+    ensure_installed = { "lua", "python", "rust" },
+<
+
+------------------------------------------------------------------------------
+                                              *tree-sitter-manager-opt-border*
+border ~
+  Type: `string|table|nil`
+  Default: `nil`
+
+  Border style for the TUI window. When `nil`, uses the value of
+  'winborder' (Neovim 0.11+). See |nvim_open_win()| for accepted values.
+  Examples: `"rounded"`, `"single"`, `"double"`, `"solid"`, `"none"`.
+
+------------------------------------------------------------------------------
+                                        *tree-sitter-manager-opt-auto_install*
+auto_install ~
+  Type: `boolean`
+  Default: `false`
+
+  When `true`, automatically installs a missing parser whenever Neovim
+  opens a file whose filetype matches a known language.
+
+------------------------------------------------------------------------------
+                                           *tree-sitter-manager-opt-highlight*
+highlight ~
+  Type: `boolean|string[]`
+  Default: `true`
+
+  Controls Tree-sitter syntax highlighting.
+  - `true`      — enable for all installed parsers
+  - `false`/`{}` — disable entirely
+  - `string[]`  — enable only for the listed languages >lua
+    highlight = { "lua", "python" },
+<
+
+------------------------------------------------------------------------------
+                                        *tree-sitter-manager-opt-nohighlight*
+nohighlight ~
+  Type: `string[]`
+  Default: `{}`
+
+  Exclude specific languages from Tree-sitter highlighting even when
+  `highlight = true`. Useful for languages where regex highlighting is
+  preferred. >lua
+    nohighlight = { "yaml", "zsh" },
+<
+
+==============================================================================
+6. COMMANDS                                   *tree-sitter-manager-commands*
+
+                                                                 *:TSManager*
+:TSManager
+  Open the Tree-sitter parser management TUI.
+
+==============================================================================
+7. KEYBINDINGS                             *tree-sitter-manager-keybindings*
+
+These keybindings are active inside the `:TSManager` TUI window.
+
+  Key        Action ~
+  ───────────────────────────────────────
+  `i`        Install parser under cursor
+  `x`        Remove parser under cursor
+  `u`        Update parser under cursor
+  `r`        Refresh installation status
+  `q`        Close window
+  `<Esc>`    Close window
+
+==============================================================================
+8. CUSTOM REPOSITORIES                    *tree-sitter-manager-custom-repos*
+
+The `languages` option accepts a table that overrides built-in language
+definitions or adds new ones. This avoids modifying the plugin source.
+
+Each entry has the following shape: >lua
+  languages = {
+    <lang> = {
+      install_info = {
+        url             = "https://github.com/...",  -- required
+        location        = nil,    -- subdirectory inside the repo (optional)
+        revision        = nil,    -- commit SHA to pin (optional)
+        branch          = nil,    -- branch name (optional)
+        generate        = false,  -- run `tree-sitter generate` before build
+        use_repo_queries = false, -- copy queries/ from cloned repo
+      },
+      requires = {},  -- list of language names that must be installed first
+    },
+  },
+<
+
+Override a built-in with a fork: >lua
+  require("tree-sitter-manager").setup({
+    languages = {
+      cpp = {
+        install_info = {
+          url = "https://github.com/myfork/tree-sitter-cpp",
+          revision = "abc1234",
+          use_repo_queries = true,
+        },
+      },
+    },
+  })
+<
+
+Add a new language: >lua
+  require("tree-sitter-manager").setup({
+    languages = {
+      mylang = {
+        install_info = {
+          url = "https://github.com/someone/tree-sitter-mylang",
+          use_repo_queries = true,
+        },
+      },
+    },
+  })
+<
+
+`use_repo_queries` behaviour: ~
+
+  Value    Query source ~
+  ──────────────────────────────────────────────────────────────────────
+  `false`  Queries bundled in `runtime/queries/<lang>/` of this plugin
+  `true`   `queries/` directory inside the cloned grammar repository
+
+  If `use_repo_queries = true` but the repo has no `queries/` directory,
+  a warning is shown and the plugin falls back to bundled queries.
+
+==============================================================================
+9. HIGHLIGHTING                           *tree-sitter-manager-highlighting*
+
+Tree-sitter highlighting is enabled by default for all installed parsers.
+It is applied via a `FileType` autocmd that calls |vim.treesitter.start()|.
+
+Opt-out for specific languages: >lua
+  require("tree-sitter-manager").setup({
+    nohighlight = { "yaml", "zsh" },
+  })
+<
+
+Opt-in mode (only listed languages): >lua
+  require("tree-sitter-manager").setup({
+    highlight = { "lua", "c", "rust" },
+  })
+<
+
+Disable completely: >lua
+  require("tree-sitter-manager").setup({
+    highlight = false,
+  })
+<
+
+==============================================================================
+10. API                                          *tree-sitter-manager-api*
+
+These functions are exposed on the module returned by `require()`.
+
+                                               *tree-sitter-manager.open()*
+`require("tree-sitter-manager").open()`
+  Open the `:TSManager` TUI window programmatically.
+
+                                        *tree-sitter-manager._install_single()*
+`require("tree-sitter-manager")._install_single(lang, silent)`
+  Install a single parser by language name.
+  `lang`   - `string`: language identifier (e.g. `"lua"`)
+  `silent` - `boolean`: suppress notifications if `true`
+
+  Note: This is a low-level function. Prefer `:TSManager` for interactive
+  use or `ensure_installed` for declarative installation.
+
+==============================================================================
+11. KNOWN LIMITATIONS                      *tree-sitter-manager-limitations*
+
+  - Primarily tested on macOS/Linux. Windows support may need extra work.
+  - `tree-sitter` CLI must be available in `$PATH`.
+  - No automatic updates: use `u` in the TUI or remove + reinstall.
+  - Parser repository URLs in `repos.lua` are sourced from the archived
+    nvim-treesitter repository and cannot all be manually verified.
+    Please open an issue or PR if you find a broken link.
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
