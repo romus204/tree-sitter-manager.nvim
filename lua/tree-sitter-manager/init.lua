@@ -298,6 +298,9 @@ end
 function M.setup(opts)
     cfg = vim.tbl_deep_extend("force", cfg, opts or {})
 
+    cfg.parser_dir = vim.fs.normalize(cfg.parser_dir)
+    cfg.query_dir = vim.fs.normalize(cfg.query_dir)
+
     -- Merge built-in repos with user-defined language overrides.
     -- User entries take precedence, allowing custom forks and new languages.
     effective_repos = vim.tbl_deep_extend("force", vim.deepcopy(repos), cfg.languages)
