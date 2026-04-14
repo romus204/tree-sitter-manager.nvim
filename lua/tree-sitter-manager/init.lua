@@ -140,11 +140,6 @@ end
 
 function M._install_single(lang, callback)
     callback = callback or function() end
-    if not repos[lang] then
-        vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
-        return false
-    end
-
     local info = get_repo_info(lang)
     if not info or not info.url then
         copy_queries(lang, lang)
