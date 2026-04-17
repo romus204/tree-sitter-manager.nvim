@@ -5,6 +5,7 @@ local src = debug.getinfo(1, "S").source
 local abs = src:sub(1, 1) == "@" and vim.fn.fnamemodify(src:sub(2), ":p") or ""
 local PLUGIN_ROOT = abs ~= "" and vim.fn.fnamemodify(abs, ":h:h:h") or vim.fn.stdpath("config")
 
+local title = "🌳  Tree-sitter Parser Manager"
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 
 local cfg = {
@@ -105,7 +106,10 @@ local function install_with_deps(lang, callback, installing)
         if not vim.uv.fs_stat(ppath(dep)) then
             vim.notify("📦 Installing dependency: " .. dep, vim.log.levels.INFO)
             install_with_deps(dep, function(ok)
-                if not ok then callback(false) return end
+                if not ok then
+                    callback(false)
+                    return
+                end
                 install_deps(i + 1)
             end, vim.deepcopy(installing))
         else
@@ -179,7 +183,8 @@ function M._install_single(lang, callback)
                     if info.use_repo_queries then
                         used_repo_queries = copy_queries_from_repo(lang, build_dir)
                         if not used_repo_queries then
-                            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
+                            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries",
+                                2)
                         end
                     end
 
@@ -285,7 +290,7 @@ local function get_meta_suffix(lang)
 end
 
 local function render(buf)
-    local lines = { " 🌳  Tree-sitter Parser Manager ", " ────────────────────────────────" }
+    local lines = {}
     for _, l in ipairs(languages) do
         table.insert(lines, string.format("   %-12s  %s%s", l, get_status_icon(l), get_meta_suffix(l)))
     end
@@ -361,11 +366,13 @@ function M.open()
         width = w,
         height = h,
         style = "minimal",
-        border = cfg.border,
+        border = cfg.border or "rounded",
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
-        title = footer,
+        title = title,
         title_pos = "center",
+        footer = footer,
+        footer_pos = "center"
     })
     render(buf)
 
