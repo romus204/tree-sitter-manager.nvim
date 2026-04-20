@@ -1407,7 +1407,7 @@ return {
     },
     razor = {
         install_info = {
-            revision = 'fe46ce5ea7d844e53d59bc96f2175d33691c61c5',
+            revision = 'a57265cc454a060292f869d6b30c10f797adb971',
             url = 'https://github.com/tris203/tree-sitter-razor',
         },
     },
