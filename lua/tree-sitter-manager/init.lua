@@ -334,15 +334,14 @@ function M.setup(opts)
         local highlight_ft = {}
         for _, lang in ipairs(languages) do
             if (cfg.highlight == true or vim.list_contains(cfg.highlight, lang))
-                and not vim.list_contains(cfg.nohighlight, lang)
-                and vim.uv.fs_stat(ppath(lang)) then
+                and not vim.list_contains(cfg.nohighlight, lang) then
                 table.insert(highlight_ft, lang)
             end
         end
         if #highlight_ft > 0 then
             vim.api.nvim_create_autocmd('FileType', {
                 pattern = highlight_ft,
-                callback = function() vim.treesitter.start() end,
+                callback = function() pcall(vim.treesitter.start) end,
                 desc = 'Auto-enable treesitter for installed parsers'
             })
         end
