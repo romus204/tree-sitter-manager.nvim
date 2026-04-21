@@ -65,6 +65,19 @@ require("tree-sitter-manager").setup({
 })
 ```
 
+## Configure your parsers
+
+The ensure_installed directive defines the list of parsers you always want installed:
+
+```lua
+    ensure_installed = {
+        "bash",
+        "dockerfile",
+        "git_config", "git_rebase",
+        -- ...
+    }
+```
+
 ## Custom / Fork Repositories
 You can override built-in language definitions or add entirely new ones via the `languages`
 option in `setup()`. This keeps `repos.lua` clean — no changes to the plugin repository are
