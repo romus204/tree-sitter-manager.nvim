@@ -43,4 +43,42 @@ function M.copy_dir(src, dst)
     end
 end
 
+local function lock_path()
+    return config.cfg.parser_dir .. "/lock.json"
+end
+
+function M.lock_read()
+    local path = lock_path()
+    local fd = io.open(path, "r")
+    if not fd then return {} end
+    local content = fd:read("*a")
+    fd:close()
+    local ok, data = pcall(vim.json.decode, content)
+    return (ok and type(data) == "table") and data or {}
+end
+
+function M.lock_write(data)
+    local path = lock_path()
+    local fd = io.open(path, "w")
+    if not fd then return end
+    fd:write(vim.json.encode(data))
+    fd:close()
+end
+
+function M.lock_set(lang, entry)
+    local data = M.lock_read()
+    data[lang] = entry
+    M.lock_write(data)
+end
+
+function M.lock_remove(lang)
+    local data = M.lock_read()
+    data[lang] = nil
+    M.lock_write(data)
+end
+
+function M.lock_get(lang)
+    return M.lock_read()[lang]
+end
+
 return M

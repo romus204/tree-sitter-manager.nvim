@@ -94,14 +94,19 @@ function M._install_single(lang, callback)
                         end
                     end
 
-                    vim.fn.delete(tmp, "rf")
-
                     if not used_repo_queries then
                         copy_queries(lang, location)
                     end
 
-                    vim.notify("✓ " .. lang .. " installed")
-                    callback(true)
+                    util.run_cmd({ "git", "rev-parse", "HEAD" }, tmp, function(sha_res)
+                        if sha_res.ok then
+                            local sha = sha_res.output:gsub("%s+", "")
+                            util.lock_set(lang, { url = info.url, sha = sha })
+                        end
+                        vim.fn.delete(tmp, "rf")
+                        vim.notify("✓ " .. lang .. " installed")
+                        callback(true)
+                    end)
                 end)
             end
 
@@ -173,6 +178,7 @@ function M.remove(lang)
     if vim.uv.fs_stat(util.ppath(lang)) then vim.uv.fs_unlink(util.ppath(lang)) end
     local qd = config.cfg.query_dir .. "/" .. lang
     if vim.uv.fs_stat(qd) then vim.fn.delete(qd, "rf") end
+    util.lock_remove(lang)
     vim.notify("✕ " .. lang)
 end
 
