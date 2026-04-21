@@ -44,7 +44,7 @@ function M.copy_dir(src, dst)
 end
 
 local function lock_path()
-    return config.cfg.parser_dir .. "/lock.json"
+    return vim.fn.fnamemodify(config.cfg.parser_dir, ":h") .. "/lock.json"
 end
 
 function M.lock_read()
@@ -59,6 +59,7 @@ end
 
 function M.lock_write(data)
     local path = lock_path()
+    vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
     local fd = io.open(path, "w")
     if not fd then return end
     fd:write(M.json_pretty(data))
