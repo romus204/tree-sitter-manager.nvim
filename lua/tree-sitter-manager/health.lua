@@ -4,12 +4,22 @@ M.check = function()
     vim.health.start("tree-sitter-manager")
 
     -- Ensure dependencies are installed
-    if vim.fn.executable("tree-sitter") == 0 then
-        vim.health.error("tree-sitter CLI must be installed")
-    else
-        local version = vim.system({ "tree-sitter", "--version" }):wait()
-        local strip_trailing_newline = string.sub(version.stdout, 1, -2)
-        vim.health.ok("tree-sitter CLI is installed: " .. strip_trailing_newline)
+    local dependencies = {
+        -- Format is { command_name, human_readable_name }
+        { "tree-sitter", "the tree-sitter CLI" },
+        { "git", "git" },
+        { "cc", "a C compiler" },
+    }
+    for _, dependency in pairs(dependencies) do
+        local command_name = dependency[1]
+        local human_readable_name = dependency[2]
+        if vim.fn.executable(command_name) == 0 then
+            vim.health.error(human_readable_name .. " must be installed")
+        else
+            local version = vim.system({ command_name, "--version" }):wait()
+            local first_line = vim.fn.split(version.stdout, "\n")[1]
+            vim.health.ok(human_readable_name .. " is installed: " .. first_line)
+        end
     end
 
 end
