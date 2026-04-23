@@ -2,6 +2,7 @@ local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local installer = require("tree-sitter-manager.installer")
 
+local title = "🌳 Tree-sitter Parser Manager"
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 
 local M = {}
@@ -34,7 +35,7 @@ local function get_meta_suffix(lang)
 end
 
 function M.render(buf)
-    local lines = { " 🌳  Tree-sitter Parser Manager ", " ────────────────────────────────" }
+    local lines = {}
     for _, l in ipairs(config.languages) do
         table.insert(lines, string.format("   %-12s  %s%s", l, get_status_icon(l), get_meta_suffix(l)))
     end
@@ -58,11 +59,13 @@ function M.open()
         width = w,
         height = h,
         style = "minimal",
-        border = config.cfg.border,
+        border = config.cfg.border or "rounded",
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
-        title = footer,
+        title = title,
         title_pos = "center",
+        footer = footer,
+        footer_pos = "center",
     })
     M.render(buf)
 
