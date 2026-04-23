@@ -177,7 +177,7 @@ function M.remove(lang)
 end
 
 function M.install_new(lang, verbose)
-    if not config.base_repos[lang] then
+    if not config.effective_repos[lang] then
         if verbose then
             vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
         end
