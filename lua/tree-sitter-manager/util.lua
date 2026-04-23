@@ -44,7 +44,7 @@ function M.copy_dir(src, dst)
 end
 
 local function lock_path()
-    return vim.fn.fnamemodify(config.cfg.parser_dir, ":h") .. "/lock.json"
+    return vim.fn.stdpath("config") .. "/tsm-lock.json"
 end
 
 function M.lock_read()
