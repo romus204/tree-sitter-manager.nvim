@@ -1171,6 +1171,12 @@ return {
             url = 'https://github.com/tree-sitter-grammars/tree-sitter-odin',
         },
     },
+    org = {
+        install_info = {
+            revision = '219c0b27fdb2c0aeb43841f23f03d6f54657f288',
+            url = 'https://github.com/nvim-orgmode/tree-sitter-org',
+        }
+    },
     pascal = {
         install_info = {
             revision = '042119eca2e18a60e56317fb06ee3ba5c32cb447',
