@@ -43,4 +43,59 @@ function M.copy_dir(src, dst)
     end
 end
 
+local function lock_path()
+    return vim.fn.stdpath("config") .. "/tsm-lock.json"
+end
+
+function M.lock_read()
+    local path = lock_path()
+    local fd = io.open(path, "r")
+    if not fd then return {} end
+    local content = fd:read("*a")
+    fd:close()
+    local ok, data = pcall(vim.json.decode, content)
+    return (ok and type(data) == "table") and data or {}
+end
+
+function M.lock_write(data)
+    local path = lock_path()
+    vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+    local fd = io.open(path, "w")
+    if not fd then return end
+    fd:write(M.json_pretty(data))
+    fd:close()
+end
+
+function M.json_pretty(data, indent)
+    indent = indent or ""
+    local next_indent = indent .. "  "
+    if type(data) ~= "table" then
+        return vim.json.encode(data)
+    end
+    local keys = vim.tbl_keys(data)
+    table.sort(keys)
+    if #keys == 0 then return "{}" end
+    local parts = {}
+    for _, k in ipairs(keys) do
+        table.insert(parts, next_indent .. vim.json.encode(k) .. ": " .. M.json_pretty(data[k], next_indent))
+    end
+    return "{\n" .. table.concat(parts, ",\n") .. "\n" .. indent .. "}"
+end
+
+function M.lock_set(lang, entry)
+    local data = M.lock_read()
+    data[lang] = entry
+    M.lock_write(data)
+end
+
+function M.lock_remove(lang)
+    local data = M.lock_read()
+    data[lang] = nil
+    M.lock_write(data)
+end
+
+function M.lock_get(lang)
+    return M.lock_read()[lang]
+end
+
 return M
