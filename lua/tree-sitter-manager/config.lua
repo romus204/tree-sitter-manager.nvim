@@ -23,6 +23,7 @@ local M = {}
 ---@field branch? string Git branch to check out after cloning. Ignored if `revision` is set.
 ---@field generate? boolean Run `tree-sitter generate` before building. Defaults to false.
 ---@field use_repo_queries? boolean Use queries from the cloned repo's `queries/` directory instead of those bundled with the plugin. Defaults to false.
+---@type tree-sitter-manager.Config
 M.cfg = {
     parser_dir = vim.fn.stdpath("data") .. "/site/parser",
     query_dir = vim.fn.stdpath("data") .. "/site/queries",
