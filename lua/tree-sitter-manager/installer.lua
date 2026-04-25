@@ -61,7 +61,7 @@ function M._install_single(lang, callback)
     local location = info.location or lang
 
     vim.notify("⬇ Cloning " .. lang)
-    util.run_cmd({ "git", "clone", info.url, tmp }, nil, function(clone)
+    util.run_cmd({ "git", "clone", "--single-branch", "--depth", "1", info.url, tmp }, nil, function(clone)
         if not clone.ok then
             vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3)
             callback(false)
