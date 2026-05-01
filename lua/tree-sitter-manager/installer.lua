@@ -60,77 +60,74 @@ function M._install_single(lang, callback)
     local tmp = vim.fn.tempname()
     local location = info.location or lang
 
+    local clone_args = { "git", "clone", "--single-branch", "--depth", "1" }
+    if info.revision then
+        table.insert(clone_args, "--revision")
+        table.insert(clone_args, info.revision)
+    elseif info.branch then
+        table.insert(clone_args, "--branch")
+        table.insert(clone_args, info.branch)
+    end
+    table.insert(clone_args, info.url)
+    table.insert(clone_args, tmp)
+    -- replace previous args { "git", "clone", info.url, tmp }
+
     vim.notify("⬇ Cloning " .. lang)
-    util.run_cmd({ "git", "clone", "--single-branch", "--depth", "1", info.url, tmp }, nil, function(clone)
+    util.run_cmd(clone_args, nil, function(clone)
         if not clone.ok then
             vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3)
             callback(false)
             return
         end
 
-        local function after_checkout()
-            local build_dir = tmp
-            if info.location then
-                build_dir = tmp .. "/" .. location
-            end
-
-            local function do_build()
-                vim.notify("🔨 Building " .. lang)
-                util.run_cmd({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_dir, function(build)
-                    if not build.ok then
-                        local err = build.output
-                        if #err > 500 then err = err:sub(-500) end
-                        vim.notify("Build failed for " .. lang .. ":\n" .. err, 3)
-                        vim.fn.delete(tmp, "rf")
-                        callback(false)
-                        return
-                    end
-
-                    local used_repo_queries = false
-                    if info.use_repo_queries then
-                        used_repo_queries = copy_queries_from_repo(lang, build_dir)
-                        if not used_repo_queries then
-                            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
-                        end
-                    end
-
-                    vim.fn.delete(tmp, "rf")
-
-                    if not used_repo_queries then
-                        copy_queries(lang, location)
-                    end
-
-                    vim.notify("✓ " .. lang .. " installed")
-                    callback(true)
-                end)
-            end
-
-            if info.generate then
-                util.run_cmd({ "tree-sitter", "generate" }, build_dir, function(gen)
-                    if not gen.ok then
-                        vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
-                        vim.fn.delete(tmp, "rf")
-                        callback(false)
-                        return
-                    end
-                    do_build()
-                end)
-            else
-                do_build()
-            end
+        local build_dir = tmp
+        if info.location then
+            build_dir = tmp .. "/" .. location
         end
 
-        local ref = info.revision or info.branch
-        if ref then
-            vim.notify("🔖 Checkout " .. ref)
-            util.run_cmd({ "git", "checkout", ref }, tmp, function(checkout)
-                if not checkout.ok then
-                    vim.notify("⚠ Checkout failed:\n" .. checkout.output:sub(1, 200), 2)
+        local function do_build()
+            vim.notify("🔨 Building " .. lang)
+            util.run_cmd({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_dir, function(build)
+                if not build.ok then
+                    local err = build.output
+                    if #err > 500 then err = err:sub(-500) end
+                    vim.notify("Build failed for " .. lang .. ":\n" .. err, 3)
+                    vim.fn.delete(tmp, "rf")
+                    callback(false)
+                    return
                 end
-                after_checkout()
+
+                local used_repo_queries = false
+                if info.use_repo_queries then
+                    used_repo_queries = copy_queries_from_repo(lang, build_dir)
+                    if not used_repo_queries then
+                        vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
+                    end
+                end
+
+                vim.fn.delete(tmp, "rf")
+
+                if not used_repo_queries then
+                    copy_queries(lang, location)
+                end
+
+                vim.notify("✓ " .. lang .. " installed")
+                callback(true)
+            end)
+        end
+
+        if info.generate then
+            util.run_cmd({ "tree-sitter", "generate" }, build_dir, function(gen)
+                if not gen.ok then
+                    vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
+                    vim.fn.delete(tmp, "rf")
+                    callback(false)
+                    return
+                end
+                do_build()
             end)
         else
-            after_checkout()
+            do_build()
         end
     end)
 end
