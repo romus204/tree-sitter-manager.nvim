@@ -97,6 +97,7 @@ require("tree-sitter-manager").setup({
     mylang = {
       install_info = {
         url = "https://github.com/someone/tree-sitter-mylang",
+        queries = "queries/subdir", -- override the default "queries" source directory
         use_repo_queries = true, -- copy queries/ from the cloned repo
       },
     },
@@ -112,6 +113,8 @@ require("tree-sitter-manager").setup({
 
 If `use_repo_queries = true` but the repo has no `queries/` directory, a warning is shown
 and the plugin falls back to the bundled queries automatically.
+
+The default `queries/` directory can be changed by means of the optional `queries` field.
 
 ## Treesitter Highlighting
 Treesitter highlighting is enabled by default. If you prefer to use standard regex highlighting for specific languages, use the `nohighlight` option.
@@ -136,17 +139,17 @@ require("tree-sitter-manager").setup({
 `:TSManager` - Open the parser management interface
 
 ## Keybindings
-`i` - Install parser under cursor  
-`x` - Remove parser under cursor  
-`u` - Update parser under cursor  
-`r` - Refresh installation status  
-`q / <Esc>` - Close window  
+`i` - Install parser under cursor<br/>
+`x` - Remove parser under cursor<br/>
+`u` - Update parser under cursor<br/>
+`r` - Refresh installation status<br/>
+`q / <Esc>` - Close window<br/>
 
 ## Queries
 Syntax highlighting queries (highlights.scm, injections.scm, etc.) were sourced from the archived [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) repository and placed in `runtime/queries/`.
 
 ## Parser Repository Links
-Parser repository URLs in `repos.lua` are sourced from the archived [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) repository. 
+Parser repository URLs in `repos.lua` are sourced from the archived [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) repository.
 
 > [!WARNING]
 > These links are provided as-is. Due to the large number of parsers, each URL cannot be manually verified for current availability or compatibility. If you encounter a broken link, outdated revision, or build failure, please:

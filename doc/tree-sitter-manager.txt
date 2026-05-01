@@ -201,12 +201,13 @@ Each entry has the following shape: >lua
   languages = {
     <lang> = {
       install_info = {
-        url             = "https://github.com/...",  -- required
-        location        = nil,    -- subdirectory inside the repo (optional)
-        revision        = nil,    -- commit SHA to pin (optional)
-        branch          = nil,    -- branch name (optional)
-        generate        = false,  -- run `tree-sitter generate` before build
-        use_repo_queries = false, -- copy queries/ from cloned repo
+        url              = "https://github.com/...",  -- required
+        location         = nil,       -- subdirectory inside the repo (optional)
+        revision         = nil,       -- commit SHA to pin (optional)
+        branch           = nil,       -- branch name (optional)
+        generate         = false,     -- run `tree-sitter generate` before build
+        queries          = "queries", -- folder in the cloned repo containing queries
+        use_repo_queries = false,     -- copy queries/ from cloned repo
       },
       requires = {},  -- list of language names that must be installed first
     },
@@ -233,6 +234,7 @@ Add a new language: >lua
       mylang = {
         install_info = {
           url = "https://github.com/someone/tree-sitter-mylang",
+          queries = "queries/subdir",
           use_repo_queries = true,
         },
       },
@@ -249,6 +251,9 @@ Add a new language: >lua
 
   If `use_repo_queries = true` but the repo has no `queries/` directory,
   a warning is shown and the plugin falls back to bundled queries.
+
+  The default `queries/` directory can be changed
+  by means of the optional `queries` field.
 
 ==============================================================================
 9. HIGHLIGHTING                           *tree-sitter-manager-highlighting*

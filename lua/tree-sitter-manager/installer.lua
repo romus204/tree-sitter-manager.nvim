@@ -14,6 +14,7 @@ function M.get_repo_info(lang)
             revision = entry.install_info.revision,
             branch = entry.install_info.branch,
             generate = entry.install_info.generate,
+            queries = entry.install_info.queries or 'queries',
             use_repo_queries = entry.install_info.use_repo_queries,
         }
     end
@@ -38,8 +39,8 @@ local function copy_queries(lang, location)
     end
 end
 
-local function copy_queries_from_repo(lang, build_dir)
-    local qs = build_dir .. "/queries"
+local function copy_queries_from_repo(lang, build_dir, queries_dir)
+    local qs = build_dir .. "/" .. queries_dir
     if vim.uv.fs_stat(qs) then
         util.copy_dir(qs, config.cfg.query_dir .. "/" .. lang)
         return true
@@ -88,9 +89,9 @@ function M._install_single(lang, callback)
 
                     local used_repo_queries = false
                     if info.use_repo_queries then
-                        used_repo_queries = copy_queries_from_repo(lang, build_dir)
+                        used_repo_queries = copy_queries_from_repo(lang, build_dir, info.queries)
                         if not used_repo_queries then
-                            vim.notify("⚠ No queries/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
+                            vim.notify("⚠ No " .. info.queries .. "/ found in repo for " .. lang .. ", falling back to bundled queries", 2)
                         end
                     end
 
