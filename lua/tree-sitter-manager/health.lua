@@ -21,7 +21,6 @@ M.check = function()
             vim.health.ok(human_readable_name .. " is installed: " .. first_line)
         end
     end
-
 end
 
 return M

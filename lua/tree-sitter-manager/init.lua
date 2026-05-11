@@ -29,36 +29,47 @@ function M.setup(opts)
     local query_parent = vim.fn.fnamemodify(state.cfg.query_dir, ":h")
     local rtp = vim.opt.rtp:get()
 
-    if not vim.tbl_contains(rtp, parser_parent) then vim.opt.rtp:prepend(parser_parent) end
-    if not vim.tbl_contains(rtp, query_parent) then vim.opt.rtp:prepend(query_parent) end
+    if not vim.tbl_contains(rtp, parser_parent) then
+        vim.opt.rtp:prepend(parser_parent)
+    end
+    if not vim.tbl_contains(rtp, query_parent) then
+        vim.opt.rtp:prepend(query_parent)
+    end
 
     for _, lang in ipairs(state.cfg.ensure_installed or {}) do
         installer.install_new(lang, true)
     end
 
     if state.cfg.auto_install then
-        vim.api.nvim_create_autocmd('FileType', {
-            callback = function(a) installer.install_new(a.match) end,
+        vim.api.nvim_create_autocmd("FileType", {
+            callback = function(a)
+                installer.install_new(a.match)
+            end,
         })
     end
 
-    vim.api.nvim_create_user_command("TSManager", function() M.open() end,
-        { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
+    vim.api.nvim_create_user_command("TSManager", function()
+        M.open()
+    end, { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
 
     if state.cfg.highlight then
         local highlight_ft = {}
         for _, lang in ipairs(state.languages) do
-            if (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
+            if
+                (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
                 and not vim.list_contains(state.cfg.nohighlight, lang)
-                and vim.uv.fs_stat(util.ppath(lang)) then
+                and vim.uv.fs_stat(util.ppath(lang))
+            then
                 table.insert(highlight_ft, lang)
             end
         end
         if #highlight_ft > 0 then
-            vim.api.nvim_create_autocmd('FileType', {
+            vim.api.nvim_create_autocmd("FileType", {
                 pattern = highlight_ft,
-                callback = function() vim.treesitter.start() end,
-                desc = 'Auto-enable treesitter for installed parsers'
+                callback = function()
+                    vim.treesitter.start()
+                end,
+                desc = "Auto-enable treesitter for installed parsers",
             })
         end
     end
