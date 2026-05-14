@@ -16,7 +16,7 @@ local T = MiniTest.new_set({
             if not success then
                 error("timeout: building starlark treesitter")
             end
-        end
+        end,
     },
 })
 
@@ -26,9 +26,13 @@ T["config"] = function()
         pattern = "bzl",
     })
     neq(#autocmds, 0, { "zero autocommands created" })
-    eq(vim.iter(autocmds):any(function(autocmd)
-        return autocmd.desc == "Auto-enable treesitter for installed parsers"
-    end), true, { "no highlight autocmd created" })
+    eq(
+        vim.iter(autocmds):any(function(autocmd)
+            return autocmd.desc == "Auto-enable treesitter for installed parsers"
+        end),
+        true,
+        { "no highlight autocmd created" }
+    )
 end
 
 return T
