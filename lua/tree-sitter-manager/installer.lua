@@ -106,7 +106,7 @@ function M._install_single(lang, callback)
                     vim.fn.delete(tmp, "rf")
 
                     if not used_repo_queries then
-                        copy_queries(lang, location)
+                        copy_queries(lang, lang)
                     end
 
                     vim.notify("✓ " .. lang .. " installed")
