@@ -39,6 +39,8 @@ local function copy_queries(lang, location)
     local d = config.cfg.query_dir .. "/" .. lang
     if vim.uv.fs_stat(s) then
         util.copy_dir(s, d)
+    else
+        vim.notify("⚠ No bundled queries found for " .. lang .. " (looked in: " .. s .. ")", vim.log.levels.WARN)
     end
 end
 
