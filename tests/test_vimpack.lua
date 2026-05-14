@@ -10,9 +10,9 @@ local T = MiniTest.new_set({
     hooks = { pre_once = clear_packages },
 })
 
-T['vim.pack'] = function()
+T["vim.pack"] = function()
     vim.pack.add(
-        { 'https://github.com/romus204/tree-sitter-manager.nvim' },
+        { "https://github.com/romus204/tree-sitter-manager.nvim" },
         { confirm = false, }
     )
 end
