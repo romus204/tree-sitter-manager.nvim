@@ -1,4 +1,5 @@
 local repos = require("tree-sitter-manager.repos")
+local filetypes = require("tree-sitter-manager.filetypes")
 
 local M = {}
 
@@ -39,5 +40,6 @@ M.base_repos = repos
 M.effective_repos = repos
 M.languages = vim.tbl_keys(repos)
 table.sort(M.languages)
+M.filetypes = filetypes
 
 return M
