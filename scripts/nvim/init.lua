@@ -3,7 +3,7 @@ vim.cmd([[let &rtp.=','.getcwd()]])
 
 -- Add 'mini.nvim' to 'runtimepath' to be able to use 'mini.test'
 -- Assumed that 'mini.nvim' is stored in 'deps/mini.nvim'
-vim.cmd('set rtp+=deps/mini.nvim')
+vim.cmd("set rtp+=deps/mini.nvim")
 
 -- Set up 'mini.test'
-require('mini.test').setup()
+require("mini.test").setup()

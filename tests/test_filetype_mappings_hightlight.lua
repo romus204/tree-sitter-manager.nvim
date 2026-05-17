@@ -6,8 +6,12 @@ local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
-        pre_case = function() child:setup() end,
-        post_case = function() child:cleanup() end,
+        pre_case = function()
+            child:setup()
+        end,
+        post_case = function()
+            child:cleanup()
+        end,
     },
 })
 
@@ -25,9 +29,12 @@ T["auto-highlight"] = function()
         event = "FileType",
         pattern = vim.iter(vim.tbl_values(lang)):flatten():totable(),
     })
-    eq(true, vim.iter(autocmds):any(function(autocmd)
-        return autocmd.desc == "Auto-enable treesitter for installed parsers"
-    end))
+    eq(
+        true,
+        vim.iter(autocmds):any(function(autocmd)
+            return autocmd.desc == "Auto-enable treesitter for installed parsers"
+        end)
+    )
 end
 
 return T
