@@ -1,6 +1,7 @@
-vim.env.XDG_CONFIG_HOME = vim.uv.cwd() .. '/scripts'
-vim.env.XDG_DATA_HOME = vim.uv.cwd() .. '/scripts'
-vim.env.XDG_STATE_HOME = vim.uv.cwd() .. '/scripts'
+local scripts = vim.fs.joinpath(vim.uv.cwd(), 'scripts')
+vim.env.XDG_CONFIG_HOME = scripts
+vim.env.XDG_DATA_HOME = scripts
+vim.env.XDG_STATE_HOME = scripts
 
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
 vim.cmd([[let &rtp.=','.getcwd()]])
