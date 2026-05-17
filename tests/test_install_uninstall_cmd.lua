@@ -1,34 +1,26 @@
-local err = MiniTest.expect.error
-local fs = vim.fs
+local eq = MiniTest.expect.equality
+local nerr = MiniTest.expect.no_error
+
+local lang = { "bash" }
+local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
-        pre_once = function()
-            local site = fs.joinpath(vim.fn.stdpath("data"), "site")
-            fs.rm(fs.joinpath(site, "parser"), { recursive = true })
-            fs.rm(fs.joinpath(site, "queries"), { recursive = true })
-            require("tree-sitter-manager").setup()
-            util = require("tree-sitter-manager.util")
-        end,
+        pre_case = function() child:setup() end,
+        post_case = function() child:cleanup() end,
     },
 })
 
-T["install"] = function()
-    vim.cmd.TSInstall("bash")
-    local success = vim.wait(60000, function()
-        return vim.uv.fs_stat(util.ppath("csv"))
-    end, 50)
-    if not success then
-        error("timeout: building csv treesitter")
+T["install_uninstall"] = function()
+    child.cmd("TSInstall "..table.concat(lang, " "))
+    child:parser_wait(lang)
+    for _, l in ipairs(lang) do
+        nerr(function() vim.treesitter.get_string_parser("", l) end)
     end
-    vim.treesitter.get_string_parser("", "csv")
-end
-
-T["uninstall"] = function()
-    vim.cmd.TSUninstall("csv")
-    err(function()
-        vim.treesitter.get_string_parser("", "csv")
-    end, "No parser for language")
+    vim.cmd.TSUninstall({ args = lang, mods = { silent = true } })
+    for _, l in ipairs(lang) do
+        eq(vim.treesitter.query.get_files(l, "highlights"), {})
+    end
 end
 
 return T

@@ -1,38 +1,33 @@
 local eq = MiniTest.expect.equality
 local neq = MiniTest.expect.no_equality
 
+local lang = { ["starlark"] = { "bzl" } }
+local child = require("tests.child")
+
 local T = MiniTest.new_set({
     hooks = {
-        pre_once = function()
-            require("tree-sitter-manager").setup({
-                ensure_installed = { "starlark" },
-                auto_install = true,
-                highlight = true,
-            })
-            local util = require("tree-sitter-manager.util")
-            local success = vim.wait(60000, function()
-                return vim.uv.fs_stat(util.ppath("starlark"))
-            end, 50)
-            if not success then
-                error("timeout: building starlark treesitter")
-            end
-        end,
+        pre_case = function() child:setup() end,
+        post_case = function() child:cleanup() end,
     },
 })
 
-T["config"] = function()
+T["auto-highlight"] = function()
+    local config = child:update_config({
+        auto_install = true,
+        highlight = true,
+    })
+    local languages = vim.tbl_keys(lang)
+    child:update_config({ ensure_installed = languages })
+    child:parser_wait(languages)
+
+    require("tree-sitter-manager").setup(config)
     local autocmds = vim.api.nvim_get_autocmds({
         event = "FileType",
-        pattern = "bzl",
+        pattern = vim.iter(vim.tbl_values(lang)):flatten():totable(),
     })
-    neq(#autocmds, 0, { "zero autocommands created" })
-    eq(
-        vim.iter(autocmds):any(function(autocmd)
-            return autocmd.desc == "Auto-enable treesitter for installed parsers"
-        end),
-        true,
-        { "no highlight autocmd created" }
-    )
+    eq(true, vim.iter(autocmds):any(function(autocmd)
+        return autocmd.desc == "Auto-enable treesitter for installed parsers"
+    end))
 end
 
 return T

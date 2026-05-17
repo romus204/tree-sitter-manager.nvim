@@ -1,4 +1,7 @@
+.env
 doc/tags
 deps/
-scripts/nvim/
--scripts/nvim/init.lua
+scripts/nvim/*.log
+scripts/nvim/*lock.json
+scripts/nvim/shada/
+scripts/nvim/site/
