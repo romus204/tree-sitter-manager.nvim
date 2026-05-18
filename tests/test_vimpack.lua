@@ -8,19 +8,19 @@ local function cleanup()
         :map(function(v)
             return v.spec.name
         end)
-        :totable())
+        :totable(),
+        { force = true }
+    )
     ]])
 end
 
 local T = MiniTest.new_set({
     hooks = {
-        pre_case = function()
+        pre_once = function()
             child:setup()
             cleanup()
         end,
-        post_case = function()
-            child:cleanup()
-            child:start()
+        post_once = function()
             cleanup()
             child:cleanup()
         end,

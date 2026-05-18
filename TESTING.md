@@ -33,11 +33,15 @@ local child = require("tests.child")
 local T = MiniTest.new_set({
     hooks = {
         -- setup will set a unique parent directory to `parser_dir` and `query_dir`
-        pre_case = function() child:setup() end,
-        post_case = function() child:cleanup() end,
+        pre_once = function()
+            child:setup()
+        end,
+        post_once = function()
+            child:cleanup()
+        end,
     }
 })
-T["test case"] = function()
+T["test-case"] = function()
     -- add more options to tree-sitter-manager.setup()
     child:update_config({ highlight = false })
     child.cmd("TSInstall bash")
@@ -45,7 +49,9 @@ T["test case"] = function()
     child:parser_wait("bash")
     -- ensure that treesitter works for starlark
     neq({}, vim.treesitter.query.get_files("bash", "highlights"))
-    nerr(function() vim.treesitter.get_string_parser("", "bash") end)
+    nerr(function()
+        vim.treesitter.get_string_parser("", "bash")
+    end)
 end
 return T
 ```

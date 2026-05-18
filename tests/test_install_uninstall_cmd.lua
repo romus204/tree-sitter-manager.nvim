@@ -6,10 +6,10 @@ local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
-        pre_case = function()
+        pre_once = function()
             child:setup()
         end,
-        post_case = function()
+        post_once = function()
             child:cleanup()
         end,
     },
