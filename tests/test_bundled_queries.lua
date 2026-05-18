@@ -22,6 +22,7 @@ for _, lang in ipairs(languages) do
         nerr(function()
             vim.treesitter.get_string_parser("", lang)
         end)
+        neq(nil, vim.treesitter.query.get(lang, "highlights"))
     end
 end
 
