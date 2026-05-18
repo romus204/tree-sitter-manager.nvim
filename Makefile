@@ -1,17 +1,18 @@
 -include .env
 export
 
-# Run all test files
+# Use `make test` to run tests for all modules
 test: .env
-	nvim --headless --noplugin -u scripts/nvim/init.lua -c "lua MiniTest.run()"
+	nvim --headless --noplugin -c "lua MiniTest.run()"
 .PHONY: test
 
-# Run test from file at `$FILE` environment variable
-test_file: .env
-	nvim --headless --noplugin -c "lua MiniTest.run_file('$(FILE)')"
-.PHONY: test_file
+# Use `make test_xxx` to run tests for module `tests/test_xxx.lua`
+TEST_MODULES = $(basename $(notdir $(wildcard tests/test_*.lua)))
+$(TEST_MODULES): .env
+	nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
+.PHONY: $(TEST_MODULES)
 
-# Run tests interactively
+# Use `make nvim` or `make nvim tests/test_xxx.lua`
 ifeq (nvim,$(firstword $(MAKECMDGOALS)))
   # Take the rest of the arguments and assign them to ARGS
   ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -33,3 +34,8 @@ nvim: .env
 deps/mini.nvim:
 	@mkdir -p deps
 	git clone --filter=blob:none https://github.com/nvim-mini/mini.nvim $@
+
+# Update 'mini.nvim'
+update: deps/mini.nvim
+	git -C deps/mini.nvim pull
+.PHONY: update

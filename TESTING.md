@@ -6,13 +6,13 @@
     ```
 0. Run headless tests:
     ```sh
-    make test                                   # run all tests
-    FILE=tests/test_file.lua make test_file     # run test_file.lua
+    make test       # run all tests
+    make test_xxx   # run tests/test_file.lua
     ```
 0. Run tests interactively.
     ```sh
     make nvim
-    make nvim tests/test_file.lua   # open a test_file.lua
+    make nvim tests/test_xxx.lua   # open test_xxx.lua
     ```
     ```vim
     :lua MiniTest.run()             -- run all tests
@@ -41,7 +41,7 @@ T["test case"] = function()
     -- add more options to tree-sitter-manager.setup()
     child:update_config({ highlight = false })
     child.cmd("TSInstall bash")
-    -- wait until starlark is installed
+    -- wait until bash is installed
     child:parser_wait("bash")
     -- ensure that treesitter works for starlark
     neq({}, vim.treesitter.query.get_files("bash", "highlights"))

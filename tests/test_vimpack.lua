@@ -28,9 +28,7 @@ T["vim.pack"] = function()
     vim.pack.add({ "https://github.com/romus204/tree-sitter-manager.nvim" }, { confirm = false })
     ]])
     local packs = child.lua_get([[vim.pack.get({ "tree-sitter-manager.nvim" })]])
-    neq(nil, packs)
-    neq(0, #packs)
-    eq(true, packs[1].active)
+    eq(true, packs and #packs > 0 and packs[1].active)
 end
 
 return T

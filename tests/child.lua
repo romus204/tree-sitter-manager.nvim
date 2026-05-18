@@ -43,24 +43,33 @@ end
 function M:parser_wait(languages, timeout, interval)
     self.lua([[
     local util = require("tree-sitter-manager.util")
-    local success, reason = vim.wait(]] .. (timeout or 60000) .. [[, function()
-        for _, lang in ipairs(]] .. vim.inspect(languages) .. [[) do
-            if not vim.uv.fs_stat(util.ppath(lang)) then return false end
+    _G.success = true
+    for _, lang in ipairs(]] .. vim.inspect(languages) .. [[) do
+        local success, reason = vim.wait(
+            ]] .. (timeout or 60000) .. [[,
+            function()
+                return vim.uv.fs_stat(util.ppath(lang))
+            end,
+            ]] .. (interval or 100) .. [[
+        )
+        if not success then
+            _G.success = false
+            _G.reason = reason
+            _G.language = lang
+            break
         end
-        return true
-    end, ]] .. (interval or 100) .. [[)
-    _G.success = success
-    _G.reason = reason
+    end
     ]])
     local success = self.lua_get("_G.success")
     local reason = self.lua_get("_G.reason")
+    local language = self.lua_get("_G.language")
     if not success then
         if -1 == reason then
-            error("timeout: installing treesitter")
+            reason = "timeout"
+        elseif -2 == reason then
+            reason = "interrupt"
         end
-        if -2 == reason then
-            error("interrupt: installing treesitter")
-        end
+        error(reason .. ": installing parser " .. language)
     end
 end
 
