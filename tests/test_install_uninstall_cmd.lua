@@ -1,7 +1,7 @@
 local eq = MiniTest.expect.equality
 local nerr = MiniTest.expect.no_error
 
-local lang = { "bash", "csv", "terraform", "helm" }
+local lang = { "bash", "csv", "terraform", "helm", "ocaml" }
 local child = require("tests.child")
 
 local T = MiniTest.new_set({
