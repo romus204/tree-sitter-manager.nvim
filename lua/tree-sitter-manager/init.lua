@@ -86,7 +86,8 @@ function M.setup(opts)
                 and not vim.list_contains(state.cfg.nohighlight, lang)
                 and vim.uv.fs_stat(util.ppath(lang))
             then
-                vim.list_extend(highlight_ft, state.filetypes[lang] or { lang })
+                table.insert(highlight_ft, lang)
+                vim.list_extend(highlight_ft, state.filetypes[lang] or {})
             end
         end
         if #highlight_ft > 0 then
