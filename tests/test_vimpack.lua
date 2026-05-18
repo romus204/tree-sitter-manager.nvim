@@ -3,11 +3,13 @@ local eq = MiniTest.expect.equality
 
 local child = require("tests.child")
 local function cleanup()
+    child.lua([[
     vim.pack.del(vim.iter(vim.pack.get())
         :map(function(v)
             return v.spec.name
         end)
         :totable())
+    ]])
 end
 
 local T = MiniTest.new_set({
@@ -18,7 +20,9 @@ local T = MiniTest.new_set({
         end,
         post_case = function()
             child:cleanup()
+            child:start()
             cleanup()
+            child:cleanup()
         end,
     },
 })

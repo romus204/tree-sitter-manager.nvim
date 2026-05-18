@@ -41,16 +41,18 @@ function M:update_config(config)
 end
 
 function M:parser_wait(languages, timeout, interval)
+    timeout = timeout or 60000
+    interval = interval or 100
     self.lua([[
     local util = require("tree-sitter-manager.util")
     _G.success = true
     for _, lang in ipairs(]] .. vim.inspect(languages) .. [[) do
         local success, reason = vim.wait(
-            ]] .. (timeout or 60000) .. [[,
+            ]] .. timeout .. [[,
             function()
                 return vim.uv.fs_stat(util.ppath(lang))
             end,
-            ]] .. (interval or 100) .. [[
+            ]] .. interval .. [[
         )
         if not success then
             _G.success = false
@@ -59,6 +61,7 @@ function M:parser_wait(languages, timeout, interval)
             break
         end
     end
+    vim.wait(500)
     ]])
     local success = self.lua_get("_G.success")
     local reason = self.lua_get("_G.reason")

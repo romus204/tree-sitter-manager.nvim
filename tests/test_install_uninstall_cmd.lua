@@ -25,7 +25,7 @@ T["install_uninstall"] = function()
     end
     vim.cmd.TSUninstall({ args = lang, mods = { silent = true } })
     for _, l in ipairs(lang) do
-        eq(vim.treesitter.query.get_files(l, "highlights"), {})
+        eq({}, vim.treesitter.query.get_files(l, "highlights"))
     end
 end
 
