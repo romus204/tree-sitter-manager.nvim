@@ -5,3 +5,4 @@ scripts/nvim/*.log
 scripts/nvim/*lock.json
 scripts/nvim/shada/
 scripts/nvim/site/
+scripts/nvim/tests/

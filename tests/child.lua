@@ -12,13 +12,12 @@ function M:setup()
         query_dir = query_dir,
     }
     require("tree-sitter-manager").setup(config)
-    self.start({ "-u", vim.fs.joinpath(vim.fn.stdpath("config"), "init.lua") })
-    self.cmd("set nomore") -- skip hit-Enter prompts
-    self.cmd("set cmdheight=10")
-    self.lua([[
-    config = ]] .. vim.inspect(config) .. [[
-    require("tree-sitter-manager").setup(config)
-    ]])
+    self.start({
+        "-u",
+        vim.fs.joinpath(vim.fn.stdpath("config"), "init.lua"),
+        "+set nomore cmdheight=10", -- skip hit-enter prompts
+        "+lua require('tree-sitter-manager').setup(" .. vim.inspect(config) .. ")",
+    })
     self.config = config
 end
 
@@ -33,10 +32,9 @@ end
 
 function M:update_config(config)
     for opt, val in pairs(config) do
-        self.lua("config." .. opt .. " = " .. vim.inspect(val))
         self.config[opt] = val
     end
-    self.lua([[require("tree-sitter-manager").setup(config)]])
+    self.lua("require('tree-sitter-manager').setup(" .. vim.inspect(config) .. ")")
     return vim.deepcopy(self.config, true)
 end
 
