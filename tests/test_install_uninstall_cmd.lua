@@ -1,5 +1,7 @@
-local eq = MiniTest.expect.equality
 local nerr = MiniTest.expect.no_error
+local neq = MiniTest.expect.no_equality
+local err = MiniTest.expect.error
+local eq = MiniTest.expect.equality
 
 local lang = { "bash", "csv", "terraform", "helm", "ocaml" }
 local child = require("tests.child")
@@ -22,9 +24,14 @@ T["install_uninstall"] = function()
         nerr(function()
             vim.treesitter.get_string_parser("", l)
         end)
+        neq(nil, vim.treesitter.query.get(l, "highlights"))
     end
-    vim.cmd.TSUninstall({ args = lang, mods = { silent = true } })
+    child.cmd("TSUninstall " .. table.concat(lang, " "))
+    child.restart()
     for _, l in ipairs(lang) do
+        err(function()
+            child.lua("vim.treesitter.get_string_parser('', l)")
+        end)
         eq({}, vim.treesitter.query.get_files(l, "highlights"))
     end
 end
