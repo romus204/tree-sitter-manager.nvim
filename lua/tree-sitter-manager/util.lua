@@ -19,15 +19,30 @@ function M.qpath(l)
     return vim.fs.joinpath(config.cfg.query_dir, l)
 end
 
-function M.run_cmd(args, cwd, callback)
-    local opts = { text = true }
-    if cwd then
-        opts.cwd = cwd
+function M.run(args, cwd, callback)
+    local callback = callback or function() end
+    local opts = { text = true, cwd = cwd }
+    local res = vim.system(args, opts):wait()
+    if res.code ~= 0 then
+        local args = table.concat(args, " ")
+        local stderr = res.stderr or ""
+        vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.WARN)
     end
+    callback(res.code == 0)
+    return res.stdout or ""
+end
+
+function M.run_async(args, cwd, callback)
+    local callback = callback or function() end
+    local opts = { text = true, cwd = cwd }
     vim.system(args, opts, function(res)
-        local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
         vim.schedule(function()
-            callback({ ok = res.code == 0, output = out })
+            if res.code ~= 0 then
+                local args = table.concat(args, " ")
+                local stderr = res.stderr or ""
+                vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.WARN)
+            end
+            callback(res.code == 0)
         end)
     end)
 end

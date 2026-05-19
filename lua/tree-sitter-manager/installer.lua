@@ -53,7 +53,7 @@ local function copy_queries_from_repo(lang, build_dir, queries_dir)
 end
 
 function M._install_single(lang, callback)
-    callback = callback or function() end
+    local callback = callback or function() end
     local info = M.get_repo_info(lang)
     if not info or not info.url then
         copy_queries(lang, lang)
@@ -66,20 +66,17 @@ function M._install_single(lang, callback)
 
     local clone_args = { "git", "clone", "--single-branch", "--depth", "1" }
     if info.revision then
-        table.insert(clone_args, "--revision")
-        table.insert(clone_args, info.revision)
+        table.insert(clone_args, "--revision=" .. info.revision)
     elseif info.branch then
-        table.insert(clone_args, "--branch")
-        table.insert(clone_args, info.branch)
+        table.insert(clone_args, "--branch=" .. info.branch)
     end
     table.insert(clone_args, info.url)
     table.insert(clone_args, tmp)
     -- replace previous args { "git", "clone", info.url, tmp }
 
     vim.notify("⬇ Cloning " .. lang)
-    util.run_cmd(clone_args, nil, function(clone)
-        if not clone.ok then
-            vim.notify("Clone failed:\n" .. clone.output:sub(1, 300), 3)
+    util.run_async(clone_args, nil, function(ok)
+        if not ok then
             callback(false)
             return
         end
@@ -91,13 +88,8 @@ function M._install_single(lang, callback)
 
         local function do_build()
             vim.notify("🔨 Building " .. lang)
-            util.run_cmd({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_dir, function(build)
-                if not build.ok then
-                    local err = build.output
-                    if #err > 500 then
-                        err = err:sub(-500)
-                    end
-                    vim.notify("Build failed for " .. lang .. ":\n" .. err, 3)
+            util.run_async({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_dir, function(ok)
+                if not ok then
                     vim.fn.delete(tmp, "rf")
                     callback(false)
                     return
@@ -130,9 +122,8 @@ function M._install_single(lang, callback)
         end
 
         if info.generate then
-            util.run_cmd({ "tree-sitter", "generate" }, build_dir, function(gen)
-                if not gen.ok then
-                    vim.notify("Generate failed for " .. lang .. ":\n" .. gen.output:sub(1, 300), 3)
+            util.run_async({ "tree-sitter", "generate" }, build_dir, function(ok)
+                if not ok then
                     vim.fn.delete(tmp, "rf")
                     callback(false)
                     return
