@@ -70,8 +70,6 @@ vim-plug: >vim
                                                *tree-sitter-manager.setup()*
 >lua
   require("tree-sitter-manager").setup({
-    parser_dir     = vim.fn.stdpath("data") .. "/site/parser",
-    query_dir      = vim.fn.stdpath("data") .. "/site/queries",
     languages      = {},
     ensure_installed = {},
     border         = nil,
@@ -92,7 +90,7 @@ All options are passed as a table to |tree-sitter-manager.setup()|.
                                           *tree-sitter-manager-opt-parser_dir*
 parser_dir ~
   Type: `string`
-  Default: `vim.fn.stdpath("data") .. "/site/parser"`
+  Default: `stdpath("data") .. "site/parser"`
 
   Directory where compiled parser `.so`/`.dll` files are stored.
   The parent directory is automatically prepended to 'runtimepath'.
@@ -101,7 +99,7 @@ parser_dir ~
                                            *tree-sitter-manager-opt-query_dir*
 query_dir ~
   Type: `string`
-  Default: `vim.fn.stdpath("data") .. "/site/queries"`
+  Default: `stdpath("data") .. "site/queries"`
 
   Directory where query files (`highlights.scm`, etc.) are stored.
   The parent directory is automatically prepended to 'runtimepath'.

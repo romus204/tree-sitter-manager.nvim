@@ -2,6 +2,7 @@ local repos = require("tree-sitter-manager.repos")
 local filetypes = require("tree-sitter-manager.filetypes")
 
 local M = {}
+local datapath = vim.fn.stdpath("data")
 
 ---@class tree-sitter-manager.Config
 ---@field parser_dir? string Directory to install compiled parsers into. Defaults to `stdpath('data')/site/parser`.
@@ -27,8 +28,8 @@ local M = {}
 ---@field use_repo_queries? boolean Use queries from the cloned repo's `queries/` directory instead of those bundled with the plugin. Defaults to false.
 ---@type tree-sitter-manager.Config
 M.cfg = {
-    parser_dir = vim.fn.stdpath("data") .. "/site/parser",
-    query_dir = vim.fn.stdpath("data") .. "/site/queries",
+    parser_dir = vim.fs.joinpath(datapath, "site/parser"),
+    query_dir = vim.fs.joinpath(datapath, "site/queries"),
     languages = {},
     ensure_installed = {},
     border = nil,
