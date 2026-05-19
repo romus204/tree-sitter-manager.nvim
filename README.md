@@ -42,8 +42,6 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
       -- auto_install = false, -- if enabled, install missing parsers when editing a new file
       -- highlight = true, -- treesitter highlighting is enabled by default
       -- languages = {}, -- override or add new parser sources
-      -- parser_dir = vim.fn.stdpath("data") .. "/site/parser",
-      -- query_dir = vim.fn.stdpath("data") .. "/site/queries",
     })
   end
 }
@@ -62,8 +60,6 @@ require("tree-sitter-manager").setup({
   -- auto_install = false, -- if enabled, install missing parsers when editing a new file
   -- highlight = true, -- treesitter highlighting is enabled by default
   -- languages = {}, -- override or add new parser sources
-  -- parser_dir = vim.fn.stdpath("data") .. "/site/parser",
-  -- query_dir = vim.fn.stdpath("data") .. "/site/queries",
 })
 ```
 

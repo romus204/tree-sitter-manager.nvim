@@ -13,10 +13,10 @@ function M.ext()
 end
 
 function M.ppath(l)
-    return config.cfg.parser_dir .. "/" .. l .. M.ext()
+    return vim.fs.joinpath(config.cfg.parser_dir, l .. M.ext())
 end
 function M.qpath(l)
-    return config.cfg.query_dir .. "/" .. l
+    return vim.fs.joinpath(config.cfg.query_dir, l)
 end
 
 function M.run_cmd(args, cwd, callback)
@@ -43,8 +43,8 @@ function M.copy_dir(src, dst)
         if not name then
             break
         end
-        local s = src .. "/" .. name
-        local d = dst .. "/" .. name
+        local s = vim.fs.joinpath(src, name)
+        local d = vim.fs.joinpath(dst, name)
         if ftype == "directory" then
             M.copy_dir(s, d)
         else

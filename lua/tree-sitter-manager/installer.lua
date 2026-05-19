@@ -36,17 +36,17 @@ function M.is_only_query(lang)
 end
 
 local function copy_queries(lang, location)
-    local s = util.PLUGIN_ROOT .. "/runtime/queries/" .. location
-    local d = config.cfg.query_dir .. "/" .. lang
+    local s = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", location)
+    local d = vim.fs.joinpath(config.cfg.query_dir, lang)
     if vim.uv.fs_stat(s) then
         util.copy_dir(s, d)
     end
 end
 
 local function copy_queries_from_repo(lang, build_dir, queries_dir)
-    local qs = build_dir .. "/" .. queries_dir
+    local qs = vim.fs.joinpath(build_dir, queries_dir)
     if vim.uv.fs_stat(qs) then
-        util.copy_dir(qs, config.cfg.query_dir .. "/" .. lang)
+        util.copy_dir(qs, vim.fs.joinpath(config.cfg.query_dir, lang))
         return true
     end
     return false
@@ -86,7 +86,7 @@ function M._install_single(lang, callback)
 
         local build_dir = tmp
         if info.location then
-            build_dir = tmp .. "/" .. info.location
+            build_dir = vim.fs.joinpath(tmp, info.location)
         end
 
         local function do_build()
@@ -186,7 +186,7 @@ function M.remove(lang)
     if vim.uv.fs_stat(util.ppath(lang)) then
         vim.uv.fs_unlink(util.ppath(lang))
     end
-    local qd = config.cfg.query_dir .. "/" .. lang
+    local qd = vim.fs.joinpath(config.cfg.query_dir, lang)
     if vim.uv.fs_stat(qd) then
         vim.fn.delete(qd, "rf")
     end
