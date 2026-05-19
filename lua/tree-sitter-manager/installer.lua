@@ -62,7 +62,6 @@ function M._install_single(lang, callback)
     end
 
     local tmp = vim.fn.tempname()
-    local location = info.location or lang
 
     local clone_args = { "git", "clone", "--single-branch", "--depth", "1" }
     if info.revision then
@@ -86,7 +85,7 @@ function M._install_single(lang, callback)
 
         local build_dir = tmp
         if info.location then
-            build_dir = tmp .. "/" .. location
+            build_dir = tmp .. "/" .. info.location
         end
 
         local function do_build()
@@ -117,7 +116,7 @@ function M._install_single(lang, callback)
                 vim.fn.delete(tmp, "rf")
 
                 if not used_repo_queries then
-                    copy_queries(lang, location)
+                    copy_queries(lang, lang)
                 end
 
                 vim.notify("✓ " .. lang .. " installed")
