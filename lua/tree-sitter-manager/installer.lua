@@ -62,7 +62,6 @@ function M._install_single(lang, callback)
     end
 
     local tmp = vim.fn.tempname()
-    local location = info.location or lang
 
     local clone_args = { "git", "clone", "--single-branch", "--depth", "1" }
     if info.revision then
