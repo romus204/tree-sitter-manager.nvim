@@ -45,13 +45,9 @@ T["test-case"] = function()
     -- add more options to tree-sitter-manager.setup()
     child:update_config({ highlight = false })
     child.cmd("TSInstall bash")
-    -- wait until bash is installed
-    child:parser_wait("bash")
-    -- ensure that treesitter works for starlark
-    neq({}, vim.treesitter.query.get_files("bash", "highlights"))
-    nerr(function()
-        vim.treesitter.get_string_parser("", "bash")
-    end)
+    -- wait until bash finishes installation
+    -- and check if treesitter works
+    child:check_installed("bash")
 end
 return T
 ```

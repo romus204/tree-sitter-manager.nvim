@@ -9,7 +9,6 @@ local T = MiniTest.new_set({
         pre_once = function()
             child:setup()
             child:update_config({ ensure_installed = languages })
-            child:parser_wait(languages)
         end,
         post_once = function()
             child:cleanup()
@@ -19,10 +18,7 @@ local T = MiniTest.new_set({
 
 for _, lang in ipairs(languages) do
     T["bundled-queries-" .. lang] = function()
-        nerr(function()
-            vim.treesitter.get_string_parser("", lang)
-        end)
-        neq(nil, vim.treesitter.query.get(lang, "highlights"))
+        child:check_installed({ lang })
     end
 end
 

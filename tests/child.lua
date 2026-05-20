@@ -68,4 +68,25 @@ function M:parser_wait(languages, timeout)
     end
 end
 
+function M:check_installed(languages, timeout)
+    self:parser_wait(languages, timeout)
+    for _, lang in ipairs(languages) do
+        MiniTest.expect.no_error(function()
+            self.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+        end)
+        self.lua("query = vim.treesitter.query.get_files('" .. lang .. "', 'highlights')")
+        MiniTest.expect.no_equality(vim.NIL, self.lua_get("query"))
+    end
+end
+
+function M:check_not_installed(languages)
+    for _, lang in ipairs(languages) do
+        MiniTest.expect.error(function()
+            self.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+        end)
+        self.lua("query = vim.treesitter.query.get('" .. lang .. "', 'highlights')")
+        MiniTest.expect.equality(vim.NIL, self.lua_get("query"))
+    end
+end
+
 return M
