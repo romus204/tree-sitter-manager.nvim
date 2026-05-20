@@ -30,9 +30,23 @@ function M.run(args, cwd)
     return res.code == 0, res.stdout or ""
 end
 
-function M.run_async(args, callback, cwd)
-    local callback = callback or function() end
-    local opts = { text = true, cwd = cwd }
+function M.run_async(args, ...)
+    -- Both signatures work:
+    -- run_async(args, cwd, callback)
+    -- run_async(args, callback, cwd)
+    local arg2, arg3 = ...
+    local opts = { text = true }
+    local callback = function() end
+    if type(arg2) == "string" then
+        opts.cwd = arg2
+    elseif type(arg2) == "function" then
+        callback = arg2
+    end
+    if type(arg3) == "string" then
+        opts.cwd = arg3
+    elseif type(arg3) == "function" then
+        callback = arg3
+    end
     vim.system(args, opts, function(res)
         vim.schedule(function()
             if res.code ~= 0 then
