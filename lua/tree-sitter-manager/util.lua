@@ -19,8 +19,7 @@ function M.qpath(l)
     return vim.fs.joinpath(config.cfg.query_dir, l)
 end
 
-function M.run(args, cwd, callback)
-    local callback = callback or function() end
+function M.run(args, cwd)
     local opts = { text = true, cwd = cwd }
     local res = vim.system(args, opts):wait()
     if res.code ~= 0 then
@@ -28,11 +27,10 @@ function M.run(args, cwd, callback)
         local stderr = res.stderr or ""
         vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.WARN)
     end
-    callback(res.code == 0)
-    return res.stdout or ""
+    return res.code == 0, res.stdout or ""
 end
 
-function M.run_async(args, cwd, callback)
+function M.run_async(args, callback, cwd)
     local callback = callback or function() end
     local opts = { text = true, cwd = cwd }
     vim.system(args, opts, function(res)
