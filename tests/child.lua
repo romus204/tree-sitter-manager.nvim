@@ -15,7 +15,7 @@ function M:setup()
     self.start({
         "-u",
         vim.fs.joinpath(vim.fn.stdpath("config"), "init.lua"),
-        "+set nomore cmdheight=10", -- skip hit-enter prompts
+        "+set nomore cmdheight=100", -- skip hit-enter prompts
         "+lua require('tree-sitter-manager').setup(" .. vim.inspect(config) .. ")",
     })
     self.config = config
@@ -64,7 +64,7 @@ function M:parser_wait(languages, timeout)
         elseif -2 == reason then
             reason = "interrupt"
         end
-        error(reason .. " installing parser " .. langs)
+        error(reason .. " installing parser " .. vim.inspect(langs))
     end
 end
 

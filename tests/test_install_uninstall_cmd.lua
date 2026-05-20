@@ -27,12 +27,13 @@ T["install_uninstall"] = function()
         neq(nil, vim.treesitter.query.get(l, "highlights"))
     end
     child.cmd("TSUninstall " .. table.concat(lang, " "))
+    vim.wait(500)
     child.restart()
     for _, l in ipairs(lang) do
         err(function()
-            child.lua("vim.treesitter.get_string_parser('', l)")
+            child.lua("vim.treesitter.get_string_parser('', '" .. l .. "')")
         end)
-        eq({}, vim.treesitter.query.get_files(l, "highlights"))
+        eq({}, child.lua_get("vim.treesitter.query.get_files('" .. l .. "', 'highlights')"))
     end
 end
 
