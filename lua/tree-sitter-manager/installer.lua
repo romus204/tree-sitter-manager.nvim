@@ -51,6 +51,22 @@ local function copy_queries(lang, query_dir, build_path)
     util.copy_dir(source, util.qpath(lang))
 end
 
+local function treesitter_build(lang, query_dir, build_path, generate)
+    vim.notify("🔨 Building " .. lang)
+    local ok = true
+    if generate then
+        ok = util.run({ "tree-sitter", "generate" }, build_path)
+    end
+    if ok then
+        ok = util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path)
+    end
+    if ok then
+        copy_queries(lang, query_dir, build_path)
+        vim.notify("✓ Installed  " .. lang)
+    end
+    return ok
+end
+
 function M._install_single(lang, callback)
     callback = callback or function() end -- backward compatibility API
     if M.is_only_query(lang) then
@@ -60,30 +76,53 @@ function M._install_single(lang, callback)
         return
     end
 
+    local ok, version = util.run({ "git", "version" })
+    if not ok then
+        vim.notify("⚠ Git not installed", vim.log.levels.WARN)
+        callback(false)
+        return
+    end
+    version = { version:match("(%d+)%.(%d+)%.(%d+)") }
+    local major = tonumber(version[1])
+    local minor = tonumber(version[2])
+    local patch = tonumber(version[3])
+
     local info = M.get_repo_info(lang)
-    local revision = info.revision and "--revision=" .. info.revision
-    local branch = info.branch and "--branch=" .. info.branch
     local tmpdir = vim.fn.tempname()
     local build_path = vim.fs.joinpath(tmpdir, info.location)
 
-    vim.notify("⬇ Cloning " .. lang)
-    util.run_async({ "git", "clone", "--depth=1", revision or branch, info.url, tmpdir }, function(ok)
-        if ok then
-            if info.generate then
-                ok = util.run({ "tree-sitter", "generate" }, build_path)
-            end
-            if ok then
-                vim.notify("🔨 Building " .. lang)
-                ok = util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path)
-            end
-            if ok then
-                copy_queries(lang, info.use_repo_queries and info.queries, build_path)
-                vim.notify("✓ Installed  " .. lang)
-            end
+    if info.revision and (major < 2 or major == 2 and minor < 49) then
+        -- Git pre 2.49.0 doesn't have --revision flag
+        if
+            not util.run({ "git", "init", tmpdir })
+            or not util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
+        then
+            vim.fn.delete(tmpdir, "rf")
+            callback(false)
         end
-        vim.fn.delete(tmpdir, "rf")
-        callback(ok)
-    end)
+        vim.notify("⬇ Fetching " .. lang)
+        util.run_async({ "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, function(ok)
+            if ok then
+                ok = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
+            end
+            if ok then
+                ok = treesitter_build(lang, info.use_repo_queries and info.queries, build_path, info.generate)
+            end
+            vim.fn.delete(tmpdir, "rf")
+            callback(ok)
+        end)
+    else
+        local revision = info.revision and "--revision=" .. info.revision
+        local branch = info.branch and "--branch=" .. info.branch
+        vim.notify("⬇ Cloning " .. lang)
+        util.run_async({ "git", "clone", "--depth=1", revision or branch, info.url, tmpdir }, function(ok)
+            if ok then
+                ok = treesitter_build(lang, info.use_repo_queries and info.queries, build_path, info.generate)
+            end
+            vim.fn.delete(tmpdir, "rf")
+            callback(ok)
+        end)
+    end
 end
 
 local function install_with_deps(lang, callback, installing)
