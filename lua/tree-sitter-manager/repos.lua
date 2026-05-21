@@ -126,8 +126,8 @@ return {
     },
     c3 = {
         install_info = {
-            revision = '6a8d31ba70a79ddf5bb5b2a18eebe742e0fc0a98',
-            url = 'https://github.com/c3lang/tree-sitter-c3',
+            revision = "6a8d31ba70a79ddf5bb5b2a18eebe742e0fc0a98",
+            url = "https://github.com/c3lang/tree-sitter-c3",
         },
     },
     c_sharp = {
