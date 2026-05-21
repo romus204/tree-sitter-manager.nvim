@@ -1,27 +1,31 @@
 -include .env
 export
 
-# Use `make test` to run tests for all modules
+# Capture extra arguments after `make test`, `make test_xxx` and `make nvim`
+ifneq (,$(filter test test_% nvim,$(firstword $(MAKECMDGOALS))))
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+$(eval $(ARGS):;@:)
+$(eval .PHONY: $(ARGS))
+endif
+
+# Use `make test` to run tests for all modules for a handful of languages
+# or `make test python` to run all tests for python
+# TODO: `make test all` to run all tests for all languages
 test: .env
-	nvim --headless --noplugin -c "lua MiniTest.run()"
+	LANGUAGES="$(ARGS)" nvim --headless --noplugin -c "lua MiniTest.run()"
 .PHONY: test
 
 # Use `make test_xxx` to run tests for module `tests/test_xxx.lua`
+# `make test_xxx python` will run it for python
+# TODO: `make test_xxx all` to run for all languages
 TEST_MODULES = $(basename $(notdir $(wildcard tests/test_*.lua)))
 $(TEST_MODULES): .env
-	nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
+	LANGUAGES="$(ARGS)" nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
 .PHONY: $(TEST_MODULES)
 
 # Use `make nvim` or `make nvim tests/test_xxx.lua`
-ifeq (nvim,$(firstword $(MAKECMDGOALS)))
-  # Take the rest of the arguments and assign them to ARGS
-  ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # Turn those extra arguments into do-nothing targets so Make doesn't complain
-  $(eval $(ARGS):;@:)
-  $(eval .PHONY: $(ARGS))
-endif
 nvim: .env
-	nvim --noplugin $(ARGS)
+	nvim --noplugin -o $(ARGS)
 
 # Set up test environment
 .env: deps/mini.nvim

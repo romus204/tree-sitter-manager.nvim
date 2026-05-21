@@ -1,8 +1,11 @@
+local languages = { "terraform", "ocaml", "helm" }
+if vim.env.LANGUAGES then
+    languages = vim.split(vim.env.LANGUAGES, " ")
+end
+
+local child = require("tests.child")
 local nerr = MiniTest.expect.no_error
 local neq = MiniTest.expect.no_equality
-
-local languages = { "terraform", "ocaml", "helm" }
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {

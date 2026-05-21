@@ -1,9 +1,10 @@
+local languages = vim.env.LANGUAGES and vim.split(vim.env.LANGUAGES, " ")
+
+local child = require("tests.child")
 local nerr = MiniTest.expect.no_error
 local neq = MiniTest.expect.no_equality
 local err = MiniTest.expect.error
 local eq = MiniTest.expect.equality
-
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
@@ -20,44 +21,48 @@ local T = MiniTest.new_set({
 })
 
 T["revision"] = function()
-    local lang = { "odin", "ocamllex", "ocaml_interface" }
+    local lang = languages or { "odin", "ocamllex", "ocaml_interface" }
     child:update_config({ ensure_installed = lang })
     child:check_installed(lang, 100000)
 end
 
 T["branch_revision"] = function()
-    local lang = { "sql" }
+    local lang = languages or { "sql" }
     child:update_config({ ensure_installed = lang })
     child:check_installed(lang)
 end
 
 T["branch"] = function()
+    local lang = languages or { "sql" }
+    local base_repos = require("tree-sitter-manager.config").base_repos
     child:update_config({
-        languages = {
-            sql = {
+        ensure_installed = lang,
+        languages = vim.iter(lang):fold({}, function(acc, l)
+            acc[l] = {
                 install_info = {
-                    branch = "gh-pages",
-                    url = "https://github.com/derekstride/tree-sitter-sql",
+                    branch = "main",
+                    url = base_repos[l].install_info.url,
                 },
-            },
-        },
-        ensure_installed = { "sql" },
+            }
+        end),
     })
-    child:check_installed({ "sql" })
+    child:check_installed(lang)
 end
 
 T["no_branch_no_rev"] = function()
+    local lang = languages or { "sql" }
+    local base_repos = require("tree-sitter-manager.config").base_repos
     child:update_config({
-        language = {
-            sql = {
+        ensure_installed = lang,
+        languages = vim.iter(lang):fold({}, function(acc, l)
+            acc[l] = {
                 install_info = {
-                    url = "https://github.com/derekstride/tree-sitter-sql",
+                    url = base_repos[l].install_info.url,
                 },
-            },
-        },
-        ensure_installed = { "sql" },
+            }
+        end),
     })
-    child:check_installed({ "sql" })
+    child:check_installed(lang)
 end
 
 T["pre_2.49.0"] = MiniTest.new_set({
@@ -89,7 +94,7 @@ T["pre_2.49.0"] = MiniTest.new_set({
     },
 })
 T["pre_2.49.0"]["revision"] = function()
-    local lang = { "php", "perl", "pem" }
+    local lang = languages or { "php", "perl", "pem" }
     child:update_config({ ensure_installed = lang })
     child:check_installed(lang)
 end

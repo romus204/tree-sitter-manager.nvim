@@ -1,7 +1,7 @@
+local child = require("tests.child")
 local neq = MiniTest.expect.no_equality
 local eq = MiniTest.expect.equality
 
-local child = require("tests.child")
 local function cleanup()
     child.lua([[
     vim.pack.del(vim.iter(vim.pack.get())

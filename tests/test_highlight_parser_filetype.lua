@@ -1,9 +1,12 @@
+local languages = { "csv", "tsv", "starlark", "python", "javascript" }
+if vim.env.LANGUAGES then
+    languages = vim.split(vim.env.LANGUAGES, " ")
+end
+
+local child = require("tests.child")
+local filetypes = require("tree-sitter-manager.filetypes")
 local eq = MiniTest.expect.equality
 local neq = MiniTest.expect.no_equality
-
-local filetypes = require("tree-sitter-manager.filetypes")
-local languages = { "csv", "tsv", "starlark", "python", "javascript" }
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
