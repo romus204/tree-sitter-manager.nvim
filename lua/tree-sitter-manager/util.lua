@@ -25,7 +25,7 @@ function M.run(args, cwd)
     if res.code ~= 0 then
         local args = table.concat(args, " ")
         local stderr = res.stderr or ""
-        vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.WARN)
+        vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.ERROR)
     end
     return res.code == 0, res.stdout or ""
 end
@@ -52,7 +52,7 @@ function M.run_async(args, ...)
             if res.code ~= 0 then
                 local args = table.concat(args, " ")
                 local stderr = res.stderr or ""
-                vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.WARN)
+                vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.ERROR)
             end
             callback(res.code == 0)
         end)
