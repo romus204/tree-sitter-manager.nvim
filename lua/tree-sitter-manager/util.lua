@@ -12,12 +12,18 @@ function M.ext()
     return sys:match("Windows") and ".dll" or sys:match("Darwin") and ".dylib" or ".so"
 end
 
-function M.ppath(l) return config.cfg.parser_dir .. "/" .. l .. M.ext() end
-function M.qpath(l) return config.cfg.query_dir .. "/" .. l end
+function M.ppath(l)
+    return vim.fs.joinpath(config.cfg.parser_dir, l .. M.ext())
+end
+function M.qpath(l)
+    return vim.fs.joinpath(config.cfg.query_dir, l)
+end
 
 function M.run_cmd(args, cwd, callback)
     local opts = { text = true }
-    if cwd then opts.cwd = cwd end
+    if cwd then
+        opts.cwd = cwd
+    end
     vim.system(args, opts, function(res)
         local out = (res.stderr ~= "" and res.stderr) or res.stdout or ""
         vim.schedule(function()
@@ -29,12 +35,16 @@ end
 function M.copy_dir(src, dst)
     vim.fn.mkdir(dst, "p")
     local handle = vim.uv.fs_scandir(src)
-    if not handle then return end
+    if not handle then
+        return
+    end
     while true do
         local name, ftype = vim.uv.fs_scandir_next(handle)
-        if not name then break end
-        local s = src .. "/" .. name
-        local d = dst .. "/" .. name
+        if not name then
+            break
+        end
+        local s = vim.fs.joinpath(src, name)
+        local d = vim.fs.joinpath(dst, name)
         if ftype == "directory" then
             M.copy_dir(s, d)
         else

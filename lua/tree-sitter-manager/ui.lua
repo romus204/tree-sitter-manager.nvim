@@ -9,16 +9,24 @@ local M = {}
 
 local function get_status_icon(lang)
     if installer.is_only_query(lang) then
-        if not vim.uv.fs_stat(util.qpath(lang)) then return "❌" end
+        if not vim.uv.fs_stat(util.qpath(lang)) then
+            return "❌"
+        end
     else
-        if not vim.uv.fs_stat(util.ppath(lang)) then return "❌" end
+        if not vim.uv.fs_stat(util.ppath(lang)) then
+            return "❌"
+        end
     end
 
     for _, dep in ipairs(installer.get_requires(lang)) do
         if installer.is_only_query(dep) then
-            if not vim.uv.fs_stat(util.qpath(dep)) then return "⚠️" end
+            if not vim.uv.fs_stat(util.qpath(dep)) then
+                return "⚠️"
+            end
         else
-            if not vim.uv.fs_stat(util.ppath(dep)) then return "⚠️" end
+            if not vim.uv.fs_stat(util.ppath(dep)) then
+                return "⚠️"
+            end
         end
     end
 
@@ -28,9 +36,13 @@ end
 local function get_meta_suffix(lang)
     local info = installer.get_repo_info(lang)
     local parts = {}
-    if info and info.revision then table.insert(parts, string.sub(info.revision, 1, 7)) end
+    if info and info.revision then
+        table.insert(parts, string.sub(info.revision, 1, 7))
+    end
     local reqs = installer.get_requires(lang)
-    if #reqs > 0 then table.insert(parts, "requires:" .. table.concat(reqs, ",")) end
+    if #reqs > 0 then
+        table.insert(parts, "requires:" .. table.concat(reqs, ","))
+    end
     return #parts > 0 and "  " .. table.concat(parts, " ") or ""
 end
 
@@ -69,27 +81,43 @@ function M.open()
     })
     M.render(buf)
 
-    local close_fn = function() vim.api.nvim_win_close(win, true) end
+    local close_fn = function()
+        vim.api.nvim_win_close(win, true)
+    end
     vim.keymap.set("n", "q", close_fn, { buffer = buf, noremap = true, silent = true })
     vim.keymap.set("n", "<Esc>", close_fn, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "r", function() M.render(buf) end, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "i", function() M._act("install") end, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "x", function() M._act("remove") end, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "u", function() M._act("update") end, { buffer = buf, noremap = true, silent = true })
+    vim.keymap.set("n", "r", function()
+        M.render(buf)
+    end, { buffer = buf, noremap = true, silent = true })
+    vim.keymap.set("n", "i", function()
+        M._act("install")
+    end, { buffer = buf, noremap = true, silent = true })
+    vim.keymap.set("n", "x", function()
+        M._act("remove")
+    end, { buffer = buf, noremap = true, silent = true })
+    vim.keymap.set("n", "u", function()
+        M._act("update")
+    end, { buffer = buf, noremap = true, silent = true })
 end
 
 function M._act(action)
     local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
-    if not lang or not config.effective_repos[lang] then return end
+    if not lang or not config.effective_repos[lang] then
+        return
+    end
     local buf = vim.api.nvim_get_current_buf()
     if action == "install" then
-        installer.install(lang, function() M.render(buf) end)
+        installer.install(lang, function()
+            M.render(buf)
+        end)
     elseif action == "remove" then
         installer.remove(lang)
         M.render(buf)
     elseif action == "update" then
         installer.remove(lang)
-        installer.install(lang, function() M.render(buf) end)
+        installer.install(lang, function()
+            M.render(buf)
+        end)
     end
 end
 
