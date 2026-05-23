@@ -132,9 +132,9 @@ require("tree-sitter-manager").setup({
 ```
 
 ## Usage
-`:TSManager` - Open the parser management interface
-`:TSInstall` - Install parsers provided as arguments
-`:TSUninstall` - Uninstall parsers
+`:TSManager` - Open the parser management interface<br/>
+`:TSInstall` - Install parsers provided as arguments<br/>
+`:TSUninstall` - Uninstall parsers<br/>
 
 ## Keybindings
 `i` - Install parser under cursor<br/>
