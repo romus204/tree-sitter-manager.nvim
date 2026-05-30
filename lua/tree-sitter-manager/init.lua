@@ -10,17 +10,35 @@ M._install_single = installer._install_single
 M.open = ui.open
 M._act = ui._act
 
+local function get_filetypes(filter)
+    return vim.iter(state.languages)
+        :filter(filter)
+        :map(function(lang)
+            return { lang, unpack(state.filetypes[lang] or {}) }
+        end)
+        :flatten()
+        :totable()
+end
+
 function M.setup(opts)
     state.cfg = vim.tbl_deep_extend("force", state.cfg, opts or {})
 
     state.cfg.parser_dir = vim.fs.normalize(state.cfg.parser_dir)
     state.cfg.query_dir = vim.fs.normalize(state.cfg.query_dir)
 
-    -- Mergebuilt-in repos with user-defined language overrides.
+    -- Merge built-in repos with user-defined language overrides.
     -- User entries take precedence, allowing custom forks and new languages.
     state.effective_repos = vim.tbl_deep_extend("force", vim.deepcopy(state.base_repos), state.cfg.languages)
     state.languages = vim.tbl_keys(state.effective_repos)
     table.sort(state.languages)
+
+    -- Reverse filetypes mapping
+    local ft_to_lang = vim.iter(state.filetypes):fold({}, function(acc, lang, fts)
+        for _, ft in ipairs(fts) do
+            acc[ft] = lang
+        end
+        return acc
+    end)
 
     vim.fn.mkdir(state.cfg.parser_dir, "p")
     vim.fn.mkdir(state.cfg.query_dir, "p")
@@ -47,24 +65,25 @@ function M.setup(opts)
     end
 
     if state.cfg.auto_install then
-        vim.api.nvim_create_autocmd("FileType", {
-            callback = function(a)
-                installer.install_new(a.match)
-            end,
-        })
+        local filetypes = get_filetypes(function(lang)
+            return not vim.list_contains(state.cfg.noauto_install, lang)
+        end)
+        if #filetypes > 0 then
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = filetypes,
+                callback = function(a)
+                    installer.install_new(ft_to_lang[a.match] or a.match)
+                end,
+                desc = "Auto-install treesitter parsers",
+            })
+        end
     end
 
     if state.cfg.highlight then
-        local filetypes = {}
-        for _, lang in ipairs(state.languages) do
-            if
-                (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
-                and not vim.list_contains(state.cfg.nohighlight, lang)
-            then
-                table.insert(filetypes, lang)
-                vim.list_extend(filetypes, state.filetypes[lang] or {})
-            end
-        end
+        local filetypes = get_filetypes(function(lang)
+            return not vim.list_contains(state.cfg.nohighlight, lang)
+                and (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
+        end)
         if #filetypes > 0 then
             vim.api.nvim_create_autocmd("FileType", {
                 pattern = filetypes,

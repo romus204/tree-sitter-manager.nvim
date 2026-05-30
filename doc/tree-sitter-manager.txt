@@ -10,14 +10,14 @@ CONTENTS                                      *tree-sitter-manager-contents*
   1. Introduction .............. |tree-sitter-manager-introduction|
   2. Requirements .............. |tree-sitter-manager-requirements|
   3. Installation .............. |tree-sitter-manager-installation|
-  4. Setup ...................... |tree-sitter-manager-setup|
+  4. Setup ..................... |tree-sitter-manager-setup|
   5. Options ................... |tree-sitter-manager-options|
   6. Commands .................. |tree-sitter-manager-commands|
   7. Keybindings ............... |tree-sitter-manager-keybindings|
-  8. Custom Repositories ........ |tree-sitter-manager-custom-repos|
+  8. Custom Repositories ....... |tree-sitter-manager-custom-repos|
   9. Highlighting .............. |tree-sitter-manager-highlighting|
- 10. API ........................ |tree-sitter-manager-api|
- 11. Known Limitations .......... |tree-sitter-manager-limitations|
+ 10. API ....................... |tree-sitter-manager-api|
+ 11. Known Limitations ......... |tree-sitter-manager-limitations|
 
 ==============================================================================
 1. INTRODUCTION                           *tree-sitter-manager-introduction*
@@ -70,12 +70,16 @@ vim-plug: >vim
                                                *tree-sitter-manager.setup()*
 >lua
   require("tree-sitter-manager").setup({
-    languages      = {},
+    languages        = {},
     ensure_installed = {},
-    border         = nil,
-    auto_install   = false,
-    highlight      = true,
-    nohighlight    = {},
+    border           = nil,
+    auto_install     = false,
+    noauto_install   = {},
+    highlight        = true,
+    nohighlight      = {},
+    parser_dir       = vim.fn.stdpath("data") .. "/site/parser",
+    query_dir        = vim.fn.stdpath("data") .. "/site/queries",
+    nerdfont         = true,
   })
 <
 
@@ -90,7 +94,7 @@ All options are passed as a table to |tree-sitter-manager.setup()|.
                                           *tree-sitter-manager-opt-parser_dir*
 parser_dir ~
   Type: `string`
-  Default: `stdpath("data") .. "site/parser"`
+  Default: `stdpath("data") .. "/site/parser"`
 
   Directory where compiled parser `.so`/`.dll` files are stored.
   The parent directory is automatically prepended to 'runtimepath'.
@@ -99,7 +103,7 @@ parser_dir ~
                                            *tree-sitter-manager-opt-query_dir*
 query_dir ~
   Type: `string`
-  Default: `stdpath("data") .. "site/queries"`
+  Default: `stdpath("data") .. "/site/queries"`
 
   Directory where query files (`highlights.scm`, etc.) are stored.
   The parent directory is automatically prepended to 'runtimepath'.
@@ -121,8 +125,8 @@ ensure_installed ~
 
   List of parsers to install automatically at startup (if not already
   installed). If set to `"all"`, install all parsers. >lua
-    ensure_installed = { "lua", "python", "rust" },
-    ensure_installed = "all",
+    ensure_installed = { "lua", "python", "rust" }
+    ensure_installed = "all"
 <
 
 ------------------------------------------------------------------------------
@@ -145,6 +149,20 @@ auto_install ~
   opens a file whose filetype matches a known language.
 
 ------------------------------------------------------------------------------
+                                      *tree-sitter-manager-opt-noauto_install*
+noauto_install ~
+  Type: `string[]`
+  Default: `{}`
+
+  Opt-out from automatically installing specified languages when
+  `auto_install = true`. For example, if you prefer the built-in Neovim
+  parsers: >lua
+    noauto_install = {
+      "c", "lua", "markdown", "markdown_inline", "query", "vim", "vimdoc"
+    }
+<
+
+------------------------------------------------------------------------------
                                            *tree-sitter-manager-opt-highlight*
 highlight ~
   Type: `boolean|string[]`
@@ -154,7 +172,7 @@ highlight ~
   - `true`      — enable for all installed parsers
   - `false`/`{}` — disable entirely
   - `string[]`  — enable only for the listed languages >lua
-    highlight = { "lua", "python" },
+    highlight = { "lua", "python" }
 <
 
 ------------------------------------------------------------------------------
@@ -166,7 +184,7 @@ nohighlight ~
   Exclude specific languages from Tree-sitter highlighting even when
   `highlight = true`. Useful for languages where regex highlighting is
   preferred. >lua
-    nohighlight = { "yaml", "zsh" },
+    nohighlight = { "yaml", "zsh" }
 <
 
 ------------------------------------------------------------------------------
@@ -230,7 +248,7 @@ Each entry has the following shape: >lua
       },
       requires = {},  -- list of language names that must be installed first
     },
-  },
+  }
 <
 
 Override a built-in with a fork: >lua

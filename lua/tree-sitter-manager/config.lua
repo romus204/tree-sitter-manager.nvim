@@ -35,6 +35,7 @@ M.cfg = {
     ensure_installed = {},
     border = nil,
     auto_install = false,
+    noauto_install = {},
     highlight = true,
     nohighlight = {},
     nerdfont = true,
