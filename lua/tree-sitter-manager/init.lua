@@ -22,6 +22,12 @@ function M.setup(opts)
     state.languages = vim.tbl_keys(state.effective_repos)
     table.sort(state.languages)
 
+    for lang, fts in pairs(state.filetypes) do
+        for _, ft in ipairs(fts) do
+            state.filetype_language[ft] = lang
+        end
+    end
+
     vim.fn.mkdir(state.cfg.parser_dir, "p")
     vim.fn.mkdir(state.cfg.query_dir, "p")
 
@@ -85,21 +91,24 @@ function M.setup(opts)
     })
 
     if state.cfg.highlight then
-        local highlight_ft = {}
+        local filetypes = {}
         for _, lang in ipairs(state.languages) do
             if
                 (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
                 and not vim.list_contains(state.cfg.nohighlight, lang)
             then
-                table.insert(highlight_ft, lang)
-                vim.list_extend(highlight_ft, state.filetypes[lang] or {})
+                table.insert(filetypes, lang)
+                vim.list_extend(filetypes, state.filetypes[lang] or {})
             end
         end
-        if #highlight_ft > 0 then
+        if #filetypes > 0 then
             vim.api.nvim_create_autocmd("FileType", {
-                pattern = highlight_ft,
-                callback = function()
-                    pcall(vim.treesitter.start)
+                pattern = filetypes,
+                callback = function(a)
+                    local lang = state.filetype_language[a.match] or a.match
+                    if vim.uv.fs_stat(util.ppath(lang)) then
+                        vim.treesitter.start(a.buf, a.match)
+                    end
                 end,
                 desc = "Auto-enable treesitter for installed parsers",
             })
