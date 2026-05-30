@@ -90,7 +90,6 @@ function M.setup(opts)
             if
                 (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
                 and not vim.list_contains(state.cfg.nohighlight, lang)
-                and vim.uv.fs_stat(util.ppath(lang))
             then
                 table.insert(highlight_ft, lang)
                 vim.list_extend(highlight_ft, state.filetypes[lang] or {})
@@ -100,7 +99,7 @@ function M.setup(opts)
             vim.api.nvim_create_autocmd("FileType", {
                 pattern = highlight_ft,
                 callback = function()
-                    vim.treesitter.start()
+                    pcall(vim.treesitter.start)
                 end,
                 desc = "Auto-enable treesitter for installed parsers",
             })
