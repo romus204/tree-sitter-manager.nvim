@@ -107,7 +107,7 @@ function M.setup(opts)
                 callback = function(a)
                     local lang = state.filetype_language[a.match] or a.match
                     if vim.uv.fs_stat(util.ppath(lang)) then
-                        vim.treesitter.start(a.buf, a.match)
+                        vim.treesitter.start()
                     end
                 end,
                 desc = "Auto-enable treesitter for installed parsers",
