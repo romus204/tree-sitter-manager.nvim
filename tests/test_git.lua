@@ -38,6 +38,7 @@ T["branch"] = function()
                     url = base_repos[l].install_info.url,
                 },
             }
+            return acc
         end),
     })
     child:check_installed(lang)
@@ -54,6 +55,7 @@ T["no_branch_no_rev"] = function()
                     url = base_repos[l].install_info.url,
                 },
             }
+            return acc
         end),
     })
     child:check_installed(lang)
