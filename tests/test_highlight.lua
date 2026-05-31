@@ -32,7 +32,7 @@ end
 T["after_install"] = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child:update_config({ ensure_installed = languages })
+            child.cmd("TSInstall " .. table.concat(languages, " "))
             child:parser_wait(languages)
         end,
     },
