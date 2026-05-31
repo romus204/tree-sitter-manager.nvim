@@ -10,10 +10,11 @@ local T = MiniTest.new_set({
             child:cleanup()
         end,
     },
-    parametrize = vim.iter(languages):fold({}, function(acc, lang)
-        table.insert(acc, { lang })
-        return acc
-    end),
+    parametrize = vim.iter(languages)
+        :map(function(lang)
+            return { lang }
+        end)
+        :totable(),
 })
 
 T["bundled_queries"] = function(lang)
