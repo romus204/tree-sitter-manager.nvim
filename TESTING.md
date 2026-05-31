@@ -48,7 +48,7 @@ local T = MiniTest.new_set({
     hooks = {
         -- setup will set a unique parent directory to `parser_dir` and `query_dir`
         pre_once = function()
-            child:setup()
+            child:setup({ highlight = true })
         end,
         post_once = function()
             child:cleanup()
@@ -57,7 +57,7 @@ local T = MiniTest.new_set({
 })
 
 T["test-case"] = function()
-    -- add more options to tree-sitter-manager.setup()
+    -- modify options to tree-sitter-manager.setup()
     child:update_config({ highlight = false })
     child.cmd("TSInstall " .. table.concat(languages, " "))
     -- wait until bash finishes installation

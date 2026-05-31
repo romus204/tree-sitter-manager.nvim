@@ -1,24 +1,22 @@
 M = MiniTest.new_child_neovim()
 
-function M:setup()
+function M:setup(config)
     self.name = MiniTest.current.case.desc[1]
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), self.name)
     local parser_dir = vim.fs.joinpath(path, "parser")
     local query_dir = vim.fs.joinpath(path, "queries")
     vim.fs.rm(parser_dir, { recursive = true, force = true })
     vim.fs.rm(query_dir, { recursive = true, force = true })
-    local config = {
-        parser_dir = parser_dir,
-        query_dir = query_dir,
-    }
-    require("tree-sitter-manager").setup(config)
+    require("tree-sitter-manager").setup({ parser_dir = parser_dir, query_dir = query_dir })
+    self.config = config or {}
+    self.config.parser_dir = parser_dir
+    self.config.query_dir = query_dir
     self.start({
         "-u",
         vim.fs.joinpath(vim.fn.stdpath("config"), "init.lua"),
         "+set nomore cmdheight=100", -- skip hit-enter prompts
-        "+lua require('tree-sitter-manager').setup(" .. vim.inspect(config) .. ")",
+        "+lua require('tree-sitter-manager').setup(" .. vim.inspect(self.config) .. ")",
     })
-    self.config = config
 end
 
 function M:cleanup()
@@ -31,10 +29,8 @@ function M:cleanup()
 end
 
 function M:update_config(config)
-    for opt, val in pairs(config) do
-        self.config[opt] = val
-    end
-    self.lua("require('tree-sitter-manager').setup(" .. vim.inspect(config) .. ")")
+    self.config = vim.tbl_deep_extend("force", self.config, config)
+    self.lua("require('tree-sitter-manager').setup(" .. vim.inspect(self.config) .. ")")
     return vim.deepcopy(self.config, true)
 end
 
@@ -53,7 +49,7 @@ function M:parser_wait(languages, timeout)
         end,
         100
     )
-    vim.wait(500)
+    vim.wait(100)
     ]])
     local success = self.lua_get("success")
     local reason = self.lua_get("reason")

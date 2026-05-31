@@ -1,17 +1,7 @@
-local languages = { "csv", "tsv", "starlark", "python", "javascript", "razor" }
-if vim.env.LANGUAGES then
-    languages = vim.split(vim.env.LANGUAGES, " ")
-end
+local languages = _G.languages or { "csv", "tsv", "starlark", "python", "javascript", "razor" }
 local filetypes = require("tree-sitter-manager.filetypes")
 local child = require("tests.child")
 local eq = MiniTest.expect.equality
-local parametrize = vim.iter(languages):fold({}, function(acc, lang)
-    table.insert(acc, { lang, lang })
-    for _, ft in ipairs(filetypes[lang] or {}) do
-        table.insert(acc, { lang, ft })
-    end
-    return acc
-end)
 
 local T = MiniTest.new_set({
     hooks = {
@@ -25,7 +15,13 @@ local T = MiniTest.new_set({
             child:cleanup()
         end,
     },
-    parametrize = parametrize,
+    parametrize = vim.iter(languages):fold({}, function(acc, lang)
+        table.insert(acc, { lang, lang })
+        for _, ft in ipairs(filetypes[lang] or {}) do
+            table.insert(acc, { lang, ft })
+        end
+        return acc
+    end),
 })
 
 T["before_install"] = function(lang, ft)

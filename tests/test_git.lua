@@ -1,10 +1,4 @@
-local languages = vim.env.LANGUAGES and vim.split(vim.env.LANGUAGES, " ")
-
 local child = require("tests.child")
-local nerr = MiniTest.expect.no_error
-local neq = MiniTest.expect.no_equality
-local err = MiniTest.expect.error
-local eq = MiniTest.expect.equality
 
 local T = MiniTest.new_set({
     hooks = {
@@ -21,19 +15,19 @@ local T = MiniTest.new_set({
 })
 
 T["revision"] = function()
-    local lang = languages or { "odin", "ocamllex", "ocaml_interface" }
+    local lang = _G.languages or { "odin", "ocamllex", "ocaml_interface" }
     child:update_config({ ensure_installed = lang })
     child:check_installed(lang, 100000)
 end
 
 T["branch_revision"] = function()
-    local lang = languages or { "sql" }
+    local lang = _G.languages or { "sql" }
     child:update_config({ ensure_installed = lang })
     child:check_installed(lang)
 end
 
 T["branch"] = function()
-    local lang = languages or { "sql" }
+    local lang = _G.languages or { "sql" }
     local base_repos = require("tree-sitter-manager.config").base_repos
     child:update_config({
         ensure_installed = lang,
@@ -50,7 +44,7 @@ T["branch"] = function()
 end
 
 T["no_branch_no_rev"] = function()
-    local lang = languages or { "sql" }
+    local lang = _G.languages or { "sql" }
     local base_repos = require("tree-sitter-manager.config").base_repos
     child:update_config({
         ensure_installed = lang,
@@ -94,7 +88,7 @@ T["pre_2.49.0"] = MiniTest.new_set({
     },
 })
 T["pre_2.49.0"]["revision"] = function()
-    local lang = languages or { "php", "perl", "pem" }
+    local lang = _G.languages or { "php", "perl", "pem" }
     child:update_config({ ensure_installed = lang })
     child:check_installed(lang)
 end

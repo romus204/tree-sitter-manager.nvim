@@ -7,3 +7,8 @@ vim.cmd("set rtp+=deps/mini.nvim")
 
 -- Set up 'mini.test'
 require("mini.test").setup()
+
+-- Parse the list of languages to test
+if vim.env.LANGUAGES then
+    _G.languages = vim.split(vim.env.LANGUAGES, " ")
+end

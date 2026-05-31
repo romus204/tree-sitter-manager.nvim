@@ -1,5 +1,4 @@
 local child = require("tests.child")
-local neq = MiniTest.expect.no_equality
 local eq = MiniTest.expect.equality
 
 local function cleanup()
