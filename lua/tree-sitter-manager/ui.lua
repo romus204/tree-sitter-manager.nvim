@@ -66,7 +66,7 @@ end
 function M.open()
     local max_w = #footer
     for _, l in ipairs(config.languages) do
-        max_w = math.max(max_w, #("   " .. l .. "  X  abc1234  requires:x,y"))
+        max_w = math.max(max_w, #("   " .. l .. "  XX  abc1234  requires:x,y"))
     end
     local w = math.max(max_w + 4, 40)
     local h = math.min(#config.languages + 6, vim.o.lines - 15)
