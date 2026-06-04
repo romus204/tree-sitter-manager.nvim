@@ -2,10 +2,10 @@ local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local installer = require("tree-sitter-manager.installer")
 
-local glyph_icon = {"*", "🌳"}
-local glyph_ok = {"OK", "✅"}
-local glyph_warn = {"!!", "⚠️"}
-local glyph_fail = {"..", "❌"}
+local glyph_icon = { "*", "🌳" }
+local glyph_ok = { "OK", "✅" }
+local glyph_warn = { "!!", "⚠️" }
+local glyph_fail = { "..", "❌" }
 local glyph_index = 2
 
 local title = " Tree-sitter Parser Manager"
