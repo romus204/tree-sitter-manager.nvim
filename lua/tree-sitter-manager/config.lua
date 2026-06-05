@@ -13,6 +13,7 @@ local datapath = vim.fn.stdpath("data")
 ---@field auto_install? boolean Install missing parsers automatically on `FileType`.
 ---@field highlight? boolean|string[] Enable `vim.treesitter.start()` for installed parsers. `true` enables all, or pass a list of languages.
 ---@field nohighlight? string[] Languages to disable highlighting for.
+---@field nerdfont? boolean Enable nerdfont glyphs.
 
 ---@class tree-sitter-manager.LanguageSpec
 ---@field install_info? tree-sitter-manager.InstallInfo Information about how to fetch and build the grammar.
@@ -36,6 +37,7 @@ M.cfg = {
     auto_install = false,
     highlight = true,
     nohighlight = {},
+    nerdfont = true,
 }
 
 M.base_repos = repos

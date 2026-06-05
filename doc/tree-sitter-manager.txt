@@ -5,7 +5,7 @@ License:  MIT
 Homepage: https://github.com/romus204/tree-sitter-manager.nvim
 
 ==============================================================================
-CONTENTS                                       *tree-sitter-manager-contents*
+CONTENTS                                      *tree-sitter-manager-contents*
 
   1. Introduction .............. |tree-sitter-manager-introduction|
   2. Requirements .............. |tree-sitter-manager-requirements|
@@ -158,7 +158,7 @@ highlight ~
 <
 
 ------------------------------------------------------------------------------
-                                        *tree-sitter-manager-opt-nohighlight*
+                                         *tree-sitter-manager-opt-nohighlight*
 nohighlight ~
   Type: `string[]`
   Default: `{}`
@@ -168,6 +168,15 @@ nohighlight ~
   preferred. >lua
     nohighlight = { "yaml", "zsh" },
 <
+
+------------------------------------------------------------------------------
+                                            *tree-sitter-manager-opt-nerdfont*
+nerdfont ~
+  Type: `boolean`
+  Default: `true`
+
+  By default, the manager buffer requires Nerd Fonts for emojis and icons. If
+  you prefer plain text instead of the glyphs set this to `false`.
 
 ==============================================================================
 6. COMMANDS                                   *tree-sitter-manager-commands*
@@ -290,11 +299,11 @@ Disable completely: >lua
 <
 
 ==============================================================================
-10. API                                          *tree-sitter-manager-api*
+10. API                                            *tree-sitter-manager-api*
 
 These functions are exposed on the module returned by `require()`.
 
-                                               *tree-sitter-manager.open()*
+                                                   *tree-sitter-manager.open()*
 `require("tree-sitter-manager").open()`
   Open the `:TSManager` TUI window programmatically.
 
