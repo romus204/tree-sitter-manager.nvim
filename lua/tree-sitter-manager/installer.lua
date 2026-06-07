@@ -28,7 +28,7 @@ local function treesitter_build(lang, query_dir, build_path, generate)
         ok = util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path)
     end
     if ok then
-        copy_queries(lang, vim.fs.joinpath(build_path, query_dir))
+        copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
     end
     return ok
 end
