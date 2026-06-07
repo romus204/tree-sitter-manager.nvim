@@ -38,6 +38,7 @@ function M._install_single(lang, callback)
     callback = function(ok)
         if ok then
             vim.notify("✓ Installed  " .. lang)
+            vim.treesitter.query.get:clear()
         end
         _callback(ok)
     end
