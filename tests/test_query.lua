@@ -1,0 +1,41 @@
+local languages = _G.languages or { "starlark", "python", "javascript", "razor" }
+local child = require("tests.child")
+local eq = MiniTest.expect.equality
+
+local T = MiniTest.new_set({
+    hooks = {
+        pre_once = function()
+            child:setup()
+        end,
+        post_once = function()
+            child:cleanup()
+        end,
+    },
+    parametrize = vim.iter(languages)
+        :map(function(lang)
+            return { lang }
+        end)
+        :totable(),
+})
+
+T["before_install"] = function(lang)
+    eq(true, child.lua_get("nil == vim.treesitter.query.get('" .. lang .. "', 'highlights')"))
+end
+
+T["after_install"] = MiniTest.new_set({
+    hooks = {
+        pre_once = function()
+            child:update_config({ ensure_installed = languages })
+            child:parser_wait(languages)
+        end,
+    },
+})
+T["after_install"]["not_cleared"] = function(lang)
+    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', 'highlights)"))
+end
+T["after_install"]["cleared"] = function(lang)
+    child.lua("vim.treesitter.query.get:clear('" .. lang .. "')")
+    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', 'highlights)"))
+end
+
+return T
