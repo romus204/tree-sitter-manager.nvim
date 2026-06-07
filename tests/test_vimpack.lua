@@ -1,5 +1,4 @@
 local child = require("tests.child")
-local eq = MiniTest.expect.equality
 
 local function cleanup()
     child.lua([[
@@ -27,6 +26,7 @@ local T = MiniTest.new_set({
 })
 
 T["vim.pack"] = function()
+    -- check vim.pack installation
     child.lua([[
     vim.pack.add({ "https://github.com/romus204/tree-sitter-manager.nvim" }, { confirm = false })
     ]])

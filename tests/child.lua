@@ -28,13 +28,13 @@ function M:cleanup()
     vim.fs.rm(query_dir, { recursive = true, force = true })
 end
 
-function M:update_config(config)
+function M:update(config)
     self.config = vim.tbl_deep_extend("force", self.config, config)
     self.lua("require('tree-sitter-manager').setup(" .. vim.inspect(self.config) .. ")")
     return vim.deepcopy(self.config, true)
 end
 
-function M:parser_wait(languages, timeout)
+function M:wait(languages, timeout)
     timeout = timeout or 60000
     self.lua([[
     local util = require("tree-sitter-manager.util")
@@ -61,27 +61,6 @@ function M:parser_wait(languages, timeout)
             reason = "interrupt"
         end
         error(reason .. " installing parser " .. vim.inspect(langs))
-    end
-end
-
-function M:check_installed(languages, timeout)
-    self:parser_wait(languages, timeout)
-    for _, lang in ipairs(languages) do
-        MiniTest.expect.no_error(function()
-            self.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-        end)
-        self.lua("query = vim.treesitter.query.get_files('" .. lang .. "', 'highlights')")
-        MiniTest.expect.no_equality(vim.NIL, self.lua_get("query"))
-    end
-end
-
-function M:check_not_installed(languages)
-    for _, lang in ipairs(languages) do
-        MiniTest.expect.error(function()
-            self.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-        end)
-        self.lua("query = vim.treesitter.query.get('" .. lang .. "', 'highlights')")
-        MiniTest.expect.equality(vim.NIL, self.lua_get("query"))
     end
 end
 

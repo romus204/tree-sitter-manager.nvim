@@ -30,39 +30,44 @@
 
 Get familiar with [MiniTest](https://github.com/nvim-mini/mini.nvim/blob/main/TESTING.md).
 
-There is a helper module at `tests/child.lua`. To spawn and run tests in an isolated neovim child process.
-This is necessary to test asynchronous functions (See [mini.nvim#1930](https://github.com/nvim-mini/mini.nvim/issues/1930)). Basic example, create a file `tests/test_install_bash.lua`:
+There is a helper module at `tests/child.lua` to spawn and run tests in an isolated neovim child process.
+This is necessary to test asynchronous functions (See [mini.nvim#1930](https://github.com/nvim-mini/mini.nvim/issues/1930)).
+
+`_G.languages` is a list of languages passed to `make test ...`.</br>
+`eq`, `neq`, `er`, `ner` are aliases to `MiniTest.expect.equality`, `no_equality`, `error`, `no_error`.
+
+Basic example, create a file `tests/test_install.lua`:
 ```lua
 -- list languages you want to test
-local languages = { "bash", "python", "java" }
-if vim.env.LANGUAGES then
-    -- this allows `make test zig rust` to work
-    languages = vim.split(vim.env.LANGUAGES, " ")
-end
-
+local languages = _G.languages or { "bash", "python", "java" }
 local child = require("tests.child")
-local neq = MiniTest.expect.no_equality
-local nerr = MiniTest.expect.no_error
 
 local T = MiniTest.new_set({
     hooks = {
         -- setup will set a unique parent directory to `parser_dir` and `query_dir`
         pre_once = function()
             child:setup({ highlight = true })
+            child.cmd("TSInstall " .. table.concat(languages, " "))
+            -- wait until bash finishes installation
+            -- if the installation fails within the timeout (default 60.000 ms)
+            -- an error is thrown
+            child:wait(languages)
         end,
         post_once = function()
             child:cleanup()
         end,
-    }
+    },
+    parametrize = vim.iter(languages)
+        :map(function(lang)
+            return { lang, "highlights" }
+        end)
+        :totable(),
 })
 
-T["test-case"] = function()
-    -- modify options to tree-sitter-manager.setup()
-    child:update_config({ highlight = false })
-    child.cmd("TSInstall " .. table.concat(languages, " "))
-    -- wait until bash finishes installation
-    -- and check if treesitter works
-    child:check_installed(languages)
+-- test highlights query for every language
+T["test-case"] = function(lang, query)
+    -- verify that treesitter has access to queries
+    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
 end
 
 return T

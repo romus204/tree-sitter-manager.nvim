@@ -14,11 +14,17 @@ local T = MiniTest.new_set({
 
 T["install_uninstall"] = function()
     child.cmd("TSInstall " .. table.concat(languages, " "))
-    child:check_installed(languages)
+    -- wait for the parsers to successfully install
+    child:wait(languages)
     child.cmd("TSUninstall " .. table.concat(languages, " "))
-    vim.wait(500)
     child.restart()
-    child:check_not_installed(languages)
+    -- verify that the parsers are uninstalled
+    for _, lang in ipairs(languages) do
+        er(function()
+            child.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+        end)
+        eq(true, child.lua_get("nil == vim.treesitter.query.get('" .. lang .. "', 'highlights')"))
+    end
 end
 
 return T

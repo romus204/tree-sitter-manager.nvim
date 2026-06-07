@@ -15,21 +15,24 @@ local T = MiniTest.new_set({
 })
 
 T["revision"] = function()
+    -- check installation with revision
     local lang = _G.languages or { "odin", "ocamllex", "ocaml_interface" }
-    child:update_config({ ensure_installed = lang })
-    child:check_installed(lang, 100000)
+    child:update({ ensure_installed = lang })
+    child:wait(lang)
 end
 
 T["branch_revision"] = function()
+    -- check installation with branch and revision (revision takes priority)
     local lang = _G.languages or { "sql" }
-    child:update_config({ ensure_installed = lang })
-    child:check_installed(lang)
+    child:update({ ensure_installed = lang })
+    child:wait(lang)
 end
 
 T["branch"] = function()
+    -- check installation with branch
     local lang = _G.languages or { "sql" }
     local base_repos = require("tree-sitter-manager.config").base_repos
-    child:update_config({
+    child:update({
         ensure_installed = lang,
         languages = vim.iter(lang):fold({}, function(acc, l)
             acc[l] = {
@@ -41,13 +44,14 @@ T["branch"] = function()
             return acc
         end),
     })
-    child:check_installed(lang)
+    child:wait(lang)
 end
 
 T["no_branch_no_rev"] = function()
+    -- check installation from HEAD
     local lang = _G.languages or { "sql" }
     local base_repos = require("tree-sitter-manager.config").base_repos
-    child:update_config({
+    child:update({
         ensure_installed = lang,
         languages = vim.iter(lang):fold({}, function(acc, l)
             acc[l] = {
@@ -58,12 +62,13 @@ T["no_branch_no_rev"] = function()
             return acc
         end),
     })
-    child:check_installed(lang)
+    child:wait(lang)
 end
 
 T["pre_2.49.0"] = MiniTest.new_set({
     hooks = {
         pre_once = function()
+            -- simulate git pre 2.49
             child.restart()
             child.lua([[
             system = vim.system
@@ -90,9 +95,10 @@ T["pre_2.49.0"] = MiniTest.new_set({
     },
 })
 T["pre_2.49.0"]["revision"] = function()
+    -- check installation with revision pre 2.49
     local lang = _G.languages or { "php", "perl", "pem" }
-    child:update_config({ ensure_installed = lang })
-    child:check_installed(lang)
+    child:update({ ensure_installed = lang })
+    child:wait(lang)
 end
 
 return T

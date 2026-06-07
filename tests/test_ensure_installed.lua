@@ -1,4 +1,4 @@
-local languages = _G.languages or { "cpp", "python", "javascript", "razor" }
+local languages = _G.languages or { "terraform", "ocaml", "helm", "python", "javascript", "razor" }
 local child = require("tests.child")
 
 local T = MiniTest.new_set({
@@ -10,7 +10,7 @@ local T = MiniTest.new_set({
             child:cleanup()
         end,
     },
-    parametrize = vim.iter(languages == "all" and require("tree-sitter-manager.repos") or languages)
+    parametrize = vim.iter(languages)
         :map(function(lang)
             return { lang }
         end)
@@ -18,7 +18,8 @@ local T = MiniTest.new_set({
 })
 
 T["install"] = function(lang)
-    child:parser_wait({ lang }, 600000)
+    -- wait for the parser to successfully install
+    child:wait({ lang })
 end
 
 return T
