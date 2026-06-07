@@ -6,7 +6,7 @@ local eq = MiniTest.expect.equality
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child:setup({ auto_install = false, highlight = true })
+            child:setup({ highlight = true })
         end,
         post_case = function()
             child.cmd("set ft=")
@@ -25,7 +25,7 @@ local T = MiniTest.new_set({
 })
 
 T["before_install"] = function(lang, ft)
-    child.cmd("enew|set ft=" .. ft)
+    child.cmd("e " .. lang .. "." .. ft .. "|set ft=" .. ft)
     eq(true, child.lua_get("nil == vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
@@ -37,8 +37,12 @@ T["after_install"] = MiniTest.new_set({
         end,
     },
 })
-T["after_install"]["highlight"] = function(lang, ft)
+T["after_install"]["new"] = function(lang, ft)
     child.cmd("enew|set ft=" .. ft)
+    eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+end
+T["after_install"]["old"] = function(lang, ft)
+    child.cmd("b " .. lang .. "." .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
