@@ -12,11 +12,54 @@ function M.ext()
     return sys:match("Windows") and ".dll" or sys:match("Darwin") and ".dylib" or ".so"
 end
 
-function M.ppath(l)
-    return vim.fs.joinpath(config.cfg.parser_dir, l .. M.ext())
+function M.ppath(lang)
+    return vim.fs.joinpath(config.cfg.parser_dir, lang .. M.ext())
 end
-function M.qpath(l)
-    return vim.fs.joinpath(config.cfg.query_dir, l)
+
+function M.qpath(lang)
+    return vim.fs.joinpath(config.cfg.query_dir, lang)
+end
+
+function M.get_requires(lang)
+    local entry = config.effective_repos[lang]
+    return (type(entry) == "table" and entry.requires) or {}
+end
+
+function M.get_repo_info(lang)
+    local entry = config.effective_repos[lang]
+    if not entry then
+        return nil
+    end
+    if type(entry) == "string" then
+        return { url = entry, location = lang }
+    end
+    if entry.install_info then
+        return {
+            url = entry.install_info.url,
+            location = entry.install_info.location,
+            revision = entry.install_info.revision,
+            branch = entry.install_info.branch,
+            generate = entry.install_info.generate,
+            queries = entry.install_info.queries or "queries",
+            use_repo_queries = entry.install_info.use_repo_queries,
+        }
+    end
+    return nil
+end
+
+function M.is_only_query(lang)
+    local info = M.get_repo_info(lang)
+    return not info or not info.url
+end
+
+function M.is_installed(lang)
+    local path
+    if M.is_only_query(lang) then
+        path = M.qpath(lang)
+    else
+        path = M.ppath(lang)
+    end
+    return nil ~= vim.uv.fs_stat(path)
 end
 
 function M.run(args, cwd)

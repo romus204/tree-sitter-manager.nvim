@@ -37,7 +37,7 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
   config = function()
     require("tree-sitter-manager").setup({
       -- Default Options
-      -- ensure_installed = {}, -- list of parsers to install at the start of a neovim session
+      -- ensure_installed = {}, -- list of parsers to install at the start of a neovim session. If set to "all", install all parsers.
       -- border = nil, -- border style for the window (e.g. "rounded", "single"), if nil, use the default border style defined by 'vim.o.winborder'. See :h 'winborder' for more info.
       -- auto_install = false, -- if enabled, install missing parsers when editing a new file
       -- highlight = true, -- treesitter highlighting is enabled by default
@@ -55,7 +55,7 @@ vim.pack.add {
 
 require("tree-sitter-manager").setup({
   -- Default Options
-  -- ensure_installed = {}, -- list of parsers to install at the start of a neovim session
+  -- ensure_installed = {}, -- list of parsers to install at the start of a neovim session. If set to "all", install all parsers.
   -- border = nil, -- border style for the window (e.g. "rounded", "single"), if nil, use the default border style defined by 'vim.o.winborder'. See :h 'winborder' for more info.
   -- auto_install = false, -- if enabled, install missing parsers when editing a new file
   -- highlight = true, -- treesitter highlighting is enabled by default
@@ -132,7 +132,9 @@ require("tree-sitter-manager").setup({
 ```
 
 ## Usage
-`:TSManager` - Open the parser management interface
+`:TSManager` - Open the parser management interface<br/>
+`:TSInstall` - Install parsers provided as arguments<br/>
+`:TSUninstall` - Uninstall parsers<br/>
 
 ## Keybindings
 `i` - Install parser under cursor<br/>

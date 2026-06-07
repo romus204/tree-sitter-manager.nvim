@@ -36,7 +36,13 @@ function M.setup(opts)
         vim.opt.rtp:prepend(query_parent)
     end
 
-    for _, lang in ipairs(state.cfg.ensure_installed or {}) do
+    local ensure_list = state.cfg.ensure_installed
+    if ensure_list == "all" then
+        ensure_list = state.languages
+    else
+        ensure_list = ensure_list or {}
+    end
+    for _, lang in ipairs(ensure_list) do
         installer.install_new(lang, true)
     end
 
