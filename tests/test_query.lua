@@ -29,13 +29,20 @@ T["after_install"] = MiniTest.new_set({
             child:parser_wait(languages)
         end,
     },
+    parametrize = { { "highlights" } },
 })
-T["after_install"]["not_cleared"] = function(lang)
-    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', 'highlights)"))
+T["after_install"]["not_cleared"] = function(lang, query)
+    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
 end
-T["after_install"]["cleared"] = function(lang)
-    child.lua("vim.treesitter.query.get:clear('" .. lang .. "')")
-    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', 'highlights)"))
+T["after_install"]["cleared"] = MiniTest.new_set({
+    hooks = {
+        pre_once = function()
+            child.lua("vim.treesitter.query.get:clear()")
+        end,
+    },
+})
+T["after_install"]["cleared"]["query"] = function(lang, query)
+    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
 end
 
 return T
