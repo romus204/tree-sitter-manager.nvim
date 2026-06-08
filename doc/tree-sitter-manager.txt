@@ -71,6 +71,7 @@ vim-plug: >vim
 >lua
   require("tree-sitter-manager").setup({
     languages      = {},
+    assume_installed = {},
     ensure_installed = {},
     border         = nil,
     auto_install   = false,
@@ -125,6 +126,8 @@ assume_installed ~
       "c", "lua", "markdown", "markdown_inline", "query", "vim", "vimdoc"
     }
 <
+  Note: tree-sitter-manager parsers often ship with more query files than
+  what's available in Neovim.
 
 ------------------------------------------------------------------------------
                                     *tree-sitter-manager-opt-ensure_installed*
