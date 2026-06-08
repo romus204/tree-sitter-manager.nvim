@@ -10,6 +10,8 @@
     make test_xxx               # run tests/test_xxx.lua
     make test       python bash # run only for python and bash
     make test_xxx   python bash
+    make test       all         # run all cases for all languages
+    make test_xxx   all         # run test_xxx for all languages
     ```
 0. Run tests interactively.
     ```sh
@@ -22,9 +24,9 @@
     ```
     See [MiniTest](https://github.com/nvim-mini/mini.nvim/blob/main/TESTING.md) for more.
 
-    To change the set of languages to run the tests on set `vim.env.LANGUAGES`
-    to a space-separated list of languages. This is what `make test` does under
-    the hood.
+    To change the set of languages to run the tests on, set the environment variable
+    `LANGUAGES` to a space-separated list of languages. This is what `make test`
+    does under the hood.
 
 ## Writing Tests
 

@@ -13,6 +13,8 @@ er = MiniTest.expect.error
 ner = MiniTest.expect.no_error
 
 -- Parse the list of languages to test
-if vim.env.LANGUAGES then
+if vim.env.LANGUAGES == "all" then
+    _G.languages = vim.tbl_keys(require("tree-sitter-manager.repos"))
+elseif vim.env.LANGUAGES then
     _G.languages = vim.split(vim.env.LANGUAGES, " ")
 end

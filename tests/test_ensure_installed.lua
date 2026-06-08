@@ -4,7 +4,11 @@ local child = require("tests.child")
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child:setup({ ensure_installed = languages })
+            if vim.env.LANGUAGES == "all" then
+                child:setup({ ensure_installed = "all" })
+            else
+                child:setup({ ensure_installed = languages })
+            end
         end,
         post_once = function()
             child:cleanup()

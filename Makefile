@@ -8,16 +8,16 @@ $(eval $(ARGS):;@:)
 $(eval .PHONY: $(ARGS))
 endif
 
-# Use `make test` to run tests for all modules for a handful of languages
-# or `make test python` to run all tests for python
-# TODO: `make test all` to run all tests for all languages
+# `make test` to run tests for all modules for a handful of languages
+# `make test python` to run all tests for python
+# `make test all` to run all tests for all languages
 test: .env
 	LANGUAGES="$(ARGS)" nvim --headless --noplugin -c "lua MiniTest.run()"
 .PHONY: test
 
-# Use `make test_xxx` to run tests for module `tests/test_xxx.lua`
+# `make test_xxx` to run tests for module `tests/test_xxx.lua`
 # `make test_xxx python` will run it for python
-# TODO: `make test_xxx all` to run for all languages
+# `make test_xxx all` to run for all languages
 TEST_MODULES = $(basename $(notdir $(wildcard tests/test_*.lua)))
 $(TEST_MODULES): .env
 	LANGUAGES="$(ARGS)" nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
