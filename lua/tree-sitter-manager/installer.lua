@@ -39,6 +39,7 @@ function M._install_single(lang, callback)
         if ok then
             vim.notify("✓ Installed  " .. lang)
             vim.treesitter.query.get:clear()
+            vim.cmd("bufdo let &filetype = &filetype")
         end
         _callback(ok)
     end
