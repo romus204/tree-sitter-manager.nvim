@@ -22,12 +22,6 @@ function M.setup(opts)
     state.languages = vim.tbl_keys(state.effective_repos)
     table.sort(state.languages)
 
-    for lang, fts in pairs(state.filetypes) do
-        for _, ft in ipairs(fts) do
-            state.filetype_language[ft] = lang
-        end
-    end
-
     vim.fn.mkdir(state.cfg.parser_dir, "p")
     vim.fn.mkdir(state.cfg.query_dir, "p")
 

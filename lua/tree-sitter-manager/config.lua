@@ -44,6 +44,5 @@ M.base_repos = repos
 M.effective_repos = repos
 M.languages = vim.tbl_keys(repos)
 M.filetypes = filetypes
-M.filetype_language = {}
 
 return M
