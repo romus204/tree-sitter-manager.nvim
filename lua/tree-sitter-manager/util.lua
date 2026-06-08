@@ -53,13 +53,13 @@ function M.is_only_query(lang)
 end
 
 function M.is_installed(lang)
-    local path
-    if M.is_only_query(lang) then
-        path = M.qpath(lang)
+    if vim.list_contains(config.cfg.assume_installed, lang) then
+        return true
+    elseif M.is_only_query(lang) then
+        return vim.uv.fs_stat(M.qpath(lang))
     else
-        path = M.ppath(lang)
+        return vim.uv.fs_stat(M.ppath(lang))
     end
-    return nil ~= vim.uv.fs_stat(path)
 end
 
 function M.run(args, cwd)

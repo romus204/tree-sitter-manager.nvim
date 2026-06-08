@@ -132,23 +132,17 @@ local function install_with_deps(lang, callback, installing)
     install_deps(1)
 end
 
-function M.install(lang, callback)
-    install_with_deps(lang, callback)
-end
-
 function M.remove(lang)
     vim.fs.rm(util.ppath(lang), { recursive = true, force = true })
     vim.fs.rm(util.qpath(lang), { recursive = true, force = true })
     vim.notify("✕ " .. lang)
 end
 
-function M.install_new(lang, verbose)
+function M.install(lang, callback)
     if not config.effective_repos[lang] then
-        if verbose then
-            vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
-        end
+        vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
     elseif not util.is_installed(lang) then
-        M.install(lang)
+        install_with_deps(lang, callback)
     end
 end
 

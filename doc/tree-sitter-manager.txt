@@ -114,6 +114,19 @@ languages ~
   See |tree-sitter-manager-custom-repos| for details.
 
 ------------------------------------------------------------------------------
+                                    *tree-sitter-manager-opt-assume_installed*
+assume_installed ~
+  Type: `table`
+  Default: `{}`
+
+  Languages in this list are assumed to be installed. The following will tell
+  tree-sitter-manager to never install Neovim's built-in parsers: >lua
+    assume_installed = {
+      "c", "lua", "markdown", "markdown_inline", "query", "vim", "vimdoc"
+    }
+<
+
+------------------------------------------------------------------------------
                                     *tree-sitter-manager-opt-ensure_installed*
 ensure_installed ~
   Type: `string[]|string`

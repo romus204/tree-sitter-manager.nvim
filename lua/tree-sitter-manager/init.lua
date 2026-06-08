@@ -43,13 +43,13 @@ function M.setup(opts)
         ensure_list = ensure_list or {}
     end
     for _, lang in ipairs(ensure_list) do
-        installer.install_new(lang, true)
+        installer.install(lang)
     end
 
     if state.cfg.auto_install then
         vim.api.nvim_create_autocmd("FileType", {
             callback = function(a)
-                installer.install_new(a.match)
+                installer.install(a.match)
             end,
         })
     end
@@ -82,7 +82,7 @@ function M.setup(opts)
 
     vim.api.nvim_create_user_command("TSInstall", function(args)
         for _, lang in ipairs(args.fargs) do
-            installer.install_new(lang, true)
+            installer.install(lang)
         end
     end, {
         nargs = "+",
