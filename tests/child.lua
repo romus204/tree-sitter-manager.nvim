@@ -43,7 +43,7 @@ function M:wait(languages, timeout)
         ]] .. timeout .. [[,
         function()
             languages = vim.tbl_filter(function(lang)
-                return not vim.uv.fs_stat(util.ppath(lang))
+                return not util.is_installed(lang)
             end, languages)
             return #languages == 0
         end,
