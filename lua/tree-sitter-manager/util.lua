@@ -63,8 +63,7 @@ function M.is_installed(lang)
 end
 
 function M.run(args, cwd)
-    local opts = { text = true, cwd = cwd }
-    local res = vim.system(args, opts):wait()
+    local res = vim.system(args, { text = true, cwd = cwd }):wait()
     if res.code ~= 0 then
         local args = table.concat(args, " ")
         local stderr = res.stderr or ""
@@ -73,24 +72,23 @@ function M.run(args, cwd)
     return res.code == 0, res.stdout or ""
 end
 
-function M.run_async(args, ...)
-    -- Both signatures work:
-    -- run_async(args, cwd, callback)
-    -- run_async(args, callback, cwd)
-    local arg2, arg3 = ...
-    local opts = { text = true }
-    local callback = function() end
-    if type(arg2) == "string" then
-        opts.cwd = arg2
-    elseif type(arg2) == "function" then
-        callback = arg2
+function M.run_async(ok, args, cwd, callback)
+    -- run_async(ok, args, cwd, callback)
+    -- run_async(ok, args, cwd)
+    -- run_async(ok, args, callback)
+    -- run_async(ok, args)
+    if type(cwd) ~= "string" then
+        callback = cwd
+        cwd = nil
     end
-    if type(arg3) == "string" then
-        opts.cwd = arg3
-    elseif type(arg3) == "function" then
-        callback = arg3
+    callback = callback or function() end
+
+    if not ok then
+        callback(false)
+        return
     end
-    vim.system(args, opts, function(res)
+
+    vim.system(args, { text = true, cwd = cwd }, function(res)
         vim.schedule(function()
             if res.code ~= 0 then
                 local args = table.concat(args, " ")

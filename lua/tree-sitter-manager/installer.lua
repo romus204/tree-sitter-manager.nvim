@@ -18,19 +18,20 @@ local function copy_queries(lang, source)
     util.copy_dir(source, util.qpath(lang))
 end
 
-local function treesitter_build(lang, query_dir, build_path, generate)
+local function treesitter_build(ok, lang, query_dir, build_path, generate, tmpdir, callback)
     vim.notify("🔨 Building " .. lang)
-    local ok = true
-    if generate then
-        ok = util.run({ "tree-sitter", "generate" }, build_path)
-    end
-    if ok then
-        ok = util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path)
-    end
-    if ok then
-        copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
-    end
-    return ok
+    util.run_async(ok and generate, { "tree-sitter", "generate" }, build_path, function(_ok)
+        if generate then
+            ok = _ok
+        end
+        util.run_async(ok, { "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, function(ok)
+            if ok then
+                copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
+            end
+            vim.fs.rm(tmpdir, { recursive = true, force = true })
+            callback(ok)
+        end)
+    end)
 end
 
 function M._install_single(lang, callback)
@@ -71,30 +72,38 @@ function M._install_single(lang, callback)
             not util.run({ "git", "init", tmpdir })
             or not util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
         then
-            vim.fn.delete(tmpdir, "rf")
+            vim.fs.rm(tmpdir, { recursive = true, force = true })
             callback(false)
         end
         vim.notify("⬇ Fetching " .. lang)
-        util.run_async({ "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, function(ok)
+        util.run_async(true, { "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, function(ok)
             if ok then
                 ok = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
             end
-            if ok then
-                ok = treesitter_build(lang, info.use_repo_queries and info.queries, build_path, info.generate)
-            end
-            vim.fn.delete(tmpdir, "rf")
-            callback(ok)
+            treesitter_build(
+                ok,
+                lang,
+                info.use_repo_queries and info.queries,
+                build_path,
+                info.generate,
+                tmpdir,
+                callback
+            )
         end)
     else
         local revision = info.revision and "--revision=" .. info.revision
         local branch = info.branch and "--branch=" .. info.branch
         vim.notify("⬇ Cloning " .. lang)
-        util.run_async({ "git", "clone", "--depth=1", revision or branch, info.url, tmpdir }, function(ok)
-            if ok then
-                ok = treesitter_build(lang, info.use_repo_queries and info.queries, build_path, info.generate)
-            end
-            vim.fn.delete(tmpdir, "rf")
-            callback(ok)
+        util.run_async(true, { "git", "clone", "--depth=1", revision or branch, info.url, tmpdir }, function(ok)
+            treesitter_build(
+                ok,
+                lang,
+                info.use_repo_queries and info.queries,
+                build_path,
+                info.generate,
+                tmpdir,
+                callback
+            )
         end)
     end
 end
