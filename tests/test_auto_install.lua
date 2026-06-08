@@ -4,7 +4,11 @@ local child = require("tests.child")
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child:setup({ ensure_installed = languages })
+            child:setup({ auto_install = true })
+            for _, lang in ipairs(languages) do
+                child.cmd("se ft=" .. lang)
+            end
+            child.cmd("se ft=")
         end,
         post_once = function()
             child:cleanup()
@@ -17,7 +21,7 @@ local T = MiniTest.new_set({
         :totable(),
 })
 
-T["ensure_installed"] = function(lang)
+T["auto_install"] = function(lang)
     -- wait for the parser to successfully install
     child:wait({ lang })
 end
