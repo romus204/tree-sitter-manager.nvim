@@ -2,44 +2,38 @@ local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local installer = require("tree-sitter-manager.installer")
 
-local title = "🌳 Tree-sitter Parser Manager"
+local glyph_icon = { "*", "🌳" }
+local glyph_ok = { "OK", "✅" }
+local glyph_warn = { "!!", "⚠️" }
+local glyph_fail = { "..", "❌" }
+local glyph_index = 2
+
+local title = " Tree-sitter Parser Manager"
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 
 local M = {}
 
 local function get_status_icon(lang)
-    if installer.is_only_query(lang) then
-        if not vim.uv.fs_stat(util.qpath(lang)) then
-            return "❌"
-        end
-    else
-        if not vim.uv.fs_stat(util.ppath(lang)) then
-            return "❌"
+    if not util.is_installed(lang) then
+        return glyph_fail[glyph_index]
+    end
+
+    for _, dep in ipairs(util.get_requires(lang)) do
+        if not util.is_installed(dep) then
+            return glyph_warn[glyph_index]
         end
     end
 
-    for _, dep in ipairs(installer.get_requires(lang)) do
-        if installer.is_only_query(dep) then
-            if not vim.uv.fs_stat(util.qpath(dep)) then
-                return "⚠️"
-            end
-        else
-            if not vim.uv.fs_stat(util.ppath(dep)) then
-                return "⚠️"
-            end
-        end
-    end
-
-    return "✅"
+    return glyph_ok[glyph_index]
 end
 
 local function get_meta_suffix(lang)
-    local info = installer.get_repo_info(lang)
+    local info = util.get_repo_info(lang)
     local parts = {}
     if info and info.revision then
         table.insert(parts, string.sub(info.revision, 1, 7))
     end
-    local reqs = installer.get_requires(lang)
+    local reqs = util.get_requires(lang)
     if #reqs > 0 then
         table.insert(parts, "requires:" .. table.concat(reqs, ","))
     end
@@ -49,7 +43,7 @@ end
 function M.render(buf)
     local lines = {}
     for _, l in ipairs(config.languages) do
-        table.insert(lines, string.format("   %-12s  %s%s", l, get_status_icon(l), get_meta_suffix(l)))
+        table.insert(lines, string.format("   %-18s  %s%s", l, get_status_icon(l), get_meta_suffix(l)))
     end
 
     vim.bo[buf].modifiable = true
@@ -60,10 +54,12 @@ end
 function M.open()
     local max_w = #footer
     for _, l in ipairs(config.languages) do
-        max_w = math.max(max_w, #("   " .. l .. "  ✅  abc1234  requires:x,y"))
+        max_w = math.max(max_w, #("   " .. l .. "  XX  abc1234  requires:x,y"))
     end
     local w = math.max(max_w + 4, 40)
     local h = math.min(#config.languages + 6, vim.o.lines - 15)
+
+    glyph_index = config.cfg.nerdfont and 2 or 1
 
     local buf = vim.api.nvim_create_buf(false, true)
     local win = vim.api.nvim_open_win(buf, true, {
@@ -74,7 +70,7 @@ function M.open()
         border = config.cfg.border or "rounded",
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
-        title = title,
+        title = glyph_icon[glyph_index] .. title,
         title_pos = "center",
         footer = footer,
         footer_pos = "center",
