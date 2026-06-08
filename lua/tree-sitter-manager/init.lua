@@ -67,6 +67,7 @@ function M.setup(opts)
     if state.cfg.auto_install then
         local filetypes = get_filetypes(function(lang)
             return not vim.list_contains(state.cfg.noauto_install, lang)
+                and not vim.list_contains(state.cfg.noauto_install, ft_to_lang[lang])
         end)
         if #filetypes > 0 then
             vim.api.nvim_create_autocmd("FileType", {
