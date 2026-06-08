@@ -7,9 +7,6 @@ local T = MiniTest.new_set({
         pre_once = function()
             child:setup({ highlight = true })
         end,
-        post_case = function()
-            child.cmd("set ft=")
-        end,
         post_once = function()
             child:cleanup()
         end,
@@ -26,6 +23,7 @@ local T = MiniTest.new_set({
 T["before_install"] = function(lang, ft)
     -- no highlighter before installation
     child.cmd("e " .. lang .. "." .. ft .. "|set ft=" .. ft)
+    eq(ft, child.lua_get("vim.o.filetype"))
     eq(true, child.lua_get("nil == vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
@@ -46,6 +44,20 @@ T["after_install"]["old"] = function(lang, ft)
     -- highlighter is active even for existing buffers
     child.cmd("b " .. lang .. "." .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+end
+
+T["nohighlight"] = MiniTest.new_set({
+    hooks = {
+        pre_once = function()
+            child.stop()
+            child:setup({ highlight = true, nohighlight = languages })
+        end,
+    },
+})
+T["nohighlight"]["not_active"] = function(lang, ft)
+    -- expect no highlighting for any languages
+    child.cmd("enew|set ft=" .. ft)
+    eq(true, child.lua_get("nil == vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
 return T
