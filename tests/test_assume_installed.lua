@@ -11,7 +11,7 @@ local requiredby = vim.iter(languages):fold({}, function(acc, lang)
     end
     return acc
 end)
-local install_list = { unpack(languages), unpack(vim.tbl_values(requiredby)) }
+install_list = { unpack(languages), unpack(vim.tbl_values(requiredby)) }
 
 local T = MiniTest.new_set({
     hooks = {
@@ -45,8 +45,9 @@ T["assume_installed"] = function(lang, dep)
 end
 
 T["query"] = function(lang, dep)
-    lang = dep or lang
-    child:works({ lang })
+    if dep then
+        child:works({ dep })
+    end
 end
 
 return T
