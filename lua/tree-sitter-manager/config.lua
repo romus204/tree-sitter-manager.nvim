@@ -11,6 +11,7 @@ local datapath = vim.fn.stdpath("data")
 ---@field ensure_installed? string|string[] Languages to install on `setup()` if not already present. Use `"all"` to install all languages.
 ---@field border? string|string[] Border style passed to `nvim_open_win` for the manager UI.
 ---@field auto_install? boolean Install missing parsers automatically on `FileType`.
+---@field noauto_install? string[] Languages to opt-out from `auto_install`.
 ---@field highlight? boolean|string[] Enable `vim.treesitter.start()` for installed parsers. `true` enables all, or pass a list of languages.
 ---@field nohighlight? string[] Languages to disable highlighting for.
 ---@field nerdfont? boolean Enable nerdfont glyphs.
