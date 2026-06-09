@@ -17,13 +17,13 @@ local T = MiniTest.new_set({
 T["revision"] = function()
     -- check installation with revision
     local lang = _G.languages or { "tsv" }
-    child:update({ ensure_installed = lang })
+    child.cmd("TSInstall " .. table.concat(lang, " "))
     child:wait(lang)
 end
 
 T["branch_revision"] = function()
     -- check installation with branch and revision (revision takes priority)
-    child:update({ ensure_installed = { "sql" } })
+    child.cmd("TSInstall sql")
     child:wait({ "sql" })
 end
 
@@ -94,7 +94,7 @@ T["pre_2.49.0"] = MiniTest.new_set({
 T["pre_2.49.0"]["revision"] = function()
     -- check installation with revision pre 2.49
     local lang = _G.languages or { "tsv" }
-    child:update({ ensure_installed = lang })
+    child.cmd("TSInstall " .. table.concat(lang, " "))
     child:wait(lang)
 end
 

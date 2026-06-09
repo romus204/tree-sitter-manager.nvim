@@ -5,9 +5,6 @@ local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
-        pre_case = function()
-            child:setup({ auto_install = true, noauto_install = languages })
-        end,
         post_case = function()
             child:cleanup()
         end,
@@ -21,7 +18,14 @@ local T = MiniTest.new_set({
     end),
 })
 
-T["noauto_install"] = function(lang, ft)
+T["noauto_install"] = MiniTest.new_set({
+    hooks = {
+        pre_case = function()
+            child:setup({ auto_install = true, noauto_install = languages })
+        end,
+    },
+})
+T["noauto_install"]["works"] = function(lang, ft)
     child.cmd("se ft=" .. ft)
     er(function()
         child:wait({ lang })
@@ -31,7 +35,7 @@ end
 T["auto_install"] = MiniTest.new_set({
     hooks = {
         pre_case = function()
-            child:update({ noauto_install = {} })
+            child:setup({ auto_install = true, noauto_install = {} })
         end,
     },
 })
