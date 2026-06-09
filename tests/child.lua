@@ -1,7 +1,7 @@
 M = MiniTest.new_child_neovim()
 
 function M:setup(config)
-    self.name = MiniTest.current.case.desc[1]
+    self.name = MiniTest.current.case and MiniTest.current.case.desc[1] or "tests/interactive_session"
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), self.name)
     local parser_dir = vim.fs.joinpath(path, "parser")
     local query_dir = vim.fs.joinpath(path, "queries")
@@ -37,13 +37,14 @@ end
 function M:wait(languages, timeout)
     timeout = timeout or 60000
     self.lua([[
-    local util = require("tree-sitter-manager.util")
+    local installer = require("tree-sitter-manager.installer")
+    status = installer.status
     languages = ]] .. vim.inspect(languages) .. [[
     success, reason = vim.wait(
         ]] .. timeout .. [[,
         function()
             languages = vim.tbl_filter(function(lang)
-                return not util.is_installed(lang)
+                return status[lang] and status[lang].ok == nil
             end, languages)
             return #languages == 0
         end,
@@ -54,6 +55,7 @@ function M:wait(languages, timeout)
     local success = self.lua_get("success")
     local reason = self.lua_get("reason")
     local langs = self.lua_get("languages")
+    local status = self.lua_get("status")
     if not success then
         if -1 == reason then
             reason = "timeout"
@@ -61,6 +63,19 @@ function M:wait(languages, timeout)
             reason = "interrupt"
         end
         error(reason .. " installing parser " .. vim.inspect(langs))
+    end
+    local err = ""
+    for _, lang in ipairs(languages) do
+        if not status[lang] then
+            err = err .. lang .. ": installation not started\n"
+        elseif
+            not status[lang].ok or not self.lua_get("require('tree-sitter-manager.util').is_installed(" .. lang .. ")")
+        then
+            err = err .. lang .. ": " .. (status[lang].error or "installation failed") .. "\n"
+        end
+    end
+    if err ~= "" then
+        error(err)
     end
 end
 

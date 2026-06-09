@@ -1,7 +1,7 @@
 local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 
-local M = {}
+local M = { status = {} }
 
 local function copy_queries(lang, source)
     local bundled = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
@@ -20,27 +20,28 @@ end
 
 local function treesitter_build(lang, query_dir, build_path, generate)
     vim.notify("🔨 Building " .. lang)
-    local ok = true
+    local ok, err = true
     if generate then
-        ok = util.run({ "tree-sitter", "generate" }, build_path)
+        ok, err = util.run({ "tree-sitter", "generate" }, build_path)
     end
     if ok then
-        ok = util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path)
+        ok, err = util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path)
     end
     if ok then
         copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
     end
-    return ok
+    return ok, err
 end
 
 function M._install_single(lang, callback)
     local _callback = callback or function() end
-    callback = function(ok)
+    callback = function(ok, err)
         if ok then
             vim.notify("✓ Installed  " .. lang)
             vim.treesitter.query.get:clear()
             vim.cmd("bufdo let &filetype = &filetype")
         end
+        M.status[lang] = { ok = ok, error = err }
         _callback(ok)
     end
 
@@ -53,7 +54,7 @@ function M._install_single(lang, callback)
     local ok, version = util.run({ "git", "version" })
     if not ok then
         vim.notify("⚠ Git not installed", vim.log.levels.WARN)
-        callback(false)
+        callback(false, "Git not installed")
         return
     end
     version = { version:match("(%d+)%.(%d+)%.(%d+)") }
@@ -67,23 +68,24 @@ function M._install_single(lang, callback)
 
     if info.revision and (major < 2 or major == 2 and minor < 49) then
         -- Git pre 2.49.0 doesn't have --revision flag
-        if
-            not util.run({ "git", "init", tmpdir })
-            or not util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
-        then
+        local ok, err = util.run({ "git", "init", tmpdir })
+        if ok then
+            ok, err = util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
+        end
+        if not ok then
             vim.fn.delete(tmpdir, "rf")
-            callback(false)
+            callback(false, err)
         end
         vim.notify("⬇ Fetching " .. lang)
-        util.run_async({ "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, function(ok)
+        util.run_async({ "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, function(ok, err)
             if ok then
-                ok = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
+                ok, err = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
             end
             if ok then
                 ok = treesitter_build(lang, info.use_repo_queries and info.queries, build_path, info.generate)
             end
             vim.fn.delete(tmpdir, "rf")
-            callback(ok)
+            callback(ok, err)
         end)
     else
         local revision = info.revision and "--revision=" .. info.revision
@@ -103,11 +105,13 @@ local function install_with_deps(lang, callback, installing)
     callback = callback or function() end
     installing = installing or {}
     if installing[lang] then
+        M.status[lang] = { ok = false, error = "Circular dependency" }
         vim.notify("⚠ Circular dependency: " .. lang, vim.log.levels.WARN)
         callback(false)
         return
     end
     installing[lang] = true
+    M.status[lang] = {} -- empty table: the parser is being installed
 
     local deps = util.get_requires(lang)
     local function install_deps(i)
@@ -144,11 +148,14 @@ end
 
 function M.install_new(lang, verbose)
     if not config.effective_repos[lang] then
+        M.status[lang] = { ok = false, error = "Parser not found in repos" }
         if verbose then
             vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
         end
     elseif not util.is_installed(lang) then
         M.install(lang)
+    else
+        M.status[lang] = { ok = true }
     end
 end
 

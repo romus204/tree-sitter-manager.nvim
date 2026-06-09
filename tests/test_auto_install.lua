@@ -25,8 +25,8 @@ T["noauto_install"] = function(lang, ft)
     child.cmd("se ft=" .. ft)
     -- expect timeout because no parser is installed
     er(function()
-        child:wait({ lang }, 4000)
-    end, "timeout")
+        child:wait({ lang })
+    end, "installation not started")
 end
 
 T["auto_install"] = MiniTest.new_set({
@@ -39,7 +39,7 @@ T["auto_install"] = MiniTest.new_set({
 T["auto_install"]["success"] = function(lang, ft)
     child.cmd("se ft=" .. ft)
     -- wait for the parser to successfully install
-    child:wait({ lang }, 4000)
+    child:wait({ lang })
 end
 
 return T
