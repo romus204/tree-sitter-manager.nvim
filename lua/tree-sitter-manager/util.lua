@@ -56,9 +56,9 @@ function M.is_installed(lang)
     if vim.list_contains(config.cfg.assume_installed, lang) then
         return true
     elseif M.is_only_query(lang) then
-        return vim.uv.fs_stat(M.qpath(lang))
+        return nil ~= vim.uv.fs_stat(M.qpath(lang))
     else
-        return vim.uv.fs_stat(M.ppath(lang))
+        return nil ~= vim.uv.fs_stat(M.ppath(lang))
     end
 end
 
