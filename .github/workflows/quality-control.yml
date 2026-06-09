@@ -1,0 +1,67 @@
+name: Quality Control
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stylua:
+    name: Stylua Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v2.4.1
+          args: --check .
+
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'lua/**'
+              - 'tests/**'
+              - 'scripts/nvim/init.lua'
+
+  test:
+    name: Run Tests
+    needs: [stylua, detect-changes]
+    if: |
+      ${{ always() &&
+        needs.stylua.result == 'success' &&
+        (needs.detect-changes.outputs.code == 'true' ||
+         needs.detect-changes.result == 'failure') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Setup tree-sitter
+        uses: tree-sitter/setup-action@v2
+        with:
+          install-lib: false
+
+      - name: Run tests
+        run: make test
