@@ -19,12 +19,7 @@ T["install_uninstall"] = function()
     child.cmd("TSUninstall " .. table.concat(languages, " "))
     child.restart()
     -- verify that the parsers are uninstalled
-    for _, lang in ipairs(languages) do
-        er(function()
-            child.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-        end)
-        eq(true, child.lua_get("nil == vim.treesitter.query.get('" .. lang .. "', 'highlights')"))
-    end
+    child:fails(languages)
 end
 
 return T

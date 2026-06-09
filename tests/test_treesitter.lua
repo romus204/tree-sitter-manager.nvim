@@ -21,15 +21,15 @@ local T = MiniTest.new_set({
         end,
     },
     parametrize = {
-        { "generate", "perl", "highlights" },
-        { "location", "prolog", "highlights" },
-        { "queries", "razor", "highlights" },
+        { "generate", "perl" },
+        { "location", "prolog" },
+        { "queries", "razor" },
     },
 })
 
-T["case"] = function(option, language, query)
+T["case"] = function(option, language)
     child:wait({ language })
-    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('perl', '" .. query .. "')"))
+    child:works({ language })
 end
 
 return T

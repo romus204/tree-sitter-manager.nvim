@@ -44,13 +44,9 @@ T["assume_installed"] = function(lang, dep)
     end
 end
 
-T["query"] = MiniTest.new_set({
-    parametrize = { { "highlights" } },
-})
-T["query"]["get"] = function(lang, dep, query)
-    -- check that treesitter can access queries
+T["query"] = function(lang, dep)
     lang = dep or lang
-    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+    child:works({ lang })
 end
 
 return T

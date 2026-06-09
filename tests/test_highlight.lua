@@ -24,7 +24,7 @@ T["before_install"] = function(lang, ft)
     -- no highlighter before installation
     child.cmd("e " .. lang .. "." .. ft .. "|set ft=" .. ft)
     eq(ft, child.lua_get("vim.o.filetype"))
-    eq(true, child.lua_get("nil == vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+    eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
 T["after_install"] = MiniTest.new_set({
@@ -54,10 +54,10 @@ T["nohighlight"] = MiniTest.new_set({
         end,
     },
 })
-T["nohighlight"]["not_active"] = function(lang, ft)
+T["nohighlight"]["fails"] = function(lang, ft)
     -- expect no highlighting for any languages
     child.cmd("enew|set ft=" .. ft)
-    eq(true, child.lua_get("nil == vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+    eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
 return T

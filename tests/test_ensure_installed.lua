@@ -24,6 +24,7 @@ local T = MiniTest.new_set({
 T["ensure_installed"] = function(lang)
     -- wait for the parser to successfully install
     child:wait({ lang })
+    child:works({ lang })
 end
 
 return T

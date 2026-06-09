@@ -68,8 +68,8 @@ local T = MiniTest.new_set({
 
 -- test highlights query for every language
 T["test-case"] = function(lang, query)
-    -- verify that treesitter has access to queries
-    eq(true, child.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+    -- verify that treesitter works
+    child:works({ lang }, query)
 end
 
 return T

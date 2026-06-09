@@ -78,4 +78,24 @@ function M:wait(languages, timeout)
     end
 end
 
+function M:works(languages, query)
+    query = query or "highlights"
+    for _, lang in ipairs(languages) do
+        ner(function()
+            self.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+        end)
+        eq(true, self.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+    end
+end
+
+function M:fails(languages, query)
+    query = query or "highlights"
+    for _, lang in ipairs(languages) do
+        er(function()
+            self.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+        end)
+        eq(false, self.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+    end
+end
+
 return M
