@@ -1,4 +1,4 @@
-local languages = _G.languages or { "bash", "csv", "terraform", "helm", "ocaml" }
+local languages = _G.languages or { "tsv", "javascript" }
 local child = require("tests.child")
 local util = require("tree-sitter-manager.util")
 

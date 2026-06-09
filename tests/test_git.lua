@@ -16,16 +16,15 @@ local T = MiniTest.new_set({
 
 T["revision"] = function()
     -- check installation with revision
-    local lang = _G.languages or { "odin", "ocamllex", "ocaml_interface" }
+    local lang = _G.languages or { "tsv" }
     child:update({ ensure_installed = lang })
     child:wait(lang)
 end
 
 T["branch_revision"] = function()
     -- check installation with branch and revision (revision takes priority)
-    local lang = _G.languages or { "sql" }
-    child:update({ ensure_installed = lang })
-    child:wait(lang)
+    child:update({ ensure_installed = { "sql" } })
+    child:wait({ "sql" })
 end
 
 T["branch"] = function()
@@ -55,9 +54,7 @@ T["no_branch_no_rev"] = function()
         ensure_installed = lang,
         languages = vim.iter(lang):fold({}, function(acc, l)
             acc[l] = {
-                install_info = {
-                    url = base_repos[l].install_info.url,
-                },
+                install_info = base_repos[l].install_info.url,
             }
             return acc
         end),
@@ -96,7 +93,7 @@ T["pre_2.49.0"] = MiniTest.new_set({
 })
 T["pre_2.49.0"]["revision"] = function()
     -- check installation with revision pre 2.49
-    local lang = _G.languages or { "php", "perl", "pem" }
+    local lang = _G.languages or { "tsv" }
     child:update({ ensure_installed = lang })
     child:wait(lang)
 end

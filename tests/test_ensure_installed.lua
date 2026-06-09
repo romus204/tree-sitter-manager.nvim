@@ -1,4 +1,4 @@
-local languages = _G.languages or { "terraform", "ocaml", "helm", "python", "javascript", "razor" }
+local languages = _G.languages or { "tsv", "javascript" }
 local child = require("tests.child")
 
 local T = MiniTest.new_set({

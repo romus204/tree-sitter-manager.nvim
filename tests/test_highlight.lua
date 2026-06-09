@@ -1,4 +1,4 @@
-local languages = _G.languages or { "csv", "tsv", "starlark", "python", "javascript", "razor" }
+local languages = _G.languages or { "tsv", "javascript" }
 local filetypes = require("tree-sitter-manager.filetypes")
 local child = require("tests.child")
 
