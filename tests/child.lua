@@ -48,9 +48,8 @@ function M:wait(languages, timeout)
             end, languages)
             return #languages == 0
         end,
-        100
+        50
     )
-    vim.wait(100)
     ]])
     local success = self.lua_get("success")
     local reason = self.lua_get("reason")
@@ -66,12 +65,12 @@ function M:wait(languages, timeout)
     end
     local err = ""
     for _, lang in ipairs(languages) do
-        if not status[lang] then
-            err = err .. lang .. ": installation not started\n"
-        elseif
-            not status[lang].ok or not self.lua_get("require('tree-sitter-manager.util').is_installed(" .. lang .. ")")
-        then
-            err = err .. lang .. ": " .. (status[lang].error or "installation failed") .. "\n"
+        if not self.lua_get("require('tree-sitter-manager.util').is_installed('" .. lang .. "')") then
+            if not status[lang] then
+                err = err .. lang .. ": installation not started\n"
+            elseif not status[lang].ok then
+                err = err .. lang .. ": " .. (status[lang].error or "installation failed") .. "\n"
+            end
         end
     end
     if err ~= "" then
