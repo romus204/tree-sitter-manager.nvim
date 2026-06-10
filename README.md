@@ -112,6 +112,20 @@ and the plugin falls back to the bundled queries automatically.
 
 The default `queries/` directory can be changed by means of the optional `queries` field.
 
+## Automatic Installation
+You can automatically install missing parsers upon editing a new file by
+setting `auto_install = true`. To opt-out of some languages, while auto-install
+is enabled, use the `noauto_install` option.
+```lua
+require("tree-sitter-manager").setup({
+  auto_install = true,
+  -- Use built-in Neovim treesitter parsers
+  noauto_install = {
+    "c", "lua", "markdown", "markdown_inline", "query", "vim", "vimdoc"
+  },
+})
+```
+
 ## Treesitter Highlighting
 Treesitter highlighting is enabled by default. If you prefer to use standard regex highlighting for specific languages, use the `nohighlight` option.
 ```lua
