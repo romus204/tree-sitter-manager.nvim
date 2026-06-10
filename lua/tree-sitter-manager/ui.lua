@@ -67,7 +67,7 @@ function M.open()
         width = w,
         height = h,
         style = "minimal",
-        border = config.cfg.border or vim.o.winborder,
+        border = config.cfg.border,
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
         title = "   " .. glyph_icon[glyph_index] .. " " .. title .. "   ",
