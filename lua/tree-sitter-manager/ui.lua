@@ -8,7 +8,7 @@ local glyph_warn = { "!!", "⚠️" }
 local glyph_fail = { "..", "❌" }
 local glyph_index = 2
 
-local title = " Tree-sitter Parser Manager"
+local title = "Tree-sitter Parser Manager"
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
 
 local M = {}
@@ -67,10 +67,10 @@ function M.open()
         width = w,
         height = h,
         style = "minimal",
-        border = config.cfg.border or "rounded",
+        border = config.cfg.border or vim.o.winborder,
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
-        title = glyph_icon[glyph_index] .. title,
+        title = "   " .. glyph_icon[glyph_index] .. " " .. title .. "   ",
         title_pos = "center",
         footer = footer,
         footer_pos = "center",
