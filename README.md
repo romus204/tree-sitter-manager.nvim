@@ -42,6 +42,7 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
       -- auto_install = false, -- if enabled, install missing parsers when editing a new file
       -- highlight = true, -- treesitter highlighting is enabled by default
       -- languages = {}, -- override or add new parser sources
+      -- nerdfont = true, -- use Nerd Font icons in the manager UI
     })
   end
 }
@@ -60,6 +61,7 @@ require("tree-sitter-manager").setup({
   -- auto_install = false, -- if enabled, install missing parsers when editing a new file
   -- highlight = true, -- treesitter highlighting is enabled by default
   -- languages = {}, -- override or add new parser sources
+  -- nerdfont = true, -- use Nerd Font icons in the manager UI
 })
 ```
 
