@@ -143,7 +143,7 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("TSUpdate", function(args)
         for _, lang in ipairs(args.fargs) do
             installer.remove(lang)
-            installer.install_new(lang, true)
+            installer.install(lang, true)
         end
     end, {
         nargs = "+",
