@@ -31,10 +31,9 @@ function M.setup(opts)
     -- Merge built-in repos with user-defined language overrides.
     -- User entries take precedence, allowing custom forks and new languages.
     state.effective_repos = vim.deepcopy(state.base_repos)
-    vim.iter(state.cfg.languages):fold(state.effective_repos, function(repos, lang, info)
-        repos[lang] = vim.tbl_extend("force", repos[lang] or {}, info)
-        return repos
-    end)
+    for lang, info in pairs(state.cfg.languages) do
+        state.effective_repos[lang] = vim.tbl_extend("force", state.effective_repos[lang] or {}, info)
+    end
     state.languages = vim.tbl_keys(state.effective_repos)
     table.sort(state.languages)
 
