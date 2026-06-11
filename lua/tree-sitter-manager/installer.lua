@@ -150,10 +150,7 @@ function M.install(languages, callback, no_deps, force)
                 -- refresh queries and update highlighting
                 vim.treesitter.query.get:clear()
                 for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-                    local filetype = vim.bo[buf].filetype
-                    if lang == filetype or vim.list_contains(config.filetypes[lang] or {}, filetype) then
-                        vim.treesitter.start(buf)
-                    end
+                    pcall(vim.treesitter.start, buf)
                 end
             end
         end)
