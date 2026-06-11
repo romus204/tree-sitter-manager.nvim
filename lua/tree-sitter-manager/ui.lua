@@ -70,7 +70,7 @@ function M.open()
         border = config.cfg.border,
         row = math.floor((vim.o.lines - h) / 2),
         col = math.floor((vim.o.columns - w) / 2),
-        title = "   " .. glyph_icon[glyph_index] .. " " .. title .. "   ",
+        title = " " .. glyph_icon[glyph_index] .. " " .. title .. " ",
         title_pos = "center",
         footer = footer,
         footer_pos = "center",
