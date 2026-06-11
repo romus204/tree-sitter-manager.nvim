@@ -73,7 +73,7 @@ vim-plug: >vim
     languages        = {},
     assume_installed = {},
     ensure_installed = {},
-    border           = nil,
+    border           = "rounded",
     auto_install     = false,
     noauto_install   = {},
     highlight        = true,
@@ -148,12 +148,13 @@ ensure_installed ~
 ------------------------------------------------------------------------------
                                               *tree-sitter-manager-opt-border*
 border ~
-  Type: `string|table|nil`
-  Default: `nil`
+  Type: `string|table`
+  Default: `"rounded"`
 
-  Border style for the TUI window. When `nil`, uses the value of
-  'winborder' (Neovim 0.11+). See |nvim_open_win()| for accepted values.
+  Border style for the TUI window. See |nvim_open_win()| for accepted values.
   Examples: `"rounded"`, `"single"`, `"double"`, `"solid"`, `"none"`.
+
+  To match 'winborder' option set it to `vim.o.winborder` (Neovim 0.11+).
 
 ------------------------------------------------------------------------------
                                         *tree-sitter-manager-opt-auto_install*
