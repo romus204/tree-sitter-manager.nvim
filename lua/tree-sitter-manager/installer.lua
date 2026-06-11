@@ -16,9 +16,15 @@ end
 
 local function treesitter_build(lang, query_dir, build_path, generate, tmpdir, status, callback)
     _status = { ok = status.ok and generate, error = status.error }
+    if _status.ok then
+        vim.notify("⚙️ Generating " .. lang)
+    end
     util.run_async({ "tree-sitter", "generate" }, build_path, _status, function(out)
         if not generate then
             out = status
+        end
+        if out.ok then
+            vim.notify("🔨 Building " .. lang)
         end
         util.run_async({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, out, function(out)
             if out.ok then
@@ -74,7 +80,7 @@ local function install(lang, callback)
         local revision = info.revision and "--revision=" .. info.revision
         local branch = info.branch and "--branch=" .. info.branch
         util.run_async(
-            { "git", "--no-advice", "clone", "--depth=1", revision or branch, info.url, tmpdir },
+            { "git", "--no-advice", "clone", "--depth=1", info.url, tmpdir, revision or branch },
             nil,
             out,
             function(out)
