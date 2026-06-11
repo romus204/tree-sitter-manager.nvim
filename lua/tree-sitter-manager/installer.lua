@@ -96,7 +96,9 @@ function M.remove(languages)
         vim.fs.rm(util.qpath(lang), { recursive = true, force = true })
         M.status[lang] = nil
     end
-    vim.notify("✕ Removed: " .. table.concat(languages, " "))
+    if not M.test then
+        vim.notify("✕ Removed: " .. table.concat(languages, " "))
+    end
 end
 
 function M.install(languages, callback, no_deps, force)
@@ -116,7 +118,9 @@ function M.install(languages, callback, no_deps, force)
                 return false -- installed or being installed
             elseif not config.effective_repos[lang] then
                 M.status[lang] = { ok = false, error = "Parser not found in repos" }
-                vim.notify_once("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
+                if not M.test then
+                    vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
+                end
                 return false
             elseif not force and util.is_installed(lang) then
                 M.status[lang] = { ok = true }
@@ -128,15 +132,19 @@ function M.install(languages, callback, no_deps, force)
         end)
         :totable()
 
-    vim.notify("📦 Installing: " .. table.concat(languages, " "))
+    if not M.test then
+        vim.notify("📦 Installing: " .. table.concat(languages, " "))
+    end
     for _, lang in ipairs(languages) do
         install(lang, function(out)
             M.status[lang] = out
             callback(out)
-            if not out.ok then
-                vim.notify("⚠ Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
-            else
+            if not M.test and out.ok then
                 vim.notify("✓ Installed " .. lang)
+            elseif not M.test then
+                vim.notify("⚠ Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
+            end
+            if out.ok then
                 -- refresh queries and update highlighting
                 vim.treesitter.query.get:clear()
                 for _, buf in ipairs(vim.api.nvim_list_bufs()) do
