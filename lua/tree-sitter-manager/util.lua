@@ -85,9 +85,9 @@ function M.run_async(args, cwd, status, callback)
 end
 
 function M.copy_dir(src, dst)
-    local ok, err, errno = vim.uv.fs_mkdir(dst, tonumber("755", 8))
+    local ok, err = pcall(vim.fn.mkdir, dst, "p")
 
-    if ok or errno == "EEXIST" then
+    if ok then
         for name, ftype in vim.fs.dir(src) do
             local s = vim.fs.joinpath(src, name)
             local d = vim.fs.joinpath(dst, name)
