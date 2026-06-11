@@ -11,7 +11,7 @@ function M:setup(config)
     self.config = config or self.config or {}
     self.config.parser_dir = parser_dir
     self.config.query_dir = query_dir
-    self.start({
+    self.restart({
         "-u",
         vim.fs.joinpath(vim.fn.stdpath("config"), "init.lua"),
         "+set nomore cmdheight=100", -- skip hit-enter prompts
@@ -26,12 +26,6 @@ function M:cleanup()
     local query_dir = vim.fs.joinpath(path, "queries")
     vim.fs.rm(parser_dir, { recursive = true, force = true })
     vim.fs.rm(query_dir, { recursive = true, force = true })
-end
-
-function M:update(config)
-    self.config = vim.tbl_deep_extend("force", self.config, config)
-    self.lua("tsm.setup(" .. vim.inspect(self.config) .. ")")
-    return vim.deepcopy(self.config, true)
 end
 
 function M:wait(languages, timeout)

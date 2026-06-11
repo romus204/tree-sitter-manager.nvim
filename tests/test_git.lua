@@ -1,10 +1,7 @@
 local T = MiniTest.new_set({
     hooks = {
-        pre_once = function()
-            child:setup()
-        end,
         pre_case = function()
-            child.restart()
+            child:setup()
         end,
         post_case = function()
             child:cleanup()
@@ -14,50 +11,60 @@ local T = MiniTest.new_set({
 
 T["revision"] = function()
     -- check installation with revision
-    local lang = _G.languages or { "tsv" }
-    child.lua("installer.install(" .. vim.inspect(lang) .. ")")
-    child:wait(lang)
+    local languages = _G.languages or { "tsv" }
+    child.lua("installer.install(" .. vim.inspect(languages) .. ")")
+    child:wait(languages)
 end
 
 T["branch_revision"] = function()
     -- check installation with branch and revision (revision takes priority)
-    child.cmd("TSInstall sql")
-    child:wait("sql")
+    local languages = { "perl" }
+    child:setup({
+        ensure_installed = languages,
+        languages = vim.iter(languages):fold({}, function(acc, lang)
+            local info = util.get_repo_info(lang)
+            info.revision = "release"
+            info.branch = "master"
+            info.generate = false
+            acc[lang] = { install_info = info }
+            return acc
+        end),
+    })
+    child:wait(languages, 180000)
 end
 
 T["branch"] = function()
     -- check installation with branch
-    local lang = _G.languages or { "sql" }
-    local base_repos = config.base_repos
-    child:update({
-        ensure_installed = lang,
-        languages = vim.iter(lang):fold({}, function(acc, l)
-            acc[l] = {
-                install_info = {
-                    branch = "main",
-                    url = base_repos[l].install_info.url,
-                },
-            }
+    local languages = { "perl" }
+    child:setup({
+        ensure_installed = languages,
+        languages = vim.iter(languages):fold({}, function(acc, lang)
+            local info = util.get_repo_info(lang)
+            info.revision = nil
+            info.branch = "master"
+            info.generate = true
+            acc[lang] = { install_info = info }
             return acc
         end),
     })
-    child:wait(lang)
+    child:wait(languages, 180000)
 end
 
 T["no_branch_no_rev"] = function()
     -- check installation from HEAD
-    local lang = _G.languages or { "sql" }
-    local base_repos = config.base_repos
-    child:update({
-        ensure_installed = lang,
-        languages = vim.iter(lang):fold({}, function(acc, l)
-            acc[l] = {
-                install_info = base_repos[l].install_info.url,
-            }
+    local languages = { "perl" }
+    child:setup({
+        ensure_installed = languages,
+        languages = vim.iter(languages):fold({}, function(acc, lang)
+            local info = util.get_repo_info(lang)
+            info.revision = nil
+            info.branch = nil
+            info.generate = true
+            acc[lang] = { install_info = info }
             return acc
         end),
     })
-    child:wait(lang)
+    child:wait(languages, 180000)
 end
 
 T["pre_2.49.0"] = MiniTest.new_set({
@@ -91,9 +98,9 @@ T["pre_2.49.0"] = MiniTest.new_set({
 })
 T["pre_2.49.0"]["revision"] = function()
     -- check installation with revision pre 2.49
-    local lang = _G.languages or { "tsv" }
-    child.lua("installer.install(" .. vim.inspect(lang) .. ")")
-    child:wait(lang)
+    local languages = _G.languages or { "tsv" }
+    child.lua("installer.install(" .. vim.inspect(languages) .. ")")
+    child:wait(languages)
 end
 
 return T

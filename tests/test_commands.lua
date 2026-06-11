@@ -18,17 +18,24 @@ T["TSInstall"] = function()
 end
 
 T["TSUpdate"] = function()
-    -- edit revision to FETCH_HEAD~
-    child:update({
+    -- expect everything working before update
+    child:wait(languages)
+    child:works(languages)
+    -- change to invalid branch
+    child:setup({
         languages = vim.iter(languages):fold({}, function(acc, lang)
             local info = util.get_repo_info(lang)
-            info.revision = "0"
-            acc[lang] = info
+            info.revision = nil
+            info.branch = "not-found"
+            acc[lang] = { install_info = info }
             return acc
         end),
     })
     child.cmd("TSUpdate " .. table.concat(languages, " "))
-    child:wait(languages)
+    -- expect error after update
+    er(function()
+        child:wait(languages)
+    end, "not found")
 end
 
 T["TSUninstall"] = function()
