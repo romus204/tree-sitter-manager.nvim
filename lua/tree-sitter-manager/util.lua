@@ -63,61 +63,50 @@ function M.is_installed(lang)
 end
 
 function M.run(args, cwd)
-    local res = vim.system(args, { text = true, cwd = cwd }):wait()
-    if res.code ~= 0 then
-        local args = table.concat(args, " ")
-        local stderr = res.stderr or ""
-        vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.ERROR)
-    end
-    return res.code == 0, res.stdout or ""
+    local out = vim.system(args, { text = true, cwd = cwd }):wait()
+    local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
+    return { ok = out.code == 0, error = err, output = out.stdout }
 end
 
-function M.run_async(ok, args, cwd, callback)
-    -- run_async(ok, args, cwd, callback)
-    -- run_async(ok, args, cwd)
-    -- run_async(ok, args, callback)
-    -- run_async(ok, args)
-    if type(cwd) ~= "string" then
-        callback = cwd
-        cwd = nil
-    end
+function M.run_async(args, cwd, status, callback)
     callback = callback or function() end
 
-    if not ok then
-        callback(false)
+    if not status.ok then
+        callback(status)
         return
     end
 
-    vim.system(args, { text = true, cwd = cwd }, function(res)
+    vim.system(args, { text = true, cwd = cwd }, function(out)
         vim.schedule(function()
-            if res.code ~= 0 then
-                local args = table.concat(args, " ")
-                local stderr = res.stderr or ""
-                vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.ERROR)
-            end
-            callback(res.code == 0)
+            local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
+            callback({ ok = out.code == 0, error = err, output = out.stdout })
         end)
     end)
 end
 
 function M.copy_dir(src, dst)
-    vim.fn.mkdir(dst, "p")
-    local handle = vim.uv.fs_scandir(src)
-    if not handle then
-        return
+    local ok, err, errno = vim.uv.fs_mkdir(dst, tonumber("755", 8))
+
+    if ok or errno == "EEXIST" then
+        for name, ftype in vim.fs.dir(src) do
+            local s = vim.fs.joinpath(src, name)
+            local d = vim.fs.joinpath(dst, name)
+            if ftype == "directory" then
+                res = M.copy_dir(s, d)
+                ok, err = res.ok, res.error
+            else
+                ok, err, errno = vim.uv.fs_copyfile(s, d)
+            end
+            if not ok then
+                break
+            end
+        end
     end
-    while true do
-        local name, ftype = vim.uv.fs_scandir_next(handle)
-        if not name then
-            break
-        end
-        local s = vim.fs.joinpath(src, name)
-        local d = vim.fs.joinpath(dst, name)
-        if ftype == "directory" then
-            M.copy_dir(s, d)
-        else
-            vim.uv.fs_copyfile(s, d)
-        end
+
+    if ok then
+        return { ok = true }
+    else
+        return { ok = false, error = "copy_dir(" .. src .. ", " .. dst .. ")\n" .. err }
     end
 end
 

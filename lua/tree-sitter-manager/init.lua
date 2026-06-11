@@ -1,14 +1,10 @@
-local M = {}
-
 local state = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local installer = require("tree-sitter-manager.installer")
 local ui = require("tree-sitter-manager.ui")
 
 -- Preserve public API surface for backward compatibility
-M._install_single = installer._install_single
-M.open = ui.open
-M._act = ui._act
+local M = require("tree-sitter-manager.backport")
 
 local function get_filetypes(filter)
     return vim.iter(state.languages)
@@ -66,9 +62,7 @@ function M.setup(opts)
     else
         ensure_list = ensure_list or {}
     end
-    for _, lang in ipairs(ensure_list) do
-        installer.install(lang)
-    end
+    installer.install(ensure_list)
 
     if state.cfg.auto_install then
         local filetypes = get_filetypes(function(lang)
@@ -107,9 +101,7 @@ function M.setup(opts)
     end, { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
 
     vim.api.nvim_create_user_command("TSInstall", function(args)
-        for _, lang in ipairs(args.fargs) do
-            installer.install(lang)
-        end
+        installer.install(args.fargs)
     end, {
         nargs = "+",
         bar = true,
@@ -141,10 +133,8 @@ function M.setup(opts)
     })
 
     vim.api.nvim_create_user_command("TSUpdate", function(args)
-        for _, lang in ipairs(args.fargs) do
-            installer.remove(lang)
-            installer.install(lang)
-        end
+        installer.remove(args.fargs)
+        installer.install(args.fargs)
     end, {
         nargs = "+",
         bar = true,

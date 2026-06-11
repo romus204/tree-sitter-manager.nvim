@@ -1,65 +1,47 @@
 local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 
-local M = {}
+local M = { status = {} }
 
 local function copy_queries(lang, source)
     local bundled = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
     source = source or bundled
     if source then
         if not vim.uv.fs_stat(source) then
-            vim.notify(
-                "⚠ " .. source .. " not found for " .. lang .. ", falling back to bundled queries",
-                vim.log.levels.WARN
-            )
-            source = bundled
+            return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. "not found" }
         end
     end
-    util.copy_dir(source, util.qpath(lang))
+    return util.copy_dir(source, util.qpath(lang))
 end
 
-local function treesitter_build(ok, lang, query_dir, build_path, generate, tmpdir, callback)
-    vim.notify("🔨 Building " .. lang)
-    util.run_async(ok and generate, { "tree-sitter", "generate" }, build_path, function(_ok)
-        if generate then
-            ok = _ok
+local function treesitter_build(lang, query_dir, build_path, generate, tmpdir, status, callback)
+    _status = { ok = status.ok and generates, error = status.error }
+    util.run_async({ "tree-sitter", "generate" }, build_path, _status, function(out)
+        if not generate then
+            out = status
         end
-        util.run_async(ok, { "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, function(ok)
-            if ok then
-                copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
+        util.run_async({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, out, function(out)
+            if out.ok then
+                out = copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
             end
             vim.fs.rm(tmpdir, { recursive = true, force = true })
-            callback(ok)
+            callback(out)
         end)
     end)
 end
 
-function M._install_single(lang, callback)
-    local _callback = callback or function() end
-    callback = function(ok)
-        if ok then
-            vim.notify("✓ Installed  " .. lang)
-            vim.treesitter.query.get:clear()
-            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-                vim.bo[buf].filetype = vim.bo[buf].filetype
-            end
-        end
-        _callback(ok)
-    end
-
+local function install(lang, callback)
     if util.is_only_query(lang) then
-        copy_queries(lang)
-        callback(true)
+        callback(copy_queries(lang))
         return
     end
 
-    local ok, version = util.run({ "git", "version" })
-    if not ok then
-        vim.notify("⚠ Git not installed", vim.log.levels.WARN)
-        callback(false)
+    local out = util.run({ "git", "version" })
+    if not out.ok then
+        callback({ ok = false, error = "Git not installed" })
         return
     end
-    version = { version:match("(%d+)%.(%d+)%.(%d+)") }
+    version = { out.output:match("(%d+)%.(%d+)%.(%d+)") }
     local major = tonumber(version[1])
     local minor = tonumber(version[2])
     local patch = tonumber(version[3])
@@ -70,90 +52,101 @@ function M._install_single(lang, callback)
 
     if info.revision and (major < 2 or major == 2 and minor < 49) then
         -- Git pre 2.49.0 doesn't have --revision flag
-        if
-            not util.run({ "git", "init", tmpdir })
-            or not util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
-        then
-            vim.fs.rm(tmpdir, { recursive = true, force = true })
-            callback(false)
+        local out = util.run({ "git", "init", tmpdir })
+        if out.ok then
+            out = util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
         end
-        vim.notify("⬇ Fetching " .. lang)
-        util.run_async(true, { "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, function(ok)
-            if ok then
-                ok = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
+        util.run_async({ "git", "fetch", "--depth=1", "origin", info.revision }, tmpdir, out, function(out)
+            if out.ok then
+                out = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
             end
             treesitter_build(
-                ok,
                 lang,
                 info.use_repo_queries and info.queries,
                 build_path,
                 info.generate,
                 tmpdir,
+                out,
                 callback
             )
         end)
     else
         local revision = info.revision and "--revision=" .. info.revision
         local branch = info.branch and "--branch=" .. info.branch
-        vim.notify("⬇ Cloning " .. lang)
-        util.run_async(true, { "git", "clone", "--depth=1", revision or branch, info.url, tmpdir }, function(ok)
+        util.run_async({ "git", "clone", "--depth=1", revision or branch, info.url, tmpdir }, nil, out, function(out)
             treesitter_build(
-                ok,
                 lang,
                 info.use_repo_queries and info.queries,
                 build_path,
                 info.generate,
                 tmpdir,
+                out,
                 callback
             )
         end)
     end
 end
 
-local function install_with_deps(lang, callback, installing)
-    callback = callback or function() end
-    installing = installing or {}
-    if installing[lang] then
-        vim.notify("⚠ Circular dependency: " .. lang, vim.log.levels.WARN)
-        callback(false)
-        return
+function M.remove(languages)
+    if type(languages) == "string" then
+        languages = { languages }
     end
-    installing[lang] = true
+    for _, lang in ipairs(languages) do
+        vim.fs.rm(util.ppath(lang), { recursive = true, force = true })
+        vim.fs.rm(util.qpath(lang), { recursive = true, force = true })
+        M.status[lang] = nil
+    end
+    vim.notify("✕ Removed: " .. table.concat(languages, " "))
+end
 
-    local deps = util.get_requires(lang)
-    local function install_deps(i)
-        if i > #deps then
-            M._install_single(lang, callback)
-            return
+function M.install(languages, callback, no_deps, force)
+    if type(languages) == "string" then
+        languages = { languages }
+    end
+    for _, lang in ipairs(languages) do
+        for _, dep in ipairs(util.get_requires(lang)) do
+            if not no_deps and not vim.list_contains(languages, dep) then
+                languages[#languages + 1] = dep
+            end
         end
-        local dep = deps[i]
-        if not util.is_installed(dep) then
-            vim.notify("📦 Installing dependency: " .. dep, vim.log.levels.INFO)
-            install_with_deps(dep, function(ok)
-                if not ok then
-                    callback(false)
-                    return
+    end
+    languages = vim.iter(languages)
+        :filter(function(lang)
+            if M.status[lang] and (M.status[lang].ok or M.status[lang].installing) then
+                return false -- installed or being installed
+            elseif not config.effective_repos[lang] then
+                M.status[lang] = { ok = false, error = "Parser not found in repos" }
+                vim.notify_once("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
+                return false
+            elseif not force and util.is_installed(lang) then
+                M.status[lang] = { ok = true }
+                return false
+            else
+                M.status[lang] = { installing = true }
+                return true
+            end
+        end)
+        :totable()
+
+    vim.notify("📦 Installing: " .. table.concat(languages, " "))
+    for _, lang in ipairs(languages) do
+        install(lang, function(out)
+            M.status[lang] = out
+            callback(out)
+            if not out.ok then
+                vim.notify("⚠ Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
+            else
+                vim.notify("✓ Installed " .. lang)
+                -- refresh queries and update highlighting
+                vim.treesitter.query.get:clear()
+                for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                    local filetype = vim.bo[buf].filetype
+                    if lang == filetype or vim.list_contains(config.filetypes[lang], filetype) then
+                        vim.treesitter.start(buf)
+                    end
                 end
-                install_deps(i + 1)
-            end, vim.deepcopy(installing))
-        else
-            install_deps(i + 1)
-        end
-    end
-    install_deps(1)
-end
-
-function M.remove(lang)
-    vim.fs.rm(util.ppath(lang), { recursive = true, force = true })
-    vim.fs.rm(util.qpath(lang), { recursive = true, force = true })
-    vim.notify("✕ " .. lang)
-end
-
-function M.install(lang, callback)
-    if not config.effective_repos[lang] then
-        vim.notify("⚠ Parser not found in repos: " .. lang, vim.log.levels.WARN)
-    elseif not util.is_installed(lang) then
-        install_with_deps(lang, callback)
+            end
+        end)
     end
 end
 
