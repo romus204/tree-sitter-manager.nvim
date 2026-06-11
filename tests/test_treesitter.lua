@@ -1,5 +1,3 @@
-local child = require("tests.child")
-
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
@@ -28,8 +26,8 @@ local T = MiniTest.new_set({
 })
 
 T["case"] = function(option, language)
-    child:wait({ language })
-    child:works({ language })
+    child:wait(language)
+    child:works(language)
 end
 
 return T

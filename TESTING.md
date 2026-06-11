@@ -35,21 +35,27 @@ Get familiar with [MiniTest](https://github.com/nvim-mini/mini.nvim/blob/main/TE
 There is a helper module at `tests/child.lua` to spawn and run tests in an isolated neovim child process.
 This is necessary to test asynchronous functions (See [mini.nvim#1930](https://github.com/nvim-mini/mini.nvim/issues/1930)).
 
-`_G.languages` is a list of languages passed to `make test ...`.</br>
-`eq`, `neq`, `er`, `ner` are aliases to `MiniTest.expect.equality`, `no_equality`, `error`, `no_error`.
+### Global Variables
+- `_G.languages`: a list of languages passed to `make test ...`
+- `eq`, `neq`, `er`, `ner`: aliases to `MiniTest.expect.equality`, `no_equality`, `error`, `no_error`
+- `child`: `require("tests.child")`
+- `tsm`: `require("tree-sitter-manager")`
+- `config`: `require("tree-sitter-manager.config")`
+- `installer`: `require("tree-sitter-manager.installer")`
+- etc.
 
-Basic example, create a file `tests/test_install.lua`:
+### Example
+Create a file `tests/test_install.lua`:
 ```lua
 -- list languages you want to test
 local languages = _G.languages or { "bash", "python", "java" }
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
         -- setup will set a unique parent directory to `parser_dir` and `query_dir`
         pre_once = function()
             child:setup({ highlight = true })
-            child.cmd("TSInstall " .. table.concat(languages, " "))
+            child.lua("installer.install(" .. vim.inspect(languages) .. ")")
             -- wait until bash finishes installation
             -- if the installation fails within the timeout (default 60.000 ms)
             -- an error is thrown
@@ -69,7 +75,7 @@ local T = MiniTest.new_set({
 -- test highlights query for every language
 T["test-case"] = function(lang, query)
     -- verify that treesitter works
-    child:works({ lang }, query)
+    child:works(lang, query)
 end
 
 return T

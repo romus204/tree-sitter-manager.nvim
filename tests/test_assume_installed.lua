@@ -1,7 +1,4 @@
 local languages = _G.languages or { "c", "lua", "markdown", "markdown_inline", "query", "vim", "vimdoc" }
-local child = require("tests.child")
-local config = require("tree-sitter-manager.config")
-local util = require("tree-sitter-manager.util")
 local requiredby = vim.iter(languages):fold({}, function(acc, lang)
     for _, dep in ipairs(config.languages) do
         if vim.list_contains(util.get_requires(dep), lang) then
@@ -37,16 +34,16 @@ local T = MiniTest.new_set({
 
 T["assume_installed"] = function(lang, dep)
     -- parser for lang should already be installed
-    child:wait({ lang }, 0)
+    child:wait(lang, 0)
     -- verify installation for the dependant language
     if dep then
-        child:wait({ dep })
+        child:wait(dep)
     end
 end
 
 T["query"] = function(lang, dep)
     if dep then
-        child:works({ dep })
+        child:works(dep)
     end
 end
 

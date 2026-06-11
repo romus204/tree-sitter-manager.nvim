@@ -1,5 +1,3 @@
-local child = require("tests.child")
-
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
@@ -17,20 +15,20 @@ local T = MiniTest.new_set({
 T["revision"] = function()
     -- check installation with revision
     local lang = _G.languages or { "tsv" }
-    child.cmd("TSInstall " .. table.concat(lang, " "))
+    child.lua("installer.install(" .. vim.inspect(lang) .. ")")
     child:wait(lang)
 end
 
 T["branch_revision"] = function()
     -- check installation with branch and revision (revision takes priority)
     child.cmd("TSInstall sql")
-    child:wait({ "sql" })
+    child:wait("sql")
 end
 
 T["branch"] = function()
     -- check installation with branch
     local lang = _G.languages or { "sql" }
-    local base_repos = require("tree-sitter-manager.config").base_repos
+    local base_repos = config.base_repos
     child:update({
         ensure_installed = lang,
         languages = vim.iter(lang):fold({}, function(acc, l)
@@ -49,7 +47,7 @@ end
 T["no_branch_no_rev"] = function()
     -- check installation from HEAD
     local lang = _G.languages or { "sql" }
-    local base_repos = require("tree-sitter-manager.config").base_repos
+    local base_repos = config.base_repos
     child:update({
         ensure_installed = lang,
         languages = vim.iter(lang):fold({}, function(acc, l)
@@ -94,7 +92,7 @@ T["pre_2.49.0"] = MiniTest.new_set({
 T["pre_2.49.0"]["revision"] = function()
     -- check installation with revision pre 2.49
     local lang = _G.languages or { "tsv" }
-    child.cmd("TSInstall " .. table.concat(lang, " "))
+    child.lua("installer.install(" .. vim.inspect(lang) .. ")")
     child:wait(lang)
 end
 

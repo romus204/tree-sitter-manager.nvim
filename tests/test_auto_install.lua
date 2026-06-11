@@ -1,7 +1,4 @@
 local languages = _G.languages or { "tsv", "javascript" }
-local filetypes = require("tree-sitter-manager.filetypes")
-local util = require("tree-sitter-manager.util")
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
@@ -28,7 +25,7 @@ T["noauto_install"] = MiniTest.new_set({
 T["noauto_install"]["works"] = function(lang, ft)
     child.cmd("se ft=" .. ft)
     er(function()
-        child:wait({ lang })
+        child:wait(lang)
     end, "installation not started")
 end
 
@@ -41,8 +38,8 @@ T["auto_install"] = MiniTest.new_set({
 })
 T["auto_install"]["works"] = function(lang, ft)
     child.cmd("se ft=" .. ft)
-    child:wait({ lang })
-    child:works({ lang })
+    child:wait(lang)
+    child:works(lang)
 end
 
 return T

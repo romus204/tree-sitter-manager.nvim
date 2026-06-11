@@ -1,4 +1,4 @@
-M = MiniTest.new_child_neovim()
+local M = MiniTest.new_child_neovim()
 
 function M:setup(config)
     self.name = MiniTest.current.case and MiniTest.current.case.desc[1] or "tests/interactive_session"
@@ -7,15 +7,15 @@ function M:setup(config)
     local query_dir = vim.fs.joinpath(path, "queries")
     vim.fs.rm(parser_dir, { recursive = true, force = true })
     vim.fs.rm(query_dir, { recursive = true, force = true })
-    require("tree-sitter-manager").setup({ parser_dir = parser_dir, query_dir = query_dir })
-    self.config = config or {}
+    tsm.setup({ parser_dir = parser_dir, query_dir = query_dir })
+    self.config = config or self.config or {}
     self.config.parser_dir = parser_dir
     self.config.query_dir = query_dir
     self.start({
         "-u",
         vim.fs.joinpath(vim.fn.stdpath("config"), "init.lua"),
         "+set nomore cmdheight=100", -- skip hit-enter prompts
-        "+lua require('tree-sitter-manager').setup(" .. vim.inspect(self.config) .. ")",
+        "+lua tsm.setup(" .. vim.inspect(self.config) .. ")",
     })
 end
 
@@ -30,21 +30,23 @@ end
 
 function M:update(config)
     self.config = vim.tbl_deep_extend("force", self.config, config)
-    self.lua("require('tree-sitter-manager').setup(" .. vim.inspect(self.config) .. ")")
+    self.lua("tsm.setup(" .. vim.inspect(self.config) .. ")")
     return vim.deepcopy(self.config, true)
 end
 
 function M:wait(languages, timeout)
+    if type(languages) == "string" then
+        languages = { languages }
+    end
     timeout = timeout or 60000
     self.lua([[
-    local installer = require("tree-sitter-manager.installer")
     status = installer.status
     languages = ]] .. vim.inspect(languages) .. [[
     success, reason = vim.wait(
         ]] .. timeout .. [[,
         function()
             languages = vim.tbl_filter(function(lang)
-                return status[lang] and status[lang].ok == nil
+                return status[lang] and status[lang].installing
             end, languages)
             return #languages == 0
         end,
@@ -63,22 +65,25 @@ function M:wait(languages, timeout)
         end
         error(reason .. " installing parser " .. vim.inspect(langs))
     end
-    local err = ""
+    local err = "\n"
     for _, lang in ipairs(languages) do
-        if not self.lua_get("require('tree-sitter-manager.util').is_installed('" .. lang .. "')") then
+        if not self.lua_get("util.is_installed('" .. lang .. "')") then
             if not status[lang] then
-                err = err .. lang .. ": installation not started\n"
+                err = err .. "installation not started for " .. lang .. "\n"
             elseif not status[lang].ok then
-                err = err .. lang .. ": " .. (status[lang].error or "installation failed") .. "\n"
+                err = err .. (status[lang].error or "installation failed for " .. lang) .. "\n"
             end
         end
     end
-    if err ~= "" then
+    if err ~= "\n" then
         error(err)
     end
 end
 
 function M:works(languages, query)
+    if type(languages) == "string" then
+        languages = { languages }
+    end
     query = query or "highlights"
     for _, lang in ipairs(languages) do
         ner(function()
@@ -89,6 +94,9 @@ function M:works(languages, query)
 end
 
 function M:fails(languages, query)
+    if type(languages) == "string" then
+        languages = { languages }
+    end
     query = query or "highlights"
     for _, lang in ipairs(languages) do
         er(function()

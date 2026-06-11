@@ -1,6 +1,4 @@
 local languages = _G.languages or { "tsv", "javascript" }
-local filetypes = require("tree-sitter-manager.filetypes")
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
@@ -30,7 +28,7 @@ end
 T["after_install"] = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child.cmd("TSInstall " .. table.concat(languages, " "))
+            child.lua("installer.install(" .. vim.inspect(languages) .. ")")
             child:wait(languages)
         end,
     },

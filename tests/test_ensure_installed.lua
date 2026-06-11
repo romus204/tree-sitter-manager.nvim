@@ -1,5 +1,4 @@
 local languages = _G.languages or { "tsv", "javascript" }
-local child = require("tests.child")
 
 local T = MiniTest.new_set({
     hooks = {
@@ -23,8 +22,8 @@ local T = MiniTest.new_set({
 
 T["ensure_installed"] = function(lang)
     -- wait for the parser to successfully install
-    child:wait({ lang })
-    child:works({ lang })
+    child:wait(lang)
+    child:works(lang)
 end
 
 return T

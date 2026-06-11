@@ -53,74 +53,60 @@ function M.is_only_query(lang)
 end
 
 function M.is_installed(lang)
-    local path
-    if M.is_only_query(lang) then
-        path = M.qpath(lang)
+    if vim.list_contains(config.cfg.assume_installed, lang) then
+        return true
+    elseif M.is_only_query(lang) then
+        return nil ~= vim.uv.fs_stat(M.qpath(lang))
     else
-        path = M.ppath(lang)
+        return nil ~= vim.uv.fs_stat(M.ppath(lang))
     end
-    return nil ~= vim.uv.fs_stat(path)
 end
 
 function M.run(args, cwd)
-    local opts = { text = true, cwd = cwd }
-    local res = vim.system(args, opts):wait()
-    if res.code ~= 0 then
-        local args = table.concat(args, " ")
-        local stderr = res.stderr or ""
-        vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.ERROR)
-        return false, stderr
-    end
-    return true, res.stdout or ""
+    local out = vim.system(args, { text = true, cwd = cwd }):wait()
+    local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
+    return { ok = out.code == 0, error = err, output = out.stdout }
 end
 
-function M.run_async(args, ...)
-    -- Both signatures work:
-    -- run_async(args, cwd, callback)
-    -- run_async(args, callback, cwd)
-    local arg2, arg3 = ...
-    local opts = { text = true }
-    local callback = function() end
-    if type(arg2) == "string" then
-        opts.cwd = arg2
-    elseif type(arg2) == "function" then
-        callback = arg2
+function M.run_async(args, cwd, status, callback)
+    callback = callback or function() end
+
+    if not status.ok then
+        callback(status)
+        return
     end
-    if type(arg3) == "string" then
-        opts.cwd = arg3
-    elseif type(arg3) == "function" then
-        callback = arg3
-    end
-    vim.system(args, opts, function(res)
+
+    vim.system(args, { text = true, cwd = cwd }, function(out)
         vim.schedule(function()
-            if res.code ~= 0 then
-                local args = table.concat(args, " ")
-                local stderr = res.stderr or ""
-                vim.notify("Failed " .. args .. "\n" .. stderr, vim.log.levels.ERROR)
-            end
-            callback(res.code == 0, res.stderr)
+            local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
+            callback({ ok = out.code == 0, error = err, output = out.stdout })
         end)
     end)
 end
 
 function M.copy_dir(src, dst)
-    vim.fn.mkdir(dst, "p")
-    local handle = vim.uv.fs_scandir(src)
-    if not handle then
-        return
+    local ok, err = pcall(vim.fn.mkdir, dst, "p")
+
+    if ok then
+        for name, ftype in vim.fs.dir(src) do
+            local s = vim.fs.joinpath(src, name)
+            local d = vim.fs.joinpath(dst, name)
+            if ftype == "directory" then
+                res = M.copy_dir(s, d)
+                ok, err = res.ok, res.error
+            else
+                ok, err, errno = vim.uv.fs_copyfile(s, d)
+            end
+            if not ok then
+                break
+            end
+        end
     end
-    while true do
-        local name, ftype = vim.uv.fs_scandir_next(handle)
-        if not name then
-            break
-        end
-        local s = vim.fs.joinpath(src, name)
-        local d = vim.fs.joinpath(dst, name)
-        if ftype == "directory" then
-            M.copy_dir(s, d)
-        else
-            vim.uv.fs_copyfile(s, d)
-        end
+
+    if ok then
+        return { ok = true }
+    else
+        return { ok = false, error = "copy_dir(" .. src .. ", " .. dst .. ")\n" .. err }
     end
 end
 

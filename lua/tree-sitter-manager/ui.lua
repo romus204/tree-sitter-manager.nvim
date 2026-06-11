@@ -103,16 +103,20 @@ function M._act(action)
     end
     local buf = vim.api.nvim_get_current_buf()
     if action == "install" then
-        installer.install(lang, function()
-            M.render(buf)
+        installer.install(lang, function(out)
+            if out.ok then
+                M.render(buf)
+            end
         end)
     elseif action == "remove" then
         installer.remove(lang)
         M.render(buf)
     elseif action == "update" then
         installer.remove(lang)
-        installer.install(lang, function()
-            M.render(buf)
+        installer.install(lang, function(out)
+            if out.ok then
+                M.render(buf)
+            end
         end)
     end
 end

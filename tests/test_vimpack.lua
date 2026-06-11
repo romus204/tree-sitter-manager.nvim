@@ -1,5 +1,3 @@
-local child = require("tests.child")
-
 local function cleanup()
     child.lua([[
     vim.pack.del(vim.iter(vim.pack.get())
