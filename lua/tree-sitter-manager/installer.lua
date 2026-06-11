@@ -15,7 +15,7 @@ local function copy_queries(lang, source)
 end
 
 local function treesitter_build(lang, query_dir, build_path, generate, tmpdir, status, callback)
-    _status = { ok = status.ok and generates, error = status.error }
+    _status = { ok = status.ok and generate, error = status.error }
     util.run_async({ "tree-sitter", "generate" }, build_path, _status, function(out)
         if not generate then
             out = status
@@ -52,7 +52,7 @@ local function install(lang, callback)
 
     if info.revision and (major < 2 or major == 2 and minor < 49) then
         -- Git pre 2.49.0 doesn't have --revision flag
-        local out = util.run({ "git", "init", tmpdir })
+        out = util.run({ "git", "init", tmpdir })
         if out.ok then
             out = util.run({ "git", "remote", "add", "origin", info.url }, tmpdir)
         end
