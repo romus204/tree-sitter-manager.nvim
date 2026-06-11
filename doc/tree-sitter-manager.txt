@@ -221,13 +221,18 @@ nerdfont ~
 
                                                                  *:TSInstall*
 :TSInstall {lang} ...
-  Install parsers provided as arguments. >vim
+  Install parsers. >vim
     :TSInstall vim nix
 <
                                                                  *:TSUninstall*
 :TSUninstall {lang} ...
-  Uninstall parsers provided as arguments. >vim
-    :TSUninstall vim nix
+  Uninstall parsers. >vim
+    :TSUninstall cpp java
+<
+                                                                 *:TSUpdate*
+:TSUpdate {lang} ...
+  Update parsers. >vim
+    :TSUpdate rust zsh
 <
 
 ==============================================================================
