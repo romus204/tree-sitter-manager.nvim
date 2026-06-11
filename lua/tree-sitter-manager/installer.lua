@@ -105,6 +105,7 @@ function M.remove(languages)
 end
 
 function M.install(languages, callback, no_deps, force)
+    callback = callback or function() end
     if type(languages) == "string" then
         languages = { languages }
     end
