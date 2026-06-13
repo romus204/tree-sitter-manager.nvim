@@ -146,7 +146,6 @@ function M.install(languages, callback, no_deps, force)
     for _, lang in ipairs(languages) do
         install(lang, function(out)
             M.status[lang] = out
-            callback(out)
             if out.ok then
                 vim.notify("✓ Installed " .. lang)
             else
@@ -159,6 +158,7 @@ function M.install(languages, callback, no_deps, force)
                     pcall(vim.treesitter.start, buf)
                 end
             end
+            callback(out)
         end)
     end
 end
