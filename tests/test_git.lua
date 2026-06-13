@@ -17,6 +17,9 @@ T["revision"] = function()
 end
 
 T["branch_revision"] = function()
+    if _G.languages then
+        MiniTest.skip()
+    end
     -- check installation with branch and revision (revision takes priority)
     local languages = { "perl" }
     child:setup({
@@ -34,6 +37,9 @@ T["branch_revision"] = function()
 end
 
 T["branch"] = function()
+    if _G.languages then
+        MiniTest.skip()
+    end
     -- check installation with branch
     local languages = { "perl" }
     child:setup({
@@ -51,6 +57,9 @@ T["branch"] = function()
 end
 
 T["no_branch_no_rev"] = function()
+    if _G.languages then
+        MiniTest.skip()
+    end
     -- check installation from HEAD
     local languages = { "perl" }
     child:setup({

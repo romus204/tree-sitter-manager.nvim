@@ -14,6 +14,11 @@ local T = MiniTest.new_set({
                 ensure_installed = { "perl", "prolog", "razor" },
             })
         end,
+        pre_case = function()
+            if _G.languages then
+                MiniTest.skip()
+            end
+        end,
         post_once = function()
             child:cleanup()
         end,
