@@ -38,12 +38,12 @@ function M.setup(opts)
     table.sort(state.languages)
 
     -- Reverse filetypes mapping
-    local ft_to_lang = vim.iter(state.filetypes):fold({}, function(acc, lang, fts)
+    local ft_to_lang = {}
+    for lang, fts in pairs(state.filetypes) do
         for _, ft in ipairs(fts) do
-            acc[ft] = lang
+            ft_to_lang[ft] = lang
         end
-        return acc
-    end)
+    end
 
     vim.fn.mkdir(state.cfg.parser_dir, "p")
     vim.fn.mkdir(state.cfg.query_dir, "p")
