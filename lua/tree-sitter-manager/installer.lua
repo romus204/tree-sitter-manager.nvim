@@ -8,7 +8,7 @@ local function copy_queries(lang, source)
     source = source or bundled
     if source then
         if not vim.uv.fs_stat(source) then
-            return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. "not found" }
+            return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. " not found" }
         end
     end
     return util.copy_dir(source, util.qpath(lang))
