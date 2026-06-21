@@ -26,7 +26,9 @@ local function treesitter_build(lang, query_dir, build_path, generate, tmpdir, s
         if out.ok then
             vim.notify("🔨 Building " .. lang)
         end
-        util.run_async({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, out, function(out)
+        util.run_async({ "tree-sitter", "build" }, build_path, out, function(out)
+            local dll_file = vim.fn.glob(build_path .."/*" .. util.ext(), false, false)
+            vim.uv.fs_copyfile(dll_file,util.ppath(lang) )
             if out.ok then
                 out = copy_queries(lang, query_dir and vim.fs.joinpath(build_path, query_dir))
             end
