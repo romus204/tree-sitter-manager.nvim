@@ -27,7 +27,7 @@ local filter_idx
 local frames = { "⣾ ", "⣽ ", "⣻ ", "⢿ ", "⡿ ", "⣟ ", "⣯ ", "⣷ " }
 local frame_idx
 
-local buf, win, langs, formatter, spinner
+local buf, win, langs, formatter, spinner, content_width
 
 local M = {}
 
@@ -139,7 +139,8 @@ function M.render(out)
     vim.bo[buf].modifiable = false
     render_spinner()
 
-    return vim.iter(lines):map(string.len):fold(0, math.max)
+    content_width = vim.iter(lines):map(string.len):fold(0, math.max)
+    return content_width
 end
 
 local function close()
@@ -147,9 +148,7 @@ local function close()
     vim.api.nvim_win_close(win, true)
 end
 
-local function win_dims(content_width)
-    content_width = content_width or vim.api.nvim_win_get_config(win).width
-
+local function win_dims()
     local w = math.max(#footer + 4, content_width + 3, 40)
     local h = math.min(#langs + 6, vim.o.lines - 15)
     local r = math.floor((vim.o.lines - h) / 2)
@@ -195,10 +194,10 @@ function M.open()
         })
     end
 
-    local width = M.render()
+    M.render()
 
     if not win or not vim.api.nvim_win_is_valid(win) then
-        local w, h, r, c = win_dims(width)
+        local w, h, r, c = win_dims()
         win = vim.api.nvim_open_win(buf, true, {
             relative = "editor",
             width = w,
