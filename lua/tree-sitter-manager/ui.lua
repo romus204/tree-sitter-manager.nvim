@@ -190,7 +190,7 @@ function M.open()
 
         vim.api.nvim_create_autocmd("VimResized", {
             group = vim.api.nvim_create_augroup("_TSManager", { clear = true }),
-            callback = resize_win(),
+            callback = resize_win,
         })
     end
 
