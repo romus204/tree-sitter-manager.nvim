@@ -147,6 +147,32 @@ local function close()
     vim.api.nvim_win_close(win, true)
 end
 
+local function win_dims(content_width)
+    content_width = content_width or vim.api.nvim_win_get_config(win).width
+
+    local w = math.max(#footer + 4, content_width + 3, 40)
+    local h = math.min(#langs + 6, vim.o.lines - 15)
+    local r = math.floor((vim.o.lines - h) / 2)
+    local c = math.floor((vim.o.columns - w) / 2)
+
+    return w, h, r, c
+end
+
+local function resize_win()
+    if not win or not vim.api.nvim_win_is_valid(win) then
+        return
+    end
+
+    local w, h, r, c = win_dims()
+    vim.api.nvim_win_set_config(win, {
+        relative = "editor",
+        width = w,
+        height = h,
+        row = r,
+        col = c,
+    })
+end
+
 function M.open()
     langs = config.languages
     filter_idx = 1
@@ -162,21 +188,25 @@ function M.open()
         vim.keymap.set("n", "x", act.remove, opts)
         vim.keymap.set("n", "u", act.update, opts)
         vim.keymap.set("n", "f", cycle_filter, opts)
+
+        vim.api.nvim_create_autocmd("VimResized", {
+            group = vim.api.nvim_create_augroup("_TSManager", { clear = true }),
+            callback = resize_win(),
+        })
     end
 
     local width = M.render()
 
     if not win or not vim.api.nvim_win_is_valid(win) then
-        local w = math.max(#footer + 4, width + 3, 40)
-        local h = math.min(#langs + 6, vim.o.lines - 15)
+        local w, h, r, c = win_dims(width)
         win = vim.api.nvim_open_win(buf, true, {
             relative = "editor",
             width = w,
             height = h,
             style = "minimal",
             border = config.cfg.border,
-            row = math.floor((vim.o.lines - h) / 2),
-            col = math.floor((vim.o.columns - w) / 2),
+            row = r,
+            col = c,
             title = title,
             title_pos = "center",
             footer = footer,
