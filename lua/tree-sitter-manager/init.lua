@@ -6,10 +6,6 @@ local ui = require("tree-sitter-manager.ui")
 -- Preserve public API surface for backward compatibility
 local M = require("tree-sitter-manager.backport")
 
-local function filter_filetypes(filter)
-    return vim.iter(state.languages):filter(filter):map(vim.treesitter.language.get_filetypes):flatten():totable()
-end
-
 local function iter_startswith(_argLead)
     return vim.iter(state.languages):filter(function(lang)
         return vim.startswith(lang, _argLead)
@@ -57,35 +53,34 @@ function M.setup(opts)
     end
     installer.install(ensure_list)
 
+    local group = vim.api.nvim_create_augroup("tree-sitter-manager", {})
+
     if state.cfg.auto_install then
-        local filetypes = filter_filetypes(function(lang)
-            return not vim.list_contains(state.cfg.noauto_install, vim.treesitter.language.get_lang(lang))
-        end)
-        if #filetypes > 0 then
-            vim.api.nvim_create_autocmd("FileType", {
-                pattern = filetypes,
-                callback = function(a)
-                    installer.install(vim.treesitter.language.get_lang(a.match))
-                end,
-                desc = "Auto-install treesitter parsers",
-            })
-        end
+        vim.api.nvim_create_autocmd("FileType", {
+            group = group,
+            callback = function(a)
+                local lang = vim.treesitter.language.get_lang(a.match)
+                if not vim.list_contains(state.cfg.noauto_install, lang) then
+                    installer.install(lang)
+                end
+            end,
+            desc = "Auto-install treesitter parsers",
+        })
     end
 
     if state.cfg.highlight then
-        local filetypes = filter_filetypes(function(lang)
-            return not vim.list_contains(state.cfg.nohighlight, lang)
-                and (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
-        end)
-        if #filetypes > 0 then
-            vim.api.nvim_create_autocmd("FileType", {
-                pattern = filetypes,
-                callback = function(a)
+        vim.api.nvim_create_autocmd("FileType", {
+            group = group,
+            callback = function(a)
+                local lang = vim.treesitter.language.get_lang(a.match)
+                if vim.list_contains(state.cfg.nohighlight, lang) then
+                    return
+                elseif state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang) then
                     pcall(vim.treesitter.start)
-                end,
-                desc = "Auto-enable treesitter highlighting",
-            })
-        end
+                end
+            end,
+            desc = "Auto-enable treesitter highlighting",
+        })
     end
 
     vim.api.nvim_create_user_command("TSManager", function()
