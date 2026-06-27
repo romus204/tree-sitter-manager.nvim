@@ -4,14 +4,17 @@ local util = require("tree-sitter-manager.util")
 local M = { status = {} }
 
 local function copy_queries(lang, source)
-    local bundled = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
-    source = source or bundled
-    if source then
-        if not vim.uv.fs_stat(source) then
-            return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. " not found" }
-        end
+    local qpath = util.qpath(lang)
+    if not source then
+        source = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
+        vim.fs.rm(qpath, { recursive = true, force = true })
+        ok, err = vim.uv.fs_symlink(source, qpath, { dir = true })
+        return { ok = ok, error = err and "copy_queries(" .. lang .. ")\n" .. err }
+    elseif vim.uv.fs_stat(source) then
+        return util.copy_dir(source, qpath)
+    else
+        return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. "not found" }
     end
-    return util.copy_dir(source, util.qpath(lang))
 end
 
 local function treesitter_build(lang, query_dir, build_path, generate, tmpdir, status, callback)
