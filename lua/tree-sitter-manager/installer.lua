@@ -20,11 +20,16 @@ function M.setup()
 end
 
 local function copy_queries(lang, source)
-    source = source or vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
-    if vim.uv.fs_stat(source) then
-        return util.copy_dir(source, util.qpath(lang))
+    local qpath = util.qpath(lang)
+    if not source then
+        source = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
+        vim.fs.rm(qpath, { recursive = true, force = true })
+        ok, err = vim.uv.fs_symlink(source, qpath, { dir = true })
+        return { ok = ok, error = err and "copy_queries(" .. lang .. ")\n" .. err }
+    elseif vim.uv.fs_stat(source) then
+        return util.copy_dir(source, qpath)
     else
-        return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. " not found" }
+        return { ok = false, error = "copy_queries(" .. lang .. ")\n" .. source .. "not found" }
     end
 end
 
@@ -79,15 +84,7 @@ local function install(lang, callback)
             if out.ok then
                 out = util.run(util.concat(git_args, { "checkout", "FETCH_HEAD" }))
             end
-            treesitter_build(
-                lang,
-                info.use_repo_queries and info.queries,
-                build_path,
-                info.generate,
-                tmpdir,
-                out,
-                callback
-            )
+            treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
         end)
     else
         local revision = info.revision and "--revision=" .. info.revision
@@ -97,15 +94,7 @@ local function install(lang, callback)
             nil,
             out,
             function(out)
-                treesitter_build(
-                    lang,
-                    info.use_repo_queries and info.queries,
-                    build_path,
-                    info.generate,
-                    tmpdir,
-                    out,
-                    callback
-                )
+                treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
             end
         )
     end

@@ -26,8 +26,7 @@ local datapath = vim.fn.stdpath("data")
 ---@field revision? string Git revision to check out after cloning. Takes priority over `branch`.
 ---@field branch? string Git branch to check out after cloning. Ignored if `revision` is set.
 ---@field generate? boolean Run `tree-sitter generate` before building. Defaults to false.
----@field queries? string Specifies the directory in the cloned repo that contains the queries. Defaults to 'queries'.
----@field use_repo_queries? boolean Use queries from the cloned repo's `queries/` directory instead of those bundled with the plugin. Defaults to false.
+---@field queries? string Specifies the queries directory in the cloned repo that will be used.
 ---@type tree-sitter-manager.Config
 M.cfg = {
     parser_dir = vim.fs.joinpath(datapath, "site/parser"),

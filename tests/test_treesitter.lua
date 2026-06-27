@@ -7,7 +7,7 @@ local T = new_set({
                         install_info = {
                             revision = "a3399c26610817c6d32c7643793caf3729cfb6d2",
                             url = "https://github.com/tris203/tree-sitter-razor",
-                            use_repo_queries = true,
+                            queries = "queries",
                         },
                     },
                 },

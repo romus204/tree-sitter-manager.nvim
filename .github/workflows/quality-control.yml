@@ -1,8 +1,6 @@
 name: Quality Control
 
 on:
-  push:
-    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
 

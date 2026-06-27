@@ -26,6 +26,7 @@ function M.setup(opts)
     -- User entries take precedence, allowing custom forks and new languages.
     state.effective_repos = vim.deepcopy(state.base_repos)
     for lang, info in pairs(state.cfg.languages) do
+        info.install_info = M.backport_use_repo_queries(info.install_info)
         state.effective_repos[lang] = vim.tbl_extend("force", state.effective_repos[lang] or {}, info)
     end
     state.languages = vim.tbl_keys(state.effective_repos)
