@@ -124,10 +124,16 @@ function M.setup(opts)
     })
 
     vim.api.nvim_create_user_command("TSUpdate", function(args)
-        installer.update(args.fargs, ui.render)
-        ui.render(true)
+        if args.args == "" then
+            local installed = vim.iter(state.languages):filter(util.is_installed):totable()
+            installer.update(installed, ui.render)
+            ui.render(true)
+        else
+            installer.update(args.fargs, ui.render)
+            ui.render(true)
+        end
     end, {
-        nargs = "+",
+        nargs = "*",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
             return iter_startswith(_argLead):totable()
