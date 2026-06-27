@@ -140,7 +140,6 @@ function M.render(out)
     render_spinner()
 
     content_width = vim.iter(lines):map(string.len):fold(0, math.max)
-    return content_width
 end
 
 local function close()
@@ -148,7 +147,7 @@ local function close()
     vim.api.nvim_win_close(win, true)
 end
 
-local function win_dims()
+local function get_dims()
     local w = math.max(#footer + 4, content_width + 3, 40)
     local h = math.min(#langs + 6, vim.o.lines - 15)
     local r = math.floor((vim.o.lines - h) / 2)
@@ -157,12 +156,12 @@ local function win_dims()
     return w, h, r, c
 end
 
-local function resize_win()
+local function resize()
     if not win or not vim.api.nvim_win_is_valid(win) then
         return
     end
 
-    local w, h, r, c = win_dims()
+    local w, h, r, c = get_dims()
     vim.api.nvim_win_set_config(win, {
         relative = "editor",
         width = w,
@@ -189,15 +188,15 @@ function M.open()
         vim.keymap.set("n", "f", cycle_filter, opts)
 
         vim.api.nvim_create_autocmd("VimResized", {
-            group = vim.api.nvim_create_augroup("_TSManager", { clear = true }),
-            callback = resize_win,
+            group = vim.api.nvim_create_augroup("tree-sitter-manager.ui", {}),
+            callback = resize,
         })
     end
 
     M.render()
 
     if not win or not vim.api.nvim_win_is_valid(win) then
-        local w, h, r, c = win_dims()
+        local w, h, r, c = get_dims()
         win = vim.api.nvim_open_win(buf, true, {
             relative = "editor",
             width = w,
