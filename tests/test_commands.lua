@@ -16,6 +16,14 @@ T["TSUpdate"] = function()
     child.works(languages)
 end
 
+T["TSUpdate!"] = function()
+    child.works(languages)
+    child.cmd("TSUpdate!")
+    eq(false, child.lua_get("vim.iter(" .. vim.inspect(languages) .. "):any(util.is_installed)"))
+    child.wait(languages)
+    child.works(languages)
+end
+
 T["TSUninstall"] = function()
     child.cmd("TSUninstall " .. table.concat(languages, " "))
     child.restart()
