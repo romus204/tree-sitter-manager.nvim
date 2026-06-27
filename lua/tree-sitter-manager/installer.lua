@@ -69,15 +69,7 @@ local function install(lang, callback)
             if out.ok then
                 out = util.run({ "git", "checkout", "FETCH_HEAD" }, tmpdir)
             end
-            treesitter_build(
-                lang,
-                info.use_repo_queries and info.queries,
-                build_path,
-                info.generate,
-                tmpdir,
-                out,
-                callback
-            )
+            treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
         end)
     else
         local revision = info.revision and "--revision=" .. info.revision
@@ -87,15 +79,7 @@ local function install(lang, callback)
             nil,
             out,
             function(out)
-                treesitter_build(
-                    lang,
-                    info.use_repo_queries and info.queries,
-                    build_path,
-                    info.generate,
-                    tmpdir,
-                    out,
-                    callback
-                )
+                treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
             end
         )
     end

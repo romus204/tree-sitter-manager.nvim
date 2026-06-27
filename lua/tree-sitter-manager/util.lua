@@ -40,8 +40,7 @@ function M.get_repo_info(lang)
             revision = entry.install_info.revision,
             branch = entry.install_info.branch,
             generate = entry.install_info.generate,
-            queries = entry.install_info.queries or "queries",
-            use_repo_queries = entry.install_info.use_repo_queries,
+            queries = entry.install_info.queries,
         }
     end
     return nil

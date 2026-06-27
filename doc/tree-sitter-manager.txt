@@ -252,6 +252,7 @@ These keybindings are active inside the `:TSManager` TUI window.
 
 ==============================================================================
 8. CUSTOM REPOSITORIES                    *tree-sitter-manager-custom-repos*
+                                          *tree-sitter-manager-languages*
 
 The `languages` option accepts a table that overrides built-in language
 definitions or adds new ones. This avoids modifying the plugin source.
@@ -260,13 +261,12 @@ Each entry has the following shape: >lua
   languages = {
     <lang> = {
       install_info = {
-        url              = "https://github.com/...",  -- required
-        location         = nil,       -- subdirectory inside the repo (optional)
-        revision         = nil,       -- commit SHA to pin (optional)
-        branch           = nil,       -- branch name (optional)
-        generate         = false,     -- run `tree-sitter generate` before build
-        queries          = "queries", -- folder in the cloned repo containing queries
-        use_repo_queries = false,     -- copy queries/ from cloned repo
+        url      = "https://github.com/...",  -- required
+        location = nil,       -- subdirectory inside the repo (optional)
+        revision = nil,       -- commit SHA to pin (optional)
+        branch   = nil,       -- branch name (optional)
+        generate = false,     -- run `tree-sitter generate` before build
+        queries  = "queries", -- queries folder in the cloned repo (optional)
       },
       requires = {},  -- list of language names that must be installed first
     },
@@ -280,7 +280,7 @@ Override a built-in with a fork: >lua
         install_info = {
           url = "https://github.com/myfork/tree-sitter-cpp",
           revision = "abc1234",
-          use_repo_queries = true,
+          queries = "queries",
         },
       },
     },
@@ -294,25 +294,19 @@ Add a new language: >lua
         install_info = {
           url = "https://github.com/someone/tree-sitter-mylang",
           queries = "queries/subdir",
-          use_repo_queries = true,
         },
       },
     },
   })
 <
+                                                  *tree-sitter-manager-queries*
+languages.<lang>.install_info.queries ~
+  Type: `string`
+  Default: `nil`
 
-`use_repo_queries` behaviour: ~
-
-  Value    Query source ~
-  ──────────────────────────────────────────────────────────────────────
-  `false`  Queries bundled in `runtime/queries/<lang>/` of this plugin
-  `true`   `queries/` directory inside the cloned grammar repository
-
-  If `use_repo_queries = true` but the repo has no `queries/` directory,
-  a warning is shown and the plugin falls back to bundled queries.
-
-  The default `queries/` directory can be changed
-  by means of the optional `queries` field.
+  If unset, bundled `runtime/queries/<lang>/` will be symlinked to the
+  `query_dir` location. Otherwise, set it to the relative path of the queries
+  directory in the repository, often `"queries"`.
 
 ==============================================================================
 9. HIGHLIGHTING                           *tree-sitter-manager-highlighting*
