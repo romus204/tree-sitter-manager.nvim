@@ -13,7 +13,7 @@ end
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child:setup()
+            child.setup()
             cleanup()
         end,
         pre_case = function()
@@ -23,7 +23,7 @@ local T = MiniTest.new_set({
         end,
         post_once = function()
             cleanup()
-            child:cleanup()
+            child.cleanup()
         end,
     },
 })

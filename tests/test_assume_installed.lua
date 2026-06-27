@@ -8,18 +8,15 @@ local requiredby = vim.iter(languages):fold({}, function(acc, lang)
     end
     return acc
 end)
-install_list = { unpack(languages), unpack(vim.tbl_values(requiredby)) }
+install_list = util.concat(languages, vim.tbl_values(requiredby))
 
-local T = MiniTest.new_set({
+local T = new_set({
     hooks = {
         pre_once = function()
-            child:setup({
+            child.setup({
                 assume_installed = languages,
                 ensure_installed = install_list,
             })
-        end,
-        post_once = function()
-            child:cleanup()
         end,
     },
     parametrize = vim.iter(languages):fold({}, function(acc, lang)
@@ -34,16 +31,16 @@ local T = MiniTest.new_set({
 
 T["assume_installed"] = function(lang, dep)
     -- parser for lang should already be installed
-    child:wait(lang, 0)
+    child.wait(lang, 0)
     -- verify installation for the dependant language
     if dep then
-        child:wait(dep)
+        child.wait(dep)
     end
 end
 
 T["query"] = function(lang, dep)
     if dep then
-        child:works(dep)
+        child.works(dep)
     end
 end
 

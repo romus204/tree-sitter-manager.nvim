@@ -1,7 +1,7 @@
-local T = MiniTest.new_set({
+local T = new_set({
     hooks = {
         pre_once = function()
-            child:setup({
+            child.setup({
                 languages = {
                     razor = {
                         install_info = {
@@ -19,9 +19,6 @@ local T = MiniTest.new_set({
                 MiniTest.skip()
             end
         end,
-        post_once = function()
-            child:cleanup()
-        end,
     },
     parametrize = {
         { "generate", "perl" },
@@ -31,8 +28,8 @@ local T = MiniTest.new_set({
 })
 
 T["case"] = function(option, language)
-    child:wait(language)
-    child:works(language)
+    child.wait(language)
+    child.works(language)
 end
 
 return T

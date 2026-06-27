@@ -44,25 +44,30 @@ This is necessary to test asynchronous functions (See [mini.nvim#1930](https://g
 - `installer`: `require("tree-sitter-manager.installer")`
 - etc.
 
+### Global Functions
+- `new_set(opts, tbl)`: do `MiniTest.new_set(opts, tbl)`
+  with default hooks for `child.setup()`, `child.cleanup()`.
+- `parametrize(list)`: nest every item into a singleton, i.e. does the following:
+  ```lua
+  vim.iter(list):map(function(x) return { x } end):totable()
+  ```
+
 ### Example
 Create a file `tests/test_install.lua`:
 ```lua
 -- list languages you want to test
 local languages = _G.languages or { "bash", "python", "java" }
 
-local T = MiniTest.new_set({
+local T = new_set({
     hooks = {
         -- setup will set a unique parent directory to `parser_dir` and `query_dir`
         pre_once = function()
-            child:setup({ highlight = true })
+            child.setup({ highlight = true })
             child.lua("installer.install(" .. vim.inspect(languages) .. ")")
             -- wait until bash finishes installation
             -- if the installation fails within the timeout (default 60.000 ms)
             -- an error is thrown
-            child:wait(languages)
-        end,
-        post_once = function()
-            child:cleanup()
+            child.wait(languages)
         end,
     },
     parametrize = vim.iter(languages)
@@ -75,7 +80,7 @@ local T = MiniTest.new_set({
 -- test highlights query for every language
 T["test-case"] = function(lang, query)
     -- verify that treesitter works
-    child:works(lang, query)
+    child.works(lang, query)
 end
 
 return T

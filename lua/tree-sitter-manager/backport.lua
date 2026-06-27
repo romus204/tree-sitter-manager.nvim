@@ -1,15 +1,4 @@
-local installer = require("tree-sitter-manager.installer")
-local ui = require("tree-sitter-manager.ui")
-
-local M = {
-    _install_single = function(lang, callback)
-        installer.install(lang, function(out)
-            callback(out.ok)
-        end, true, true)
-    end,
-    open = ui.open,
-    _act = ui._act,
-}
+local M = {}
 
 function M.backport_use_repo_queries(info)
     if info.use_repo_queries then

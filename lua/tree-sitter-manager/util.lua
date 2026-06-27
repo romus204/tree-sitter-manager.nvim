@@ -61,12 +61,30 @@ function M.is_installed(lang)
     end
 end
 
+---@vararg table lists to be concatenated (out-of-place)
+---@return table concatenated list
+function M.concat(...)
+    return vim.iter({ ... }):flatten():totable()
+end
+
+---@class Status
+---@field ok? boolean
+---@field error? string
+---@field output? string
+
+---@param args string[]
+---@param cwd string
+---@return Status
 function M.run(args, cwd)
     local out = vim.system(args, { text = true, cwd = cwd }):wait()
     local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
     return { ok = out.code == 0, error = err, output = out.stdout }
 end
 
+---@param args string[]
+---@param cwd string
+---@param status Status
+---@param callback fun(out:Status)
 function M.run_async(args, cwd, status, callback)
     callback = callback or function() end
 

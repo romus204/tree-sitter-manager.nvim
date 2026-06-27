@@ -1,21 +1,12 @@
 local languages = _G.languages or { "skip" }
 
-local T = MiniTest.new_set({
-    hooks = {
-        post_case = function()
-            child:cleanup()
-        end,
-    },
-    parametrize = vim.iter(languages)
-        :map(function(lang)
-            return { lang }
-        end)
-        :totable(),
+local T = new_set({
+    parametrize = parametrize(languages),
 })
 
 T["crash"] = function(lang)
     if lang == "haskell" then
-        child:setup({
+        child.setup({
             languages = {
                 haskell = {
                     install_info = {
@@ -26,7 +17,7 @@ T["crash"] = function(lang)
             },
             ensure_installed = { "haskell" },
         })
-        child:wait("haskell")
+        child.wait("haskell")
         er(function()
             child.cmd("edit tests/haskell/Main.hs")
             child.cmd("edit")
@@ -38,7 +29,7 @@ end
 
 T["works"] = function(lang)
     if lang == "haskell" then
-        child:setup({
+        child.setup({
             languages = {
                 haskell = {
                     install_info = {
@@ -49,7 +40,7 @@ T["works"] = function(lang)
             },
             ensure_installed = { "haskell" },
         })
-        child:wait("haskell")
+        child.wait("haskell")
         ner(function()
             child.cmd("edit tests/haskell/Main.hs")
             child.cmd("edit")
