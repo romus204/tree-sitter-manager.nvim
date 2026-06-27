@@ -114,26 +114,25 @@ function M.setup(opts)
         nargs = "+",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead)
-                :filter(function(lang)
-                    return util.is_installed(lang)
-                end)
-                :totable()
+            return iter_startswith(_argLead):filter(util.is_installed):totable()
         end,
         desc = "Remove treesitter parsers",
     })
 
     vim.api.nvim_create_user_command("TSUpdate", function(args)
-        if args.args == "" then
+        if args.args == "" and args.bang then
             local installed = vim.iter(state.languages):filter(util.is_installed):totable()
             installer.update(installed, ui.render)
             ui.render(true)
-        else
+        elseif args.args ~= "" then
             installer.update(args.fargs, ui.render)
             ui.render(true)
+        else
+            vim.notify("E471: Argument required", vim.log.levels.ERROR)
         end
     end, {
         nargs = "*",
+        bang = true,
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
             return iter_startswith(_argLead):totable()

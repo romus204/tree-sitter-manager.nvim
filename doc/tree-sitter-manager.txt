@@ -232,9 +232,10 @@ nerdfont ~
 <
                                                                  *:TSUpdate*
 :TSUpdate [{lang}] ...
+:TSUpdate!
   Update parsers. >vim
-    :TSUpdate
     :TSUpdate rust zsh
+    :TSUpdate! "force update all
 <
 
 ==============================================================================
