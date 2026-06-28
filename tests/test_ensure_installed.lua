@@ -10,13 +10,26 @@ local T = new_set({
             end
         end,
     },
-    parametrize = parametrize(languages),
+    parametrize = vim.iter(languages)
+        :map(function(lang)
+            local paths = vim.fn.glob("runtime/queries/" .. lang .. "/*.scm", true, true)
+            local queries = vim.iter(paths):map(function(path)
+                return vim.fn.fnamemodify(path, ":t:r")
+            end)
+            return queries
+                :map(function(query)
+                    return { lang, query }
+                end)
+                :totable()
+        end)
+        :flatten()
+        :totable(),
 })
 
-T["ensure_installed"] = function(lang)
+T["ensure_installed"] = function(lang, query)
     -- wait for the parser to successfully install
-    child.wait(lang)
-    child.works(lang)
+    child.wait(lang, 120000)
+    child.works(lang, query)
 end
 
 return T

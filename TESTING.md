@@ -70,17 +70,13 @@ local T = new_set({
             child.wait(languages)
         end,
     },
-    parametrize = vim.iter(languages)
-        :map(function(lang)
-            return { lang, "highlights" }
-        end)
-        :totable(),
+    parametrize = parametrize(languages),
 })
 
--- test highlights query for every language
-T["test-case"] = function(lang, query)
-    -- verify that treesitter works
-    child.works(lang, query)
+T["test-case"] = function(lang)
+    -- verify that highlighting works for each lang
+    -- second argument is optional, default: highlights
+    child.works(lang, "highlights")
 end
 
 return T
