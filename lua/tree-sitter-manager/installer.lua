@@ -125,7 +125,9 @@ function M.install(languages, callback, update)
     callback = callback or function() end
 
     for _, lang in ipairs(languages) do
-        vim.list.unique(vim.list_extend(languages, util.get_requires(lang)))
+        if not util.is_installed(lang) then
+            vim.list.unique(vim.list_extend(languages, util.get_requires(lang)))
+        end
     end
 
     local installing = {}
