@@ -62,4 +62,4 @@ jobs:
           install-lib: false
 
       - name: Run tests
-        run: make test
+        run: make test arduino cuda
