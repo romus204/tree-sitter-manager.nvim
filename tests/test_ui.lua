@@ -1,4 +1,4 @@
-local languages = _G.languages or { "tsv", "tsx" }
+local languages = _G.languages or { "tsv", "typescript", "glimmer_typescript" }
 
 local T = new_set()
 
@@ -23,6 +23,64 @@ T["update"] = function()
     )
     child.wait(languages)
     child.works(languages)
+end
+
+local installed, deps
+T["filter"] = MiniTest.new_set()
+T["filter"]["installed"] = function()
+    child.cmd("normal f")
+    local lines = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
+    installed = vim.iter(lines)
+        :map(function(line)
+            return line:match("%S+")
+        end)
+        :totable()
+    eq(
+        true,
+        vim.iter(languages):all(function(lang)
+            return vim.list_contains(installed, lang)
+        end)
+    )
+end
+T["filter"]["warning"] = function()
+    deps = vim.iter(installed)
+        :filter(function(lang)
+            return not vim.list_contains(languages, lang)
+        end)
+        :totable()
+    if #deps == 0 then
+        MiniTest.skip("no dependencies")
+    end
+    child.cmd("TSUninstall " .. table.concat(deps, " "))
+    child.cmd("normal f")
+    local warns = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
+    eq(true, #warns > 0)
+    if vim.list_contains(languages, "typescript") and vim.list_contains(languages, "glimmer_typescript") then
+        eq(
+            true,
+            vim.iter(warns):any(function(line)
+                return line:match("glimmer_typescript")
+            end)
+        )
+    end
+end
+T["filter"]["missing"] = function()
+    child.cmd("normal f")
+    local lines = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
+    local missing = vim.iter(lines)
+        :map(function(line)
+            return line:match("%S+")
+        end)
+        :totable()
+    eq(
+        false,
+        vim.iter(languages):any(function(lang)
+            return vim.list_contains(missing, lang)
+        end)
+    )
+end
+T["filter"]["all"] = function()
+    child.cmd("normal f")
 end
 
 T["remove"] = function()

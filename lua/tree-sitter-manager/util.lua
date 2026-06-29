@@ -20,9 +20,18 @@ function M.qpath(lang)
     return vim.fs.joinpath(config.cfg.query_dir, lang)
 end
 
+--- Flat dependency tree.
 function M.get_requires(lang)
     local entry = config.effective_repos[lang]
-    return (type(entry) == "table" and entry.requires) or {}
+    local deps = entry and entry.requires or {}
+
+    for _, lang in ipairs(deps) do
+        entry = config.effective_repos[lang]
+        local _deps = entry and entry.requires or {}
+        vim.list.unique(vim.list_extend(deps, _deps))
+    end
+
+    return deps
 end
 
 function M.get_repo_info(lang)
