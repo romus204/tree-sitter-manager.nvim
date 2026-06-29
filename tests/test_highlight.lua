@@ -24,11 +24,17 @@ T["after_install"] = MiniTest.new_set({
     },
 })
 T["after_install"]["new"] = function(ft)
+    if util.is_only_query(ft) then
+        MiniTest.skip("only query")
+    end
     -- highlighter is active for new buffers
     child.cmd("enew|set ft=" .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 T["after_install"]["old"] = function(ft)
+    if util.is_only_query(ft) then
+        MiniTest.skip("only query")
+    end
     -- highlighter is active even for existing buffers
     child.cmd("b name." .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))

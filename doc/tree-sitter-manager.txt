@@ -73,14 +73,17 @@ vim-plug: >vim
     languages        = {},
     assume_installed = {},
     ensure_installed = {},
-    border           = "rounded",
     auto_install     = false,
     noauto_install   = {},
     highlight        = true,
     nohighlight      = {},
     parser_dir       = vim.fn.stdpath("data") .. "/site/parser",
     query_dir        = vim.fn.stdpath("data") .. "/site/queries",
+    -- TUI options
     nerdfont         = true,
+    border           = "rounded",
+    min_width        = 78,
+    min_height       = 40,
   })
 <
 
@@ -146,17 +149,6 @@ ensure_installed ~
 <
 
 ------------------------------------------------------------------------------
-                                              *tree-sitter-manager-opt-border*
-border ~
-  Type: `string|table`
-  Default: `"rounded"`
-
-  Border style for the TUI window. See |nvim_open_win()| for accepted values.
-  Examples: `"rounded"`, `"single"`, `"double"`, `"solid"`, `"none"`.
-
-  To match 'winborder' option set it to `vim.o.winborder` (Neovim 0.11+).
-
-------------------------------------------------------------------------------
                                         *tree-sitter-manager-opt-auto_install*
 auto_install ~
   Type: `boolean`
@@ -212,6 +204,29 @@ nerdfont ~
 
   By default, the manager buffer requires Nerd Fonts for emojis and icons. If
   you prefer plain text instead of the glyphs set this to `false`.
+
+------------------------------------------------------------------------------
+                                              *tree-sitter-manager-opt-border*
+border ~
+  Type: `string|table`
+  Default: `"rounded"`
+
+  Border style for the TUI window. See |nvim_open_win()| for accepted values.
+  Examples: `"rounded"`, `"single"`, `"double"`, `"solid"`, `"none"`.
+
+  To match 'winborder' option set it to `vim.o.winborder` (Neovim 0.11+).
+
+------------------------------------------------------------------------------
+                                           *tree-sitter-manager-opt-min-width*
+                                           *tree-sitter-manager-opt-min-height*
+min_width ~
+min_height ~
+  Type: `number`
+
+  Minimum size of the TUI window. Default vales: >lua
+    min_width = 78
+    min_height = 40
+>
 
 ==============================================================================
 6. COMMANDS                                   *tree-sitter-manager-commands*

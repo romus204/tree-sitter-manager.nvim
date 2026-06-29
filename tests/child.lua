@@ -68,15 +68,15 @@ function M.wait(languages, timeout)
 end
 
 function M.works(languages, query)
-    if type(languages) == "string" then
-        languages = { languages }
-    end
+    languages = type(languages) == "string" and { languages } or languages
     query = query or "highlights"
     for _, lang in ipairs(languages) do
-        ner(function()
-            M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-        end)
-        eq(true, M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+        if not util.is_only_query(lang) then
+            ner(function()
+                M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+            end)
+            eq(true, M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+        end
     end
 end
 

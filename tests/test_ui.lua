@@ -15,7 +15,12 @@ end
 T["update"] = function()
     child.works(languages)
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ")/normal u")
-    eq(false, child.lua_get("vim.iter(" .. vim.inspect(languages) .. "):any(util.is_installed)"))
+    eq(
+        false,
+        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[):filter(function(lang)
+            return not util.is_only_query(lang)
+        end):any(util.is_installed)]])
+    )
     child.wait(languages)
     child.works(languages)
 end
