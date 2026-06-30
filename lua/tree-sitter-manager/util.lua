@@ -20,9 +20,18 @@ function M.qpath(lang)
     return vim.fs.joinpath(config.cfg.query_dir, lang)
 end
 
+--- Flat dependency tree.
 function M.get_requires(lang)
     local entry = config.effective_repos[lang]
-    return (type(entry) == "table" and entry.requires) or {}
+    local deps = entry and entry.requires or {}
+
+    for _, lang in ipairs(deps) do
+        entry = config.effective_repos[lang]
+        local _deps = entry and entry.requires or {}
+        vim.list.unique(vim.list_extend(deps, _deps))
+    end
+
+    return deps
 end
 
 function M.get_repo_info(lang)
@@ -40,8 +49,7 @@ function M.get_repo_info(lang)
             revision = entry.install_info.revision,
             branch = entry.install_info.branch,
             generate = entry.install_info.generate,
-            queries = entry.install_info.queries or "queries",
-            use_repo_queries = entry.install_info.use_repo_queries,
+            queries = entry.install_info.queries,
         }
     end
     return nil
@@ -62,12 +70,30 @@ function M.is_installed(lang)
     end
 end
 
+---@vararg table lists to be concatenated (out-of-place)
+---@return table concatenated list
+function M.concat(...)
+    return vim.iter({ ... }):flatten():totable()
+end
+
+---@class Status
+---@field ok? boolean
+---@field error? string
+---@field output? string
+
+---@param args string[]
+---@param cwd string
+---@return Status
 function M.run(args, cwd)
     local out = vim.system(args, { text = true, cwd = cwd }):wait()
     local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
     return { ok = out.code == 0, error = err, output = out.stdout }
 end
 
+---@param args string[]
+---@param cwd string
+---@param status Status
+---@param callback fun(out:Status)
 function M.run_async(args, cwd, status, callback)
     callback = callback or function() end
 

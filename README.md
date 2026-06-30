@@ -16,7 +16,7 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
 - Dynamic FileType autocmd registration for installed parsers
 - Works with any plugin manager (lazy, packer, vim-plug, native packages)
 - **Custom/fork repositories**: Override any language or add new ones via `setup()`
-- **Repository queries**: Use `use_repo_queries` to use query files bundled in the grammar repo itself
+- **Repository queries**: Set `queries` to the relative path of the queries directory in the repo
 
 ## Requirements
 ### Mandatory
@@ -57,13 +57,15 @@ require("tree-sitter-manager").setup({
   query_dir = vim.fn.stdpath("data") .. "/site/queries",
   assume_installed = {}, -- blacklist languages
   ensure_installed = {}, -- parsers to install at startup
-  border = "rounded", -- border style for the TUI window
   auto_install = false, -- auto-install when a new filetype is encountered
   noauto_install = {}, -- blacklist from auto_install
   highlight = true, -- enable treesitter highlighting (use list to whitelist)
   nohighlight = {}, -- blacklist from highlight
   languages = {}, -- override or add new parser sources
   nerdfont = true, -- use Nerd Font icons in the manager UI
+  border = "rounded", -- border style for the TUI window
+  min_width = 78, -- minimum size of the TUI
+  min_height = 40,
 })
 ```
 
@@ -80,10 +82,7 @@ require("tree-sitter-manager").setup({
       install_info = {
         url = "https://github.com/myfork/tree-sitter-cpp",
         revision = "abc1234",
-        -- Use the query files that ship with the forked repo instead of
-        -- the bundled queries. The parser's queries/ directory is copied
-        -- automatically during installation.
-        use_repo_queries = true,
+        queries = "queries",
       },
     },
   },
@@ -97,24 +96,18 @@ require("tree-sitter-manager").setup({
     mylang = {
       install_info = {
         url = "https://github.com/someone/tree-sitter-mylang",
-        queries = "queries/subdir", -- override the default "queries" source directory
-        use_repo_queries = true, -- copy queries/ from the cloned repo
+        queries = "queries/subdir",
       },
     },
   },
 })
 ```
 
-### `use_repo_queries` behaviour
-| Value | Query source |
-|-------|-------------|
-| `false` (default) | Queries bundled in `runtime/queries/<lang>/` of this plugin |
-| `true` | `queries/` directory inside the cloned grammar repository |
-
-If `use_repo_queries = true` but the repo has no `queries/` directory, a warning is shown
-and the plugin falls back to the bundled queries automatically.
-
-The default `queries/` directory can be changed by means of the optional `queries` field.
+### `queries` behaviour
+If `queries` is unset or `nil` bundled `runtime/queries/<lang>/` will be
+symlinked to the `query_dir` location. Set it to the relative path of the
+queries directory in the repository, often `"queries"`, to use the shipped
+queries.
 
 ## Automatic Installation
 You can automatically install missing parsers upon editing a new file by
@@ -153,6 +146,7 @@ require("tree-sitter-manager").setup({
 `:TSManager` - Open the parser management interface<br/>
 `:TSInstall` - Install parsers provided as arguments<br/>
 `:TSUninstall` - Uninstall parsers<br/>
+`:TSUpdate` - Update parsers. Add `bang` to force update all.<br/>
 
 ## Keybindings
 `i` - Install parser under cursor<br/>

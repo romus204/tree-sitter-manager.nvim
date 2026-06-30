@@ -1,0 +1,29 @@
+name: Auto-Rebase
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  rebase:
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to fetch all history for rebasing
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Rebase fix-cpp20-incompatibility onto develop
+        run: |
+          git checkout fix-cpp20-incompatibility
+          git rebase develop
+          git push --force origin fix-cpp20-incompatibility

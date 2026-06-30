@@ -1,5 +1,4 @@
 local repos = require("tree-sitter-manager.repos")
-local filetypes = require("tree-sitter-manager.filetypes")
 
 local M = {}
 local datapath = vim.fn.stdpath("data")
@@ -10,12 +9,14 @@ local datapath = vim.fn.stdpath("data")
 ---@field languages? table<string, string|tree-sitter-manager.LanguageSpec> User-defined language repos to use instead of the built-in ones. Can either be a string (a git URL), or a more detailed LanguageSpec.
 ---@field assume_installed? string[] Languages to never install.
 ---@field ensure_installed? string|string[] Languages to install on `setup()` if not already present. Use `"all"` to install all languages.
----@field border? string|string[] Border style passed to `nvim_open_win` for the manager UI.
 ---@field auto_install? boolean Install missing parsers automatically on `FileType`.
 ---@field noauto_install? string[] Languages to opt-out from `auto_install`.
 ---@field highlight? boolean|string[] Enable `vim.treesitter.start()` for installed parsers. `true` enables all, or pass a list of languages.
 ---@field nohighlight? string[] Languages to disable highlighting for.
 ---@field nerdfont? boolean Enable nerdfont glyphs.
+---@field border? string|string[] Border style passed to `nvim_open_win` for the manager UI.
+---@field min_width? number Minimum width of the TUI window.
+---@field min_height? number Minimum height of the TUI window.
 
 ---@class tree-sitter-manager.LanguageSpec
 ---@field install_info? tree-sitter-manager.InstallInfo Information about how to fetch and build the grammar.
@@ -27,8 +28,7 @@ local datapath = vim.fn.stdpath("data")
 ---@field revision? string Git revision to check out after cloning. Takes priority over `branch`.
 ---@field branch? string Git branch to check out after cloning. Ignored if `revision` is set.
 ---@field generate? boolean Run `tree-sitter generate` before building. Defaults to false.
----@field queries? string Specifies the directory in the cloned repo that contains the queries. Defaults to 'queries'.
----@field use_repo_queries? boolean Use queries from the cloned repo's `queries/` directory instead of those bundled with the plugin. Defaults to false.
+---@field queries? string Specifies the queries directory in the cloned repo that will be used.
 ---@type tree-sitter-manager.Config
 M.cfg = {
     parser_dir = vim.fs.joinpath(datapath, "site/parser"),
@@ -36,17 +36,18 @@ M.cfg = {
     languages = {},
     assume_installed = {},
     ensure_installed = {},
-    border = "rounded",
     auto_install = false,
     noauto_install = {},
     highlight = true,
     nohighlight = {},
     nerdfont = true,
+    border = "rounded",
+    min_width = 78,
+    min_height = 40,
 }
 
 M.base_repos = repos
 M.effective_repos = repos
 M.languages = vim.tbl_keys(repos)
-M.filetypes = filetypes
 
 return M
