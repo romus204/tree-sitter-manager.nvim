@@ -74,9 +74,8 @@ local T = new_set({
 })
 
 T["test-case"] = function(lang)
-    -- verify that highlighting works for each lang
-    -- second argument is optional, default: highlights
-    child.works(lang, "highlights")
+    child.works(lang) -- checks parser
+    child.works(lang, "highlights") -- check highlights queries
 end
 
 return T
