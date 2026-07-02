@@ -40,7 +40,7 @@ function M.get_repo_info(lang)
         return nil
     end
     if type(entry) == "string" then
-        return { url = entry, location = lang }
+        return { url = entry }
     end
     if entry.install_info then
         return {
