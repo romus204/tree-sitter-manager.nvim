@@ -113,15 +113,6 @@ query_dir ~
   The parent directory is automatically prepended to 'runtimepath'.
 
 ------------------------------------------------------------------------------
-                                           *tree-sitter-manager-opt-languages*
-languages ~
-  Type: `table`
-  Default: `{}`
-
-  Override built-in language definitions or add new ones.
-  See |tree-sitter-manager-custom-repos| for details.
-
-------------------------------------------------------------------------------
                                     *tree-sitter-manager-opt-assume_installed*
 assume_installed ~
   Type: `table`
@@ -268,8 +259,8 @@ These keybindings are active inside the `:TSManager` TUI window.
   `<Esc>`    Close window
 
 ==============================================================================
-8. CUSTOM REPOSITORIES                    *tree-sitter-manager-custom-repos*
-                                          *tree-sitter-manager-languages*
+8. CUSTOM REPOSITORIES                     *tree-sitter-manager-custom-repos*
+                                           *tree-sitter-manager-opt-languages*
 
 The `languages` option accepts a table that overrides built-in language
 definitions or adds new ones. This avoids modifying the plugin source.
@@ -282,7 +273,7 @@ Each entry has the following shape: >lua
         location = nil,       -- subdirectory inside the repo (optional)
         revision = nil,       -- commit SHA to pin (optional)
         branch   = nil,       -- branch name (optional)
-        generate = false,     -- run `tree-sitter generate` before build
+        generate = false,     -- run `tree-sitter generate` before building
         queries  = "queries", -- queries folder in the cloned repo (optional)
       },
       requires = {},  -- list of language names that must be installed first
@@ -316,7 +307,18 @@ Add a new language: >lua
     },
   })
 <
-                                                  *tree-sitter-manager-queries*
+
+------------------------------------------------------------------------------
+                                    *tree-sitter-manager-install_info-location*
+languages.<lang>.install_info.location ~
+  Type: `string`
+  Default: `nil`
+
+  If `grammar.js` is not located in the repository's root you can configure it
+  with the `location` option.
+
+------------------------------------------------------------------------------
+                                     *tree-sitter-manager-install_info-queries*
 languages.<lang>.install_info.queries ~
   Type: `string`
   Default: `nil`
