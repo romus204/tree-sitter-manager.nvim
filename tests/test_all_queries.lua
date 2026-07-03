@@ -1,4 +1,5 @@
 local languages = _G.languages or { "tsv", "tsx" }
+local fail_parser = {}
 
 local T = new_set({
     hooks = {
@@ -27,8 +28,13 @@ local T = new_set({
 })
 
 T.pass = function(lang, query)
+    if fail_parser[lang] then
+        MiniTest.skip("failed parser")
+    end
+    fail_parser[lang] = query == "parser"
     child.wait(lang)
     child.works(lang, query)
+    fail_parser[lang] = false
 end
 
 return T
