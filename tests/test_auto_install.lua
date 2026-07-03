@@ -14,8 +14,8 @@ T["noauto_install"] = MiniTest.new_set({
 })
 T["noauto_install"]["works"] = function(ft)
     child.cmd("se ft=" .. ft)
+    local lang = vim.treesitter.language.get_lang(ft)
     er(function()
-        local lang = vim.treesitter.language.get_lang(ft)
         child.wait(lang, 0)
     end, "installation not started")
 end
