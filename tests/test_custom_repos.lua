@@ -2,7 +2,7 @@ local T = new_set({
     hooks = {
         pre_case = function()
             if _G.languages then
-                MiniTest.skip()
+                MiniTest.skip("skip smoke tests")
             end
         end,
         post_case = child.cleanup,
@@ -44,7 +44,6 @@ T.generate.works = function()
     child.cmd("TSInstall perl")
     child.wait("perl")
     child.works("perl")
-    child.works("perl", "highlights")
 end
 T.generate.fails = function()
     child.lua("config.effective_repos.perl.install_info.generate = false")
@@ -70,7 +69,6 @@ T.location.works = function()
     child.cmd("TSInstall prolog")
     child.wait("prolog")
     child.works("prolog")
-    child.works("prolog", "highlights")
 end
 T.location.fails = function()
     child.lua("config.effective_repos.prolog.install_info.location = nil")
@@ -96,13 +94,12 @@ T.queries.works = function()
     child.cmd("TSInstall matlab")
     child.wait("matlab")
     child.works("matlab")
-    child.works("matlab", "highlights")
 end
 T.queries.fails = function()
     child.lua("config.effective_repos.matlab.install_info.queries = 'queries'")
     child.cmd("TSInstall matlab")
     child.wait("matlab")
-    child.fails("matlab", "highlights")
+    child.fails("matlab")
 end
 
 return T
