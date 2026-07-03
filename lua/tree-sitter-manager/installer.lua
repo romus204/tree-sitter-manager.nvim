@@ -137,7 +137,10 @@ function M.install(languages, callback, update)
                 M.status[lang] = out
                 M.installing[lang] = nil
                 if not out.ok then
-                    notify.notify("Error installing " .. lang .. "\n" .. out.error, { icon = "warning", level = vim.log.levels.WARN })
+                    notify.notify(
+                        "Error installing " .. lang .. "\n" .. out.error,
+                        { icon = "warning", level = vim.log.levels.WARN }
+                    )
                 else
                     notify.notify((update and "Updated " or "Installed ") .. lang, { icon = "success" })
                     -- refresh queries and update highlighting
