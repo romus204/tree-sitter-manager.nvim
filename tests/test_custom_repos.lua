@@ -22,9 +22,8 @@ T["local"] = MiniTest.new_set({
     },
 })
 T["local"].fails = function()
-    child.cmd("TSInstall console")
     er(function()
-        child.wait("console")
+        child.install("console")
     end, "does not exist")
 end
 
@@ -41,15 +40,13 @@ T.generate = MiniTest.new_set({
     },
 })
 T.generate.works = function()
-    child.cmd("TSInstall perl")
-    child.wait("perl")
-    child.works("perl")
+    child.install("perl")
+    child.works("perl", "parser")
 end
 T.generate.fails = function()
     child.lua("config.effective_repos.perl.install_info.generate = false")
-    child.cmd("TSInstall perl")
     er(function()
-        child.wait("perl")
+        child.install("perl")
     end, "Failed to compile")
 end
 
@@ -66,15 +63,13 @@ T.location = MiniTest.new_set({
     },
 })
 T.location.works = function()
-    child.cmd("TSInstall prolog")
-    child.wait("prolog")
-    child.works("prolog")
+    child.install("prolog")
+    child.works("prolog", "parser")
 end
 T.location.fails = function()
     child.lua("config.effective_repos.prolog.install_info.location = nil")
-    child.cmd("TSInstall prolog")
     er(function()
-        child.wait("prolog")
+        child.install("prolog")
     end, "Failed to compile")
 end
 
@@ -91,15 +86,13 @@ T.queries = MiniTest.new_set({
     },
 })
 T.queries.works = function()
-    child.cmd("TSInstall matlab")
-    child.wait("matlab")
-    child.works("matlab")
+    child.install("matlab")
+    child.works("matlab", "highlights")
 end
 T.queries.fails = function()
     child.lua("config.effective_repos.matlab.install_info.queries = 'queries'")
-    child.cmd("TSInstall matlab")
-    child.wait("matlab")
-    child.fails("matlab")
+    child.install("matlab")
+    child.fails("matlab", "highlights")
 end
 
 return T
