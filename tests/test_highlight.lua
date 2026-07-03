@@ -18,8 +18,7 @@ end
 T["after_install"] = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child.lua("installer.install(" .. vim.inspect(languages) .. ")")
-            child.wait(languages)
+            child.install(languages)
         end,
     },
 })

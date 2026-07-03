@@ -9,9 +9,8 @@ local T = new_set({
 })
 
 T["assume_installed"] = function()
-    child.cmd("TSInstall " .. table.concat(languages, " "))
-    local err = child.wait(languages, 0, true)
-    eq(true, err == nil or 0 <= vim.fn.match(err, [[^\v([^\n]*installation not started[^\n]*\n?)*$]]))
+    local err = child.install(languages, 0, true)
+    eq(true, not err or 0 <= vim.fn.match(err, [[^\v([^\n]*installation not started[^\n]*\n?)*$]]), err)
 end
 
 T["dependants"] = function()
@@ -26,8 +25,7 @@ T["dependants"] = function()
     if #dependants == 0 then
         MiniTest.skip("no dependants")
     end
-    child.cmd("TSInstall " .. table.concat(dependants, " "))
-    child.wait(dependants)
+    child.install(dependants)
 end
 
 return T

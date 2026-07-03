@@ -16,7 +16,7 @@ local T = new_set({
             local queries = vim.iter(paths):map(function(path)
                 return vim.fn.fnamemodify(path, ":t:r")
             end)
-            return queries
+            return vim.iter({ "parser", unpack(queries:totable()) })
                 :map(function(query)
                     return { lang, query }
                 end)

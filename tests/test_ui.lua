@@ -9,11 +9,11 @@ end
 T["install"] = function()
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal i")
     child.wait(languages)
-    child.works(languages)
+    child.works(languages, "parser")
 end
 
 T["update"] = function()
-    child.works(languages)
+    child.works(languages, "parser")
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal u")
     eq(
         false,
@@ -22,7 +22,7 @@ T["update"] = function()
         )
     )
     child.wait(languages)
-    child.works(languages)
+    child.works(languages, "parser")
 end
 
 local installed, deps
@@ -42,7 +42,7 @@ T["filter"]["warning"] = function()
     if #deps == 0 then
         MiniTest.skip("no dependencies")
     end
-    child.cmd("TSUninstall " .. table.concat(deps, " "))
+    child.remove(deps)
     child.cmd("normal f")
     local warns = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
     eq(true, #warns > 0)
@@ -70,10 +70,10 @@ T["filter"]["all"] = function()
 end
 
 T["remove"] = function()
-    child.works(languages)
-    child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ")/normal x")
+    child.works(languages, "parser")
+    child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal x")
     child.restart()
-    child.fails(languages)
+    child.fails(languages, "parser")
 end
 
 return T

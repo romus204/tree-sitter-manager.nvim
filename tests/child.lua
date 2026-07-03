@@ -1,5 +1,6 @@
 local M = MiniTest.new_child_neovim()
 
+---@param config tree-sitter-manager.Config
 function M.setup(config)
     M.name = MiniTest.current.case and MiniTest.current.case.desc[1] or "tests/interactive_session"
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), M.name)
@@ -27,6 +28,9 @@ function M.cleanup()
     vim.fs.rm(query_dir, { recursive = true, force = true })
 end
 
+---@param languages string[]
+---@param timeout? number default 60
+---@param return_error? boolean whether to return or throw an error (default false)
 function M.wait(languages, timeout, return_error)
     languages = type(languages) == "string" and { languages } or { unpack(languages) }
     -- add dependencies
@@ -78,28 +82,50 @@ function M.wait(languages, timeout, return_error)
     end
 end
 
+---@param languages string[]
+---@param timeout? number default 60
+---@param return_error? boolean whether to return or throw an error (default false)
+function M.install(languages, timeout, return_error)
+    M.lua("installer.install(" .. vim.inspect(languages) .. ")")
+    return M.wait(languages, timeout, return_error)
+end
+
+---@param languages string[]
+function M.remove(languages)
+    M.lua("installer.remove(" .. vim.inspect(languages) .. ")")
+end
+
+---@param languages string[]
+---@param query "parser" | "aerial" | "folds" | "highlights" | "indents" | "injections" | "locals" | "tags"
 function M.works(languages, query)
     languages = type(languages) == "string" and { languages } or languages
-    query = query or "highlights"
-    for _, lang in ipairs(languages) do
-        if not util.is_only_query(lang) then
-            ner(function()
-                M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-            end)
+    if query ~= "parser" then
+        for _, lang in ipairs(languages) do
             eq(true, M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
         end
+    else
+        vim.iter(languages):filter(util.no(util.is_only_query)):each(function(lang)
+            M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+        end)
     end
 end
 
+---@param languages string[]
+---@param query "parser" | "aerial" | "folds" | "highlights" | "indents" | "injections" | "locals" | "tags"
 function M.fails(languages, query)
     if type(languages) == "string" then
         languages = { languages }
     end
-    query = query or "highlights"
-    for _, lang in ipairs(languages) do
-        local parser_works = pcall(M.lua, "vim.treesitter.get_string_parser('', '" .. lang .. "')")
-        local query_works = M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')")
-        eq(false, parser_works and query_works)
+    if query ~= "parser" then
+        for _, lang in ipairs(languages) do
+            eq(false, M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
+        end
+    else
+        vim.iter(languages):filter(util.no(util.is_only_query)):each(function(lang)
+            er(function()
+                M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+            end)
+        end)
     end
 end
 

@@ -5,11 +5,11 @@ local T = new_set()
 T["TSInstall"] = function()
     child.cmd("TSInstall " .. table.concat(languages, " "))
     child.wait(languages)
-    child.works(languages)
+    child.works(languages, "parser")
 end
 
 T["TSUpdate"] = function()
-    child.works(languages)
+    child.works(languages, "parser")
     child.cmd("TSUpdate " .. table.concat(languages, " "))
     eq(
         false,
@@ -18,11 +18,11 @@ T["TSUpdate"] = function()
         )
     )
     child.wait(languages)
-    child.works(languages)
+    child.works(languages, "parser")
 end
 
 T["TSUpdate!"] = function()
-    child.works(languages)
+    child.works(languages, "parser")
     child.cmd("TSUpdate!")
     eq(
         false,
@@ -31,13 +31,13 @@ T["TSUpdate!"] = function()
         )
     )
     child.wait(languages)
-    child.works(languages)
+    child.works(languages, "parser")
 end
 
 T["TSUninstall"] = function()
     child.cmd("TSUninstall " .. table.concat(languages, " "))
     child.restart()
-    child.fails(languages)
+    child.fails(languages, "parser")
 end
 
 return T
