@@ -20,8 +20,6 @@ local icons = {
     build = "🔨 ",
 }
 
-local M = {}
-
 ---@class NotifyOpts
 ---@field icon?  NotifyIcon Prefix the message with this icon (nerdfont only).
 ---@field level? integer    Log level forwarded to |vim.notify()| (e.g. `vim.log.levels.WARN`).
@@ -29,7 +27,7 @@ local M = {}
 ---Display a notification, optionally prefixed with an icon.
 ---@param message string      The notification message.
 ---@param opts?   NotifyOpts  Optional settings selecting an icon and log level.
-function M.notify(message, opts)
+return function(message, opts)
     opts = opts or {}
     local prefix = ""
     if opts.icon and config.cfg.nerdfont then
@@ -37,5 +35,3 @@ function M.notify(message, opts)
     end
     vim.notify(prefix .. message, opts.level)
 end
-
-return M

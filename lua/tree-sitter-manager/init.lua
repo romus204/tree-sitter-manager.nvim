@@ -27,7 +27,7 @@ function M.setup(opts)
             info.install_info = M.backport_use_repo_queries(info.install_info)
             state.effective_repos[lang] = vim.tbl_extend("force", state.effective_repos[lang] or {}, info)
         else
-            notify.notify(
+            notify(
                 "Language is missing `install_info`, ignoring entry: " .. lang,
                 { icon = "warning", level = vim.log.levels.WARN }
             )
