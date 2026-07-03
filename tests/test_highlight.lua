@@ -24,7 +24,7 @@ T["after_install"] = MiniTest.new_set({
     },
 })
 T["after_install"]["new"] = function(ft)
-    if util.is_only_query(ft) then
+    if util.is_only_query(vim.treesitter.language.get_lang(ft)) then
         MiniTest.skip("only query")
     end
     -- highlighter is active for new buffers
@@ -32,7 +32,7 @@ T["after_install"]["new"] = function(ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 T["after_install"]["old"] = function(ft)
-    if util.is_only_query(ft) then
+    if util.is_only_query(vim.treesitter.language.get_lang(ft)) then
         MiniTest.skip("only query")
     end
     -- highlighter is active even for existing buffers
@@ -43,7 +43,6 @@ end
 T["nohighlight"] = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child.stop()
             child.setup({ highlight = true, nohighlight = languages })
         end,
     },
