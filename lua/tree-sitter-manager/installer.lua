@@ -1,9 +1,7 @@
 local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local backport = require("tree-sitter-manager.backport")
-
-local notify_nerd = { "✕ ", "📦 ", "󰚰 ", "⚠ ", "✓ ", "⚙️ ", "🔨 " }
-local notify_icon
+local notify = require("tree-sitter-manager.notify")
 
 ---@class Installer
 ---@field installing table<Lang, boolean>
@@ -14,10 +12,6 @@ local notify_icon
 ---
 ---@alias Lang string
 local M = { installing = {}, status = {} }
-
-function M.setup()
-    notify_icon = config.cfg.nerdfont and notify_nerd or vim.fn["repeat"]({ "" }, 7)
-end
 
 local function copy_queries(lang, source)
     local qpath = util.qpath(lang)
@@ -36,12 +30,12 @@ end
 local function treesitter_build(lang, query_dir, build_path, generate, tmpdir, status, callback)
     _status = { ok = status.ok and generate, error = status.error }
     if _status.ok then
-        vim.notify(notify_icon[6] .. "Generating " .. lang)
+        notify.notify("Generating " .. lang, { icon = "generate" })
     end
     util.run_async({ "tree-sitter", "generate" }, build_path, _status, function(out)
         out = generate and out or status
         if out.ok then
-            vim.notify(notify_icon[7] .. "Building " .. lang)
+            notify.notify("Building " .. lang, { icon = "build" })
         end
         util.run_async({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, out, function(out)
             if out.ok then
@@ -115,7 +109,7 @@ function M.remove(languages, callback, update)
     end
 
     if not update and #uninstalled > 0 then
-        vim.notify(notify_icon[1] .. "Removed " .. table.concat(languages, " "))
+        notify.notify("Removed " .. table.concat(languages, " "), { icon = "removed" })
         callback({ ok = true })
     end
 end
@@ -135,7 +129,7 @@ function M.install(languages, callback, update)
     for _, lang in ipairs(languages) do
         if not config.effective_repos[lang] then
             M.status[lang] = { ok = false, error = "Parser not found in repos" }
-            vim.notify(notify_icon[4] .. "Parser not found in repos: " .. lang, vim.log.levels.WARN)
+            notify.notify("Parser not found in repos: " .. lang, { icon = "warning", level = vim.log.levels.WARN })
         elseif util.is_installed(lang) then
             M.status[lang] = { ok = true }
         elseif not M.installing[lang] then
@@ -143,9 +137,9 @@ function M.install(languages, callback, update)
                 M.status[lang] = out
                 M.installing[lang] = nil
                 if not out.ok then
-                    vim.notify(notify_icon[4] .. "Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
+                    notify.notify("Error installing " .. lang .. "\n" .. out.error, { icon = "warning", level = vim.log.levels.WARN })
                 else
-                    vim.notify(notify_icon[5] .. (update and "Updated " or "Installed ") .. lang)
+                    notify.notify((update and "Updated " or "Installed ") .. lang, { icon = "success" })
                     -- refresh queries and update highlighting
                     vim.treesitter.query.get:clear()
                     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -163,9 +157,9 @@ function M.install(languages, callback, update)
 
     if #installing > 0 then
         if update then
-            vim.notify(notify_icon[3] .. "Updating " .. table.concat(installing, " "))
+            notify.notify("Updating " .. table.concat(installing, " "), { icon = "update" })
         else
-            vim.notify(notify_icon[2] .. "Installing " .. table.concat(installing, " "))
+            notify.notify("Installing " .. table.concat(installing, " "), { icon = "install" })
         end
     end
 end
