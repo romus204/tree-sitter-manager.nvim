@@ -18,7 +18,7 @@ local T = MiniTest.new_set({
         end,
         pre_case = function()
             if _G.languages then
-                MiniTest.skip()
+                MiniTest.skip("skip smoke tests")
             end
         end,
         post_once = function()

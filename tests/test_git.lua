@@ -1,4 +1,4 @@
-local T = new_set()
+local T = new_set({ hooks = { pre_case = child.setup, post_case = child.cleanup } })
 
 T["revision"] = function()
     -- check installation with revision
@@ -9,7 +9,7 @@ end
 
 T["branch_revision"] = function()
     if _G.languages then
-        MiniTest.skip()
+        MiniTest.skip("skip smoke tests")
     end
     -- check installation with branch and revision (revision takes priority)
     local languages = { "perl" }
@@ -24,12 +24,12 @@ T["branch_revision"] = function()
             return acc
         end),
     })
-    child.wait(languages, 180000)
+    child.wait(languages)
 end
 
 T["branch"] = function()
     if _G.languages then
-        MiniTest.skip()
+        MiniTest.skip("skip smoke tests")
     end
     -- check installation with branch
     local languages = { "perl" }
@@ -44,12 +44,12 @@ T["branch"] = function()
             return acc
         end),
     })
-    child.wait(languages, 180000)
+    child.wait(languages)
 end
 
 T["no_branch_no_rev"] = function()
     if _G.languages then
-        MiniTest.skip()
+        MiniTest.skip("skip smoke tests")
     end
     -- check installation from HEAD
     local languages = { "perl" }
@@ -64,7 +64,7 @@ T["no_branch_no_rev"] = function()
             return acc
         end),
     })
-    child.wait(languages, 180000)
+    child.wait(languages)
 end
 
 T["GIT_WORK_TREE"] = function()
@@ -76,9 +76,8 @@ end
 
 T["pre_2.49.0"] = MiniTest.new_set({
     hooks = {
-        pre_once = function()
+        pre_case = function()
             -- simulate git pre 2.49
-            child.restart()
             child.lua([[
             system = vim.system
             vim.system = function(cmd, ...)
@@ -97,6 +96,9 @@ T["pre_2.49.0"] = MiniTest.new_set({
                 return system(cmd, ...)
             end
             ]])
+            local version = { child.lua_get('util.run({ "git", "version" }).output'):match("(%d+)%.(%d+)%.(%d+)") }
+            local major, minor, patch = unpack(vim.iter(version):map(tonumber):totable())
+            eq(true, major < 2 or major == 2 and minor < 49)
         end,
     },
 })

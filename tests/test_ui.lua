@@ -17,9 +17,9 @@ T["update"] = function()
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal u")
     eq(
         false,
-        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[):filter(function(lang)
-            return not util.is_only_query(lang)
-        end):any(util.is_installed)]])
+        child.lua_get(
+            "vim.iter(" .. vim.inspect(languages) .. "):filter(util.no(util.is_only_query)):any(util.is_installed)"
+        )
     )
     child.wait(languages)
     child.works(languages)
@@ -35,19 +35,10 @@ T["filter"]["installed"] = function()
             return line:match("%S+")
         end)
         :totable()
-    eq(
-        true,
-        vim.iter(languages):all(function(lang)
-            return vim.list_contains(installed, lang)
-        end)
-    )
+    eq(true, vim.iter(languages):all(util.isin(installed)))
 end
 T["filter"]["warning"] = function()
-    deps = vim.iter(installed)
-        :filter(function(lang)
-            return not vim.list_contains(languages, lang)
-        end)
-        :totable()
+    deps = vim.iter(installed):filter(util.notin(languages)):totable()
     if #deps == 0 then
         MiniTest.skip("no dependencies")
     end
@@ -55,7 +46,7 @@ T["filter"]["warning"] = function()
     child.cmd("normal f")
     local warns = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
     eq(true, #warns > 0)
-    if vim.list_contains(languages, "typescript") and vim.list_contains(languages, "glimmer_typescript") then
+    if vim.iter({ "typescript", "glimmer_typescript" }):all(util.isin(languages)) then
         eq(
             true,
             vim.iter(warns):any(function(line)
@@ -67,17 +58,12 @@ end
 T["filter"]["missing"] = function()
     child.cmd("normal f")
     local lines = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
-    local missing = vim.iter(lines)
+    local missing = util.isin(vim.iter(lines)
         :map(function(line)
             return line:match("%S+")
         end)
-        :totable()
-    eq(
-        false,
-        vim.iter(languages):any(function(lang)
-            return vim.list_contains(missing, lang)
-        end)
-    )
+        :totable())
+    eq(false, vim.iter(languages):any(missing))
 end
 T["filter"]["all"] = function()
     child.cmd("normal f")
