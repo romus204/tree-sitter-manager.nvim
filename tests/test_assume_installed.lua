@@ -8,12 +8,12 @@ local T = new_set({
     },
 })
 
-T["assume_installed"] = function()
+T.assume_installed = function()
     local err = child.install(languages, 0, true)
     eq(true, not err or 0 <= vim.fn.match(err, [[^\v([^\n]*installation not started[^\n]*\n?)*$]]), err)
 end
 
-T["dependants"] = function()
+T.dependants = function()
     local dependants = vim.iter(languages)
         :map(function(lang)
             return vim.iter(config.languages):find(function(other)
