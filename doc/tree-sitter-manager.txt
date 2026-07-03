@@ -308,6 +308,12 @@ Add a new language: >lua
   })
 <
 
+If you are only setting the `url` field, there is a shortcut: >lua
+  require("tree-sitter-manager").setup({
+    languages = { mylang = "https://github.com/someone/tree-sitter-mylang" },
+  })
+<
+
 ------------------------------------------------------------------------------
                                     *tree-sitter-manager-install_info-location*
 languages.<lang>.install_info.location ~
