@@ -1,6 +1,7 @@
 local state = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local installer = require("tree-sitter-manager.installer")
+local notify = require("tree-sitter-manager.notify")
 local ui = require("tree-sitter-manager.ui")
 
 -- Preserve public API surface for backward compatibility
@@ -22,13 +23,19 @@ function M.setup(opts)
     -- User entries take precedence, allowing custom forks and new languages.
     state.effective_repos = vim.deepcopy(state.base_repos)
     for lang, info in pairs(state.cfg.languages) do
-        info.install_info = M.backport_use_repo_queries(info.install_info)
-        state.effective_repos[lang] = vim.tbl_extend("force", state.effective_repos[lang] or {}, info)
+        if info.install_info then
+            info.install_info = M.backport_use_repo_queries(info.install_info)
+            state.effective_repos[lang] = vim.tbl_extend("force", state.effective_repos[lang] or {}, info)
+        else
+            notify.notify(
+                "Language is missing `install_info`, ignoring entry: " .. lang,
+                { icon = "warning", level = vim.log.levels.WARN }
+            )
+        end
     end
     state.languages = vim.tbl_keys(state.effective_repos)
     table.sort(state.languages)
 
-    installer.setup()
     ui.setup()
 
     vim.fn.mkdir(state.cfg.parser_dir, "p")
