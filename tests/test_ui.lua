@@ -7,14 +7,14 @@ T["open"] = function()
 end
 
 T["install"] = function()
-    child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ")/normal i")
+    child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal i")
     child.wait(languages)
     child.works(languages)
 end
 
 T["update"] = function()
     child.works(languages)
-    child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ")/normal u")
+    child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal u")
     eq(
         false,
         child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[):filter(function(lang)
