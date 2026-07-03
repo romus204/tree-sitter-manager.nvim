@@ -7,20 +7,65 @@ local M = {}
 
 M.PLUGIN_ROOT = abs ~= "" and vim.fn.fnamemodify(abs, ":h:h:h") or vim.fn.stdpath("config")
 
+---@vararg table lists to be concatenated (out-of-place)
+---@return table concatenated list
+function M.concat(...)
+    return vim.iter({ ... }):flatten():totable()
+end
+
+---Compose functions
+---@vararg fun
+---@return fun
+function M.compose(f, ...)
+    local g = ... and M.compose(...)
+    return not g and f or function(...)
+        return f(g(...))
+    end
+end
+
+---Logical not of the function output
+---@param f fun
+---@return fun
+function M.no(f)
+    return function(...)
+        return not f(...)
+    end
+end
+
+---@return fun getter function
+function M.get(tbl)
+    return function(key)
+        return tbl[key]
+    end
+end
+
+---@return fun checks inclusion
+function M.isin(list)
+    return function(val)
+        return vim.list_contains(list, val)
+    end
+end
+
+M.notin = M.compose(M.no, M.isin)
+
+---@return string parser extension
 function M.ext()
     local sys = vim.uv.os_uname().sysname
     return sys:match("Windows") and ".dll" or sys:match("Darwin") and ".dylib" or ".so"
 end
 
+---@return string parser path
 function M.ppath(lang)
     return vim.fs.joinpath(config.cfg.parser_dir, lang .. M.ext())
 end
 
+---@return string query path
 function M.qpath(lang)
     return vim.fs.joinpath(config.cfg.query_dir, lang)
 end
 
---- Flat dependency tree.
+---Flat dependency tree.
+---@return string[]
 function M.get_requires(lang)
     local entry = config.effective_repos[lang]
     local deps = entry and entry.requires or {}
@@ -34,6 +79,7 @@ function M.get_requires(lang)
     return deps
 end
 
+---@return table
 function M.get_repo_info(lang)
     local entry = config.effective_repos[lang]
     if not entry then
@@ -55,11 +101,13 @@ function M.get_repo_info(lang)
     return nil
 end
 
+---@return bool
 function M.is_only_query(lang)
     local info = M.get_repo_info(lang)
     return not info or not info.url
 end
 
+---@return bool
 function M.is_installed(lang)
     if vim.list_contains(config.cfg.assume_installed, lang) then
         return true
@@ -68,12 +116,6 @@ function M.is_installed(lang)
     else
         return nil ~= vim.uv.fs_stat(M.ppath(lang))
     end
-end
-
----@vararg table lists to be concatenated (out-of-place)
----@return table concatenated list
-function M.concat(...)
-    return vim.iter({ ... }):flatten():totable()
 end
 
 ---@class Status
