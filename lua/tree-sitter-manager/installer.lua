@@ -59,7 +59,11 @@ local function treesitter_build(lang, info, tmpdir, status, callback)
     end)
 end
 
-local function install(lang, callback)
+local function install(lang, on_finish)
+    local function callback(out)
+        on_finish(out, lang)
+    end
+
     if util.is_only_query(lang) then
         callback(copy_queries(lang))
         return
@@ -125,14 +129,32 @@ end
 
 function M.install(languages, callback, update)
     languages = type(languages) == "string" and { languages } or languages
-    callback = callback or function() end
-
-    for _, lang in ipairs({ unpack(languages) }) do
-        if not vim.list_contains(config.cfg.assume_installed, lang) then
-            vim.list_extend(languages, util.get_requires(lang))
+    local function on_finish(out, lang)
+        M.status[lang] = out
+        M.installing[lang] = nil
+        if not out.ok then
+            vim.notify(notify_icon[4] .. "Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
+        else
+            vim.notify(notify_icon[5] .. (update and "Updated " or "Installed ") .. lang)
+            -- refresh queries and update highlighting
+            vim.treesitter.query.get:clear()
+            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                pcall(vim.treesitter.start, buf)
+            end
+        end
+        if callback then
+            callback(out)
         end
     end
-    vim.list.unique(languages)
+
+    local lang_n_deps = {}
+    for i, lang in ipairs(languages) do
+        table.insert(lang_n_deps, lang)
+        if not vim.list_contains(config.cfg.assume_installed, lang) then
+            vim.list_extend(lang_n_deps, util.get_requires(lang))
+        end
+    end
+    languages = vim.list.unique(lang_n_deps)
 
     local installing = {}
     for _, lang in ipairs(languages) do
@@ -141,28 +163,26 @@ function M.install(languages, callback, update)
             vim.notify(notify_icon[4] .. lang .. " not in repos", vim.log.levels.WARN)
         elseif util.is_installed(lang) then
             M.status[lang] = { ok = true }
+        elseif util.is_only_query(lang) then
+            install(lang, on_finish)
         elseif not M.installing[lang] then
-            install(lang, function(out)
-                M.status[lang] = out
-                M.installing[lang] = nil
-                if not out.ok then
-                    vim.notify(notify_icon[4] .. "Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
-                else
-                    vim.notify(notify_icon[5] .. (update and "Updated " or "Installed ") .. lang)
-                    -- refresh queries and update highlighting
-                    vim.treesitter.query.get:clear()
-                    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-                        pcall(vim.treesitter.start, buf)
-                    end
-                end
-                callback(out)
-            end)
-            if not util.is_only_query(lang) then
-                M.installing[lang] = true
-                table.insert(installing, lang)
-            end
+            M.installing[lang] = true
+            table.insert(installing, lang)
         end
     end
+
+    local function install_batch(i, size)
+        local batch = vim.list_slice(installing, i, i + size - 1)
+        for _, lang in ipairs(batch) do
+            install(lang, function(out, lang)
+                on_finish(out, lang)
+                if not vim.iter(batch):any(util.get(M.installing)) then
+                    install_batch(i + size, size)
+                end
+            end)
+        end
+    end
+    install_batch(1, 64)
 
     if #installing > 0 then
         if update then
