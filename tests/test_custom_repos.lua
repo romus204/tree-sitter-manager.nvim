@@ -21,7 +21,7 @@ T["local"] = MiniTest.new_set({
         end,
     },
 })
-T["local"].fails = function()
+T["local"].fail = function()
     er(function()
         child.install("console")
     end, "does not exist")
@@ -39,11 +39,11 @@ T.generate = MiniTest.new_set({
         end,
     },
 })
-T.generate.works = function()
+T.generate.pass = function()
     child.install("perl")
     child.works("perl", "parser")
 end
-T.generate.fails = function()
+T.generate.fail = function()
     child.lua("config.effective_repos.perl.install_info.generate = false")
     er(function()
         child.install("perl")
@@ -62,11 +62,11 @@ T.location = MiniTest.new_set({
         end,
     },
 })
-T.location.works = function()
+T.location.pass = function()
     child.install("prolog")
     child.works("prolog", "parser")
 end
-T.location.fails = function()
+T.location.fail = function()
     child.lua("config.effective_repos.prolog.install_info.location = nil")
     er(function()
         child.install("prolog")
@@ -85,11 +85,11 @@ T.queries = MiniTest.new_set({
         end,
     },
 })
-T.queries.works = function()
+T.queries.pass = function()
     child.install("matlab")
     child.works("matlab", "highlights")
 end
-T.queries.fails = function()
+T.queries.fail = function()
     child.lua("config.effective_repos.matlab.install_info.queries = 'queries'")
     child.install("matlab")
     child.fails("matlab", "highlights")

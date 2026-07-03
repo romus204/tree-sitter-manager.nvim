@@ -2,17 +2,17 @@ local languages = _G.languages or { "tsv", "typescript", "glimmer_typescript" }
 
 local T = new_set()
 
-T["open"] = function()
+T.open = function()
     child.cmd("TSManager")
 end
 
-T["install"] = function()
+T.install = function()
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal i")
     child.wait(languages)
     child.works(languages, "parser")
 end
 
-T["update"] = function()
+T.update = function()
     child.works(languages, "parser")
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal u")
     eq(
@@ -26,8 +26,8 @@ T["update"] = function()
 end
 
 local installed, deps
-T["filter"] = MiniTest.new_set()
-T["filter"]["installed"] = function()
+T.filter = MiniTest.new_set()
+T.filter.installed = function()
     child.cmd("normal f")
     local lines = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
     installed = vim.iter(lines)
@@ -37,7 +37,7 @@ T["filter"]["installed"] = function()
         :totable()
     eq(true, vim.iter(languages):all(util.isin(installed)))
 end
-T["filter"]["warning"] = function()
+T.filter.warning = function()
     deps = vim.iter(installed):filter(util.notin(languages)):totable()
     if #deps == 0 then
         MiniTest.skip("no dependencies")
@@ -55,7 +55,7 @@ T["filter"]["warning"] = function()
         )
     end
 end
-T["filter"]["missing"] = function()
+T.filter.missing = function()
     child.cmd("normal f")
     local lines = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
     local missing = util.isin(vim.iter(lines)
@@ -65,11 +65,11 @@ T["filter"]["missing"] = function()
         :totable())
     eq(false, vim.iter(languages):any(missing))
 end
-T["filter"]["all"] = function()
+T.filter.all = function()
     child.cmd("normal f")
 end
 
-T["remove"] = function()
+T.remove = function()
     child.works(languages, "parser")
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal x")
     child.restart()

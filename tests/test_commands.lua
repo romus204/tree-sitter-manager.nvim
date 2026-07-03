@@ -2,13 +2,13 @@ local languages = _G.languages or { "tsv", "tsx" }
 
 local T = new_set()
 
-T["TSInstall"] = function()
+T.TSInstall = function()
     child.cmd("TSInstall " .. table.concat(languages, " "))
     child.wait(languages)
     child.works(languages, "parser")
 end
 
-T["TSUpdate"] = function()
+T.TSUpdate = function()
     child.works(languages, "parser")
     child.cmd("TSUpdate " .. table.concat(languages, " "))
     eq(
@@ -34,7 +34,7 @@ T["TSUpdate!"] = function()
     child.works(languages, "parser")
 end
 
-T["TSUninstall"] = function()
+T.TSUninstall = function()
     child.cmd("TSUninstall " .. table.concat(languages, " "))
     child.restart()
     child.fails(languages, "parser")
