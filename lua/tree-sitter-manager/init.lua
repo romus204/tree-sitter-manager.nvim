@@ -95,11 +95,7 @@ function M.setup(opts)
         nargs = "+",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead)
-                :filter(function(lang)
-                    return not util.is_installed(lang)
-                end)
-                :totable()
+            return iter_startswith(_argLead, _cmdLine):filter(util.no(util.is_installed)):totable()
         end,
         desc = "Install treesitter parsers",
     })

@@ -16,11 +16,11 @@ local icon_col
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [f] Filter  [q] Close "
 
 local filter_type = {
-    --ok    warn  miss  installing
-    { true, true, true, true }, --    all
-    { true, true, false, true }, --   installed
-    { false, true, false, true }, --  warning
-    { false, false, true, false }, -- missing
+    --            ok    warn  miss  installing
+    util.get({ true, true, true, true }), --    all
+    util.get({ true, true, false, true }), --   installed
+    util.get({ false, true, false, true }), --  warning
+    util.get({ false, false, true, false }), -- missing
 }
 local filter_idx
 
@@ -33,7 +33,7 @@ local M = {}
 
 function M.setup()
     title = config.cfg.nerdfont and title_nerd or title_asci
-    status_icon = config.cfg.nerdfont and status_nerd or status_asci
+    status_icon = util.get(config.cfg.nerdfont and status_nerd or status_asci)
     local langwidth = vim.iter(config.languages):map(string.len):fold(0, math.max)
     formatter = "   %-" .. langwidth .. "s  %s%s"
     icon_col = 3 + langwidth + 2
@@ -53,13 +53,6 @@ local function get_status(lang)
     end
 end
 
-local function get_status_icon_iter(langs)
-    local function get_icon(status)
-        return status_icon[status]
-    end
-    return vim.iter(langs):map(get_status):map(get_icon)
-end
-
 local function get_meta_suffix(lang)
     local info = util.get_repo_info(lang)
     local parts = {}
@@ -75,10 +68,7 @@ local function get_meta_suffix(lang)
 end
 
 local function get_langs_filtered()
-    local function filter(lang)
-        return filter_type[filter_idx][get_status(lang)]
-    end
-    return vim.iter(config.languages):filter(filter):totable()
+    return vim.iter(config.languages):filter(util.compose(filter_type[filter_idx], get_status)):totable()
 end
 
 local function cycle_filter()
@@ -128,7 +118,7 @@ function M.render(out)
         table.sort(vim.list.unique(vim.list_extend(langs, get_langs_filtered())))
     end
 
-    local status = get_status_icon_iter(langs)
+    local status = vim.iter(langs):map(get_status):map(status_icon)
     local meta = vim.iter(langs):map(get_meta_suffix)
     local lines = vim.iter(langs)
         :map(function(lang)
