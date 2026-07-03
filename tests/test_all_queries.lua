@@ -26,7 +26,7 @@ local T = new_set({
         :totable(),
 })
 
-T["ensure_installed"] = function(lang, query)
+T.pass = function(lang, query)
     child.wait(lang)
     child.works(lang, query)
 end

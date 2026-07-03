@@ -9,20 +9,20 @@ local T = new_set({
     parametrize = parametrize(vim.iter(languages):map(vim.treesitter.language.get_filetypes):flatten():totable()),
 })
 
-T["before_install"] = function(ft)
+T.before_install = function(ft)
     -- no highlighter before installation
     child.cmd("e name." .. ft .. "|se ft=" .. ft)
     eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
-T["after_install"] = MiniTest.new_set({
+T.after_install = MiniTest.new_set({
     hooks = {
         pre_once = function()
             child.install(languages)
         end,
     },
 })
-T["after_install"]["new"] = function(ft)
+T.after_install.new = function(ft)
     if util.is_only_query(vim.treesitter.language.get_lang(ft)) then
         MiniTest.skip("only query")
     end
@@ -30,7 +30,7 @@ T["after_install"]["new"] = function(ft)
     child.cmd("enew|set ft=" .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
-T["after_install"]["old"] = function(ft)
+T.after_install.old = function(ft)
     if util.is_only_query(vim.treesitter.language.get_lang(ft)) then
         MiniTest.skip("only query")
     end
@@ -39,14 +39,14 @@ T["after_install"]["old"] = function(ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
-T["nohighlight"] = MiniTest.new_set({
+T.nohighlight = MiniTest.new_set({
     hooks = {
         pre_once = function()
             child.setup({ highlight = true, nohighlight = languages })
         end,
     },
 })
-T["nohighlight"]["fails"] = function(ft)
+T.nohighlight.fail = function(ft)
     -- expect no highlighting for any languages
     child.cmd("enew|set ft=" .. ft)
     eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))

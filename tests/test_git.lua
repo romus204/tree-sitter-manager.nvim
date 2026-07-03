@@ -1,11 +1,11 @@
 local T = new_set({ hooks = { pre_case = child.setup, post_case = child.cleanup } })
 
-T["revision"] = function()
+T.revision = function()
     -- check installation with revision
     child.install(_G.languages or { "tsv" })
 end
 
-T["branch_revision"] = function()
+T.branch_revision = function()
     if _G.languages then
         MiniTest.skip("skip smoke tests")
     end
@@ -25,7 +25,7 @@ T["branch_revision"] = function()
     child.wait(languages)
 end
 
-T["branch"] = function()
+T.branch = function()
     if _G.languages then
         MiniTest.skip("skip smoke tests")
     end
@@ -45,7 +45,7 @@ T["branch"] = function()
     child.wait(languages)
 end
 
-T["no_branch_no_rev"] = function()
+T.no_branch_no_rev = function()
     if _G.languages then
         MiniTest.skip("skip smoke tests")
     end
@@ -65,7 +65,7 @@ T["no_branch_no_rev"] = function()
     child.wait(languages)
 end
 
-T["GIT_WORK_TREE"] = function()
+T.GIT_WORK_TREE = function()
     child.cmd("let $GIT_WORK_TREE = '.'")
     child.install(_G.languages or { "tsv" })
 end
@@ -99,10 +99,10 @@ T["pre_2.49.0"] = MiniTest.new_set({
     },
 })
 -- check installation with revision pre 2.49
-T["pre_2.49.0"]["revision"] = function()
+T["pre_2.49.0"].revision = function()
     child.install(_G.languages or { "tsv" })
 end
-T["pre_2.49.0"]["GIT_WORK_TREE"] = function()
+T["pre_2.49.0"].GIT_WORK_TREE = function()
     child.cmd("let $GIT_WORK_TREE = '.'")
     child.install(_G.languages or { "tsv" })
 end
