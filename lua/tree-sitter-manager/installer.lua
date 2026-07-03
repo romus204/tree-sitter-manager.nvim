@@ -35,7 +35,7 @@ end
 
 local function treesitter_build(lang, info, tmpdir, status, callback)
     local build_path = vim.fs.joinpath(tmpdir, info.location)
-    if status.ok and not vim.uv.fs_stat(build_dir) then
+    if status.ok and not vim.uv.fs_stat(build_path) then
         status = { ok = false, error = lang .. ": invalid location: " .. info.location }
     end
 
