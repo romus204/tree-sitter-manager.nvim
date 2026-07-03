@@ -16,8 +16,7 @@ local T = new_set({
             local queries = vim.iter(paths):map(function(path)
                 return vim.fn.fnamemodify(path, ":t:r")
             end)
-            -- nil to test parser
-            return vim.iter({ nil, unpack(queries:totable()) })
+            return queries
                 :map(function(query)
                     return { lang, query }
                 end)
@@ -28,8 +27,7 @@ local T = new_set({
 })
 
 T["ensure_installed"] = function(lang, query)
-    -- wait for the parser to successfully install
-    child.wait(lang, 120000)
+    child.wait(lang)
     child.works(lang, query)
 end
 

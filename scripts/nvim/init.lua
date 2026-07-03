@@ -34,16 +34,10 @@ elseif vim.env.LANGUAGES then
 end
 
 function new_set(opts, tbl)
-    local _opts = {
-        hooks = {
-            pre_once = function()
-                child.setup()
-            end,
-            post_once = function()
-                child.cleanup()
-            end,
-        },
-    }
+    local _opts = { hooks = {
+        pre_once = child.setup,
+        post_once = child.cleanup,
+    } }
     opts = vim.tbl_deep_extend("force", _opts, opts or {})
     return MiniTest.new_set(opts, tbl)
 end
