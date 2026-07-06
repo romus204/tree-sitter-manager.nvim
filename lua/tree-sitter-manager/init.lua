@@ -6,9 +6,11 @@ local ui = require("tree-sitter-manager.ui")
 -- Preserve public API surface for backward compatibility
 local M = require("tree-sitter-manager.backport")
 
-local function iter_startswith(_argLead)
+local function iter_startswith(_argLead, _cmdLine)
+    local args = vim.split(_cmdLine, " +")
+    table.remove(args) -- don't include last word
     return vim.iter(state.languages):filter(function(lang)
-        return vim.startswith(lang, _argLead)
+        return vim.startswith(lang, _argLead) and not vim.list_contains(args, lang)
     end)
 end
 
@@ -75,7 +77,6 @@ function M.setup(opts)
             callback = function(a)
                 local lang = vim.treesitter.language.get_lang(a.match)
                 if vim.list_contains(state.cfg.nohighlight, lang) then
-                    return
                 elseif state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang) then
                     pcall(vim.treesitter.start)
                 end
@@ -84,9 +85,7 @@ function M.setup(opts)
         })
     end
 
-    vim.api.nvim_create_user_command("TSManager", function()
-        ui.open()
-    end, { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
+    vim.api.nvim_create_user_command("TSManager", ui.open, { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
 
     vim.api.nvim_create_user_command("TSInstall", function(args)
         installer.install(args.fargs, ui.render)
@@ -95,7 +94,11 @@ function M.setup(opts)
         nargs = "+",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead, _cmdLine):filter(util.no(util.is_installed)):totable()
+            return iter_startswith(_argLead, _cmdLine)
+                :filter(function(lang)
+                    return not util.is_installed(lang)
+                end)
+                :totable()
         end,
         desc = "Install treesitter parsers",
     })
@@ -107,7 +110,7 @@ function M.setup(opts)
         nargs = "+",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead):filter(util.is_installed):totable()
+            return iter_startswith(_argLead, _cmdLine):filter(util.is_installed):totable()
         end,
         desc = "Remove treesitter parsers",
     })
@@ -128,7 +131,7 @@ function M.setup(opts)
         bang = true,
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead):totable()
+            return iter_startswith(_argLead, _cmdLine):totable()
         end,
         desc = "Update treesitter parsers",
     })
