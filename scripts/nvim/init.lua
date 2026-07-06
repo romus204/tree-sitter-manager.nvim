@@ -5,13 +5,6 @@ vim.cmd([[let &rtp.=','.getcwd()]])
 -- Assumed that 'mini.nvim' is stored in 'deps/mini.nvim'
 vim.cmd("set rtp+=deps/mini.nvim")
 
--- Set up 'mini.test'
-require("mini.test").setup()
-eq = MiniTest.expect.equality
-neq = MiniTest.expect.no_equality
-er = MiniTest.expect.error
-ner = MiniTest.expect.no_error
-
 -- Set up 'tree-sitter-manager'
 vim.cmd.runtime("plugin/filetypes.lua")
 tsm = require("tree-sitter-manager")
@@ -23,15 +16,32 @@ repos = require("tree-sitter-manager.repos")
 ui = require("tree-sitter-manager.ui")
 util = require("tree-sitter-manager.util")
 
--- Set up 'tests.child'
-child = require("tests.child")
-
 -- Parse the list of languages to test
 if vim.env.LANGUAGES == "all" then
     _G.languages = vim.tbl_keys(require("tree-sitter-manager.repos"))
 elseif vim.env.LANGUAGES then
     _G.languages = vim.split(vim.env.LANGUAGES, " ")
 end
+
+-- Set up 'mini.test'
+require("mini.test").setup({
+    collect = {
+        filter_cases = function(case)
+            local skip_smoke_tests = { "tests/test_git.lua", "tests/test_custom_repos.lua", "tests/test_vimpack.lua" }
+            if _G.languages and vim.list_contains(skip_smoke_tests, case.desc[1]) then
+                return false
+            end
+            return true
+        end,
+    },
+})
+eq = MiniTest.expect.equality
+neq = MiniTest.expect.no_equality
+er = MiniTest.expect.error
+ner = MiniTest.expect.no_error
+
+-- Set up 'tests.child'
+child = require("tests.child")
 
 function new_set(opts, tbl)
     local _opts = { hooks = {

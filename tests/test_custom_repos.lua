@@ -1,13 +1,4 @@
-local T = new_set({
-    hooks = {
-        pre_case = function()
-            if _G.languages then
-                MiniTest.skip("skip smoke tests")
-            end
-        end,
-        post_case = child.cleanup,
-    },
-})
+local T = new_set({ hooks = { post_case = child.cleanup } })
 
 T["local"] = MiniTest.new_set({
     hooks = {

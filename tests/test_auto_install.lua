@@ -12,7 +12,7 @@ T.noauto_install = MiniTest.new_set({
         post_once = child.cleanup,
     },
 })
-T.noauto_install.pass = function(ft)
+T.noauto_install.fail = function(ft)
     child.cmd("se ft=" .. ft)
     local lang = vim.treesitter.language.get_lang(ft)
     er(function()
