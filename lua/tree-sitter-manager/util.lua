@@ -7,46 +7,45 @@ local M = {}
 
 M.PLUGIN_ROOT = abs ~= "" and vim.fn.fnamemodify(abs, ":h:h:h") or vim.fn.stdpath("config")
 
----@vararg table lists to be concatenated (out-of-place)
----@return table concatenated list
+---concat({1,2,3}, {4,5}) = {1,2,3,4,5}
+---Does not mutate lists.
+---@vararg any[]
+---@return any[]
 function M.concat(...)
     return vim.iter({ ... }):flatten():totable()
 end
 
----Compose functions
----@vararg fun
----@return fun
-function M.compose(f, ...)
-    local g = ... and M.compose(...)
-    return not g and f or function(...)
-        return f(g(...))
+---get(key)(tbl) = tbl[key]
+---@return function
+function M.get(key)
+    return function(tbl)
+        return tbl[key]
     end
 end
 
----Logical not of the function output
----@param f fun
----@return fun
-function M.no(f)
-    return function(...)
-        return not f(...)
-    end
-end
-
----@return fun getter function
-function M.get(tbl)
+---getter(tbl)(key) = tbl[key]
+---@return function
+function M.getter(tbl)
     return function(key)
         return tbl[key]
     end
 end
 
----@return fun checks inclusion
+---isin({ x, y, z })(x) = true
+---@return function
 function M.isin(list)
     return function(val)
         return vim.list_contains(list, val)
     end
 end
 
-M.notin = M.compose(M.no, M.isin)
+---notin({ x, y, z })(w) = true
+---@return function
+function M.notin(list)
+    return function(val)
+        return not vim.list_contains(list, val)
+    end
+end
 
 ---@return string parser extension
 function M.ext()
@@ -123,33 +122,108 @@ end
 ---@field error? string
 ---@field output? string
 
----@param args string[]
----@param cwd string
----@return Status
-function M.run(args, cwd)
-    local out = vim.system(args, { text = true, cwd = cwd }):wait()
-    local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
-    return { ok = out.code == 0, error = err, output = out.stdout }
+---@class AsyncJob
+---@field wait fun(self: AsyncJob, timeout: number): Status
+---@field start fun(self: AsyncJob) Start the job immediately.
+---@field active boolean
+
+---@class Queue: AsyncJob[]
+---@field new fun(self): Queue
+---@field find fun(self, job: AsyncJob): number, AsyncJob
+---@field add fun(self, job: AsyncJob)
+---@field remove fun(self, job: AsyncJob)
+---@field start_next_batch fun(self) Start the next batch capped at `async_size`
+local Queue = {}
+Queue.__index = Queue
+
+function Queue:new()
+    return setmetatable({}, self)
 end
 
+---@return number The index of the job
+---@return AsyncJob The job itself
+function Queue:find(job)
+    return vim.iter(ipairs(self)):find(function(_, j)
+        return j == job
+    end)
+end
+
+Queue.add = table.insert
+
+function Queue:remove(job)
+    local i = self:find(job) or 0
+    table.remove(self, i)
+end
+
+function Queue:start_next_batch()
+    local active = #vim.iter(self):filter(M.get("active")):totable()
+    for i = active + 1, math.min(#self, config.cfg.async_size) do
+        self[i]:start()
+    end
+end
+
+M.Queue = Queue
+M.global_queue = Queue:new()
+
+---@class runOptions
+---@field callback? fun(out: Status) If not given the job skips the queue.
+---@field status? Status If not status.ok, the job is skipped to the callback.
+---@field queue? Queue Jobs are queued, by default `global_queue`. Use Queue:new() to skip the queue.
+---@field [string] any Additional options are forwarded to vim.system
+
 ---@param args string[]
----@param cwd string
----@param status Status
----@param callback fun(out:Status)
-function M.run_async(args, cwd, status, callback)
-    callback = callback or function() end
+---@param opts? runOptions
+---@return AsyncJob
+function M.run(args, opts)
+    opts = opts or {}
+    local status = opts.status or { ok = true }
+    local queue = opts.queue or opts.callback and Queue:new() or M.global_queue
+    local callback = opts.callback or function() end
 
     if not status.ok then
         callback(status)
         return
     end
 
-    vim.system(args, { text = true, cwd = cwd }, function(out)
-        vim.schedule(function()
-            local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
-            callback({ ok = out.code == 0, error = err, output = out.stdout })
+    local job = {} ---@type AsyncJob
+
+    function job:start()
+        self.start = function() end -- subsequent calls do nothing
+
+        opts.text = true
+        local obj = vim.system(args, opts, function(out)
+            vim.schedule(function()
+                queue:remove(self)
+                queue:start_next_batch()
+                local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
+                callback({ ok = out.code == 0, error = err, output = out.stdout })
+            end)
         end)
-    end)
+
+        function self:wait(...) -- replace job:wait with the actual SystemObj:wait
+            local out = obj:wait(...)
+            local err = table.concat(args, " ") .. "\n" .. (out.stderr or "")
+            return { ok = out.code == 0, error = err, output = out.stdout }
+        end
+
+        self.active = true
+    end
+
+    function job:wait(timeout)
+        timeout = timeout or math.huge
+        local start = vim.uv.hrtime()
+        -- wait until the job starts
+        if vim.wait(timeout, function()
+            return self.active
+        end) then -- wait until the job finishes
+            return self:wait(timeout - (vim.uv.hrtime() - start) / 1e6)
+        end
+    end
+
+    queue:add(job)
+    queue:start_next_batch()
+
+    return job
 end
 
 function M.copy_dir(src, dst)

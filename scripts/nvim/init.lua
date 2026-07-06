@@ -5,6 +5,8 @@ vim.cmd([[let &rtp.=','.getcwd()]])
 -- Assumed that 'mini.nvim' is stored in 'deps/mini.nvim'
 vim.cmd("set rtp+=deps/mini.nvim")
 
+require("vim._core.ui2").enable()
+
 -- Set up 'tree-sitter-manager'
 vim.cmd.runtime("plugin/filetypes.lua")
 tsm = require("tree-sitter-manager")
