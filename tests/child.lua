@@ -124,7 +124,7 @@ function M.fails(languages, query)
         vim.iter(languages):filter(util.no(util.is_only_query)):each(function(lang)
             er(function()
                 M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-            end)
+            end, "No parser")
         end)
     end
 end
