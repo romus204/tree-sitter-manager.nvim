@@ -77,10 +77,13 @@ end
 
 local function cycle_filter()
     local new_langs
-    repeat -- skip empty results and duplicates
+    for idx = 1, 4 do
         filter_idx = (filter_idx % 4) + 1
         new_langs = get_langs_filtered()
-    until filter_idx == 1 or #new_langs > 0 and not vim.deep_equal(langs, new_langs)
+        if #new_langs > 0 and not vim.deep_equal(langs, new_langs) then
+            break
+        end
+    end
     langs = new_langs
     M.render()
 end
