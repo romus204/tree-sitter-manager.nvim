@@ -28,7 +28,9 @@ local T = new_set({
 })
 
 T.pass = function(lang, query)
-    if fail_parser[lang] then
+    if util.is_only_query(lang) then
+        MiniTest.skip("query dependency")
+    elseif fail_parser[lang] then
         MiniTest.skip("failed parser")
     end
     fail_parser[lang] = query == "parser"

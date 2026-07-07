@@ -10,17 +10,17 @@ local title
 
 local status_asci = { "OK", "!!", "..", "  " }
 local status_nerd = { "✅", "⚠️", "❌", "  " }
-local status_icon
+local get_status_icon
 local icon_col
 
 local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [f] Filter  [q] Close "
 
 local filter_type = {
     --            ok    warn  miss  installing
-    util.get({ true, true, true, true }), --    all
-    util.get({ true, true, false, true }), --   installed
-    util.get({ false, true, false, true }), --  warning
-    util.get({ false, false, true, false }), -- missing
+    util.getter({ true, true, true, true }), --    all
+    util.getter({ true, true, false, true }), --   installed
+    util.getter({ false, true, false, true }), --  warning
+    util.getter({ false, false, true, false }), -- missing
 }
 local filter_idx
 
@@ -33,7 +33,7 @@ local M = {}
 
 function M.setup()
     title = config.cfg.nerdfont and title_nerd or title_asci
-    status_icon = util.get(config.cfg.nerdfont and status_nerd or status_asci)
+    get_status_icon = util.getter(config.cfg.nerdfont and status_nerd or status_asci)
     local langwidth = vim.iter(config.languages):map(string.len):fold(0, math.max)
     formatter = "   %-" .. langwidth .. "s  %s%s"
     icon_col = 3 + langwidth + 2
@@ -68,7 +68,11 @@ local function get_meta_suffix(lang)
 end
 
 local function get_langs_filtered()
-    return vim.iter(config.languages):filter(util.compose(filter_type[filter_idx], get_status)):totable()
+    return vim.iter(config.languages)
+        :filter(function(lang)
+            return filter_type[filter_idx](get_status(lang))
+        end)
+        :totable()
 end
 
 local function cycle_filter()
@@ -97,19 +101,15 @@ local function render_spinner()
     end
 end
 
-local act = setmetatable({}, {
-    __index = function(act, action)
-        local function _action()
-            local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
-            if lang then
-                installer[action](lang, M.render)
-                M.render(true)
-            end
+local act = vim.defaulttable(function(action)
+    return function()
+        local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
+        if lang then
+            installer[action](lang, M.render)
+            M.render(true)
         end
-        rawset(act, action, _action)
-        return _action
-    end,
-})
+    end
+end)
 
 function M.render(out)
     if not buf or not vim.api.nvim_buf_is_valid(buf) then
@@ -118,7 +118,7 @@ function M.render(out)
         table.sort(vim.list.unique(vim.list_extend(langs, get_langs_filtered())))
     end
 
-    local status = vim.iter(langs):map(get_status):map(status_icon)
+    local status = vim.iter(langs):map(get_status):map(get_status_icon)
     local meta = vim.iter(langs):map(get_meta_suffix)
     local lines = vim.iter(langs)
         :map(function(lang)

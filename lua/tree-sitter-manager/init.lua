@@ -9,8 +9,8 @@ local M = require("tree-sitter-manager.backport")
 local function iter_startswith(_argLead, _cmdLine)
     local args = vim.split(_cmdLine, " +")
     table.remove(args) -- don't include last word
-    return vim.iter(state.languages):filter(function(lang)
-        return vim.startswith(lang, _argLead) and not vim.list_contains(args, lang)
+    return vim.iter(state.languages):filter(util.notin(args)):filter(function(lang)
+        return vim.startswith(lang, _argLead)
     end)
 end
 

@@ -74,8 +74,8 @@ T["test-case"] = function(lang)
 
     -- Parameters:
     -- languages to be installed
-    -- timeout (default 60s)
-    -- return_error, whether to return the error message or throw it
+    -- timeout (default 60,000 ms)
+    -- return_error (default false), whether to return the error message or throw it
     child.install(languages, 60000, false)
 
     child.works(lang, "parser") -- checks parser
