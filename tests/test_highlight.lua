@@ -6,7 +6,7 @@ local T = new_set({
             child.setup({ highlight = true })
         end,
     },
-    parametrize = parametrize(vim.iter(languages):map(vim.treesitter.language.get_filetypes):flatten():totable()),
+    parametrize = parametrize(vim.iter(languages):map(util.get_filetypes):flatten():totable()),
 })
 
 T.before_install = function(ft)
