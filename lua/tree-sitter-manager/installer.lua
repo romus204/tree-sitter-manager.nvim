@@ -33,7 +33,7 @@ local function copy_queries(lang, source)
     end
 end
 
-local function treesitter_build(lang, info, tmpdir, status, callback)
+local function build(lang, info, tmpdir, status, callback)
     local build_path = vim.fs.joinpath(tmpdir, info.location)
     if status.ok and not vim.uv.fs_stat(build_path) then
         status = { ok = false, error = lang .. ": invalid location: " .. info.location }
@@ -44,34 +44,43 @@ local function treesitter_build(lang, info, tmpdir, status, callback)
         vim.notify(notify_icon[6] .. "Generating " .. lang)
     end
 
-    util.run_async({ "tree-sitter", "generate" }, build_path, _status, function(out)
-        out = info.generate and out or status
-        if out.ok then
-            vim.notify(notify_icon[7] .. "Building " .. lang)
-        end
-        util.run_async({ "tree-sitter", "build", "-o", util.ppath(lang) }, build_path, out, function(out)
+    local queue = util.Queue:new() -- skip global_queue
+    util.run({ "tree-sitter", "generate" }, {
+        cwd = build_path,
+        status = _status,
+        queue = queue,
+        callback = function(out)
+            out = info.generate and out or status
             if out.ok then
-                out = copy_queries(lang, info.queries and vim.fs.joinpath(build_path, info.queries))
+                vim.notify(notify_icon[7] .. "Building " .. lang)
             end
-            vim.fs.rm(tmpdir, { recursive = true, force = true })
-            callback(out)
-        end)
-    end)
+            util.run({ "tree-sitter", "build", "-o", util.ppath(lang) }, {
+                cwd = build_path,
+                status = out,
+                queue = queue,
+                callback = function(out)
+                    if out.ok then
+                        out = copy_queries(lang, info.queries and vim.fs.joinpath(build_path, info.queries))
+                    end
+                    vim.fs.rm(tmpdir, { recursive = true, force = true })
+                    callback(out)
+                end,
+            })
+        end,
+    })
 end
 
-local function install(lang, on_finish)
-    local function callback(out)
-        on_finish(out, lang)
-    end
+local function install(lang, callback)
+    callback = callback or function() end
 
     if util.is_only_query(lang) then
         callback(copy_queries(lang))
         return
     end
 
-    local out = util.run({ "git", "version" })
+    local out = util.run({ "git", "version" }):wait()
     if not out.ok then
-        callback({ ok = false, error = "Git not installed" })
+        callback(out)
         return
     end
     local version = { out.output:match("(%d+)%.(%d+)%.(%d+)") }
@@ -83,27 +92,28 @@ local function install(lang, on_finish)
 
     if info.revision and (major < 2 or major == 2 and minor < 49) then
         -- Git pre 2.49.0 doesn't have --revision flag
-        out = util.run(util.concat(git_args, { "init", tmpdir }))
+        out = util.run(util.concat(git_args, { "init", tmpdir })):wait()
         if out.ok then
-            out = util.run(util.concat(git_args, { "remote", "add", "origin", info.url }))
+            out = util.run(util.concat(git_args, { "remote", "add", "origin", info.url })):wait()
         end
-        util.run_async(util.concat(git_args, { "fetch", "--depth=1", "origin", info.revision }), nil, out, function(out)
-            if out.ok then
-                out = util.run(util.concat(git_args, { "checkout", "FETCH_HEAD" }))
-            end
-            treesitter_build(lang, info, tmpdir, out, callback)
-        end)
+        util.run(util.concat(git_args, { "fetch", "--depth=1", "origin", info.revision }), {
+            status = out,
+            callback = function(out)
+                if out.ok then
+                    out = util.run(util.concat(git_args, { "checkout", "FETCH_HEAD" })):wait()
+                end
+                build(lang, info, tmpdir, out, callback)
+            end,
+        })
     else
         local revision = info.revision and "--revision=" .. info.revision
         local branch = info.branch and "--branch=" .. info.branch
-        util.run_async(
-            util.concat(git_args, { "clone", "--depth=1", info.url, tmpdir, revision or branch }),
-            nil,
-            out,
-            function(out)
-                treesitter_build(lang, info, tmpdir, out, callback)
-            end
-        )
+        util.run(util.concat(git_args, { "clone", "--depth=1", info.url, tmpdir, revision or branch }), {
+            status = out,
+            callback = function(out)
+                build(lang, info, tmpdir, out, callback)
+            end,
+        })
     end
 end
 
@@ -122,30 +132,13 @@ function M.remove(languages, callback, update)
     end
 
     if not update and #uninstalled > 0 then
-        vim.notify(notify_icon[1] .. "Removed " .. table.concat(languages, " "))
+        vim.notify(notify_icon[1] .. "Removed " .. table.concat(uninstalled, " "))
         callback({ ok = true })
     end
 end
 
 function M.install(languages, callback, update)
     languages = type(languages) == "string" and { languages } or languages
-    local function on_finish(out, lang)
-        M.status[lang] = out
-        M.installing[lang] = nil
-        if not out.ok then
-            vim.notify(notify_icon[4] .. "Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
-        else
-            vim.notify(notify_icon[5] .. (update and "Updated " or "Installed ") .. lang)
-            -- refresh queries and update highlighting
-            vim.treesitter.query.get:clear()
-            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-                pcall(vim.treesitter.start, buf)
-            end
-        end
-        if callback then
-            callback(out)
-        end
-    end
 
     local lang_n_deps = {}
     for i, lang in ipairs(languages) do
@@ -163,26 +156,31 @@ function M.install(languages, callback, update)
             vim.notify(notify_icon[4] .. lang .. " not in repos", vim.log.levels.WARN)
         elseif util.is_installed(lang) then
             M.status[lang] = { ok = true }
-        elseif util.is_only_query(lang) then
-            install(lang, on_finish)
-        elseif not M.installing[lang] then
-            M.installing[lang] = true
-            table.insert(installing, lang)
-        end
-    end
-
-    local function install_batch(i, size)
-        local batch = vim.list_slice(installing, i, i + size - 1)
-        for _, lang in ipairs(batch) do
-            install(lang, function(out, lang)
-                on_finish(out, lang)
-                if not vim.iter(batch):any(util.get(M.installing)) then
-                    install_batch(i + size, size)
+        elseif M.installing[lang] then
+        else
+            install(lang, function(out)
+                M.status[lang] = out
+                M.installing[lang] = nil
+                if not out.ok then
+                    vim.notify(notify_icon[4] .. "Error installing " .. lang .. "\n" .. out.error, vim.log.levels.WARN)
+                else
+                    vim.notify(notify_icon[5] .. (update and "Updated " or "Installed ") .. lang)
+                    -- refresh queries and update highlighting
+                    vim.treesitter.query.get:clear()
+                    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                        pcall(vim.treesitter.start, buf)
+                    end
+                end
+                if callback then
+                    callback(out)
                 end
             end)
+            if not util.is_only_query(lang) then
+                M.installing[lang] = true
+                table.insert(installing, lang)
+            end
         end
     end
-    install_batch(1, 64)
 
     if #installing > 0 then
         if update then

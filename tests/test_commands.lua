@@ -13,9 +13,11 @@ T.TSUpdate = function()
     child.cmd("TSUpdate " .. table.concat(languages, " "))
     eq(
         false,
-        child.lua_get(
-            "vim.iter(" .. vim.inspect(languages) .. [[):filter(util.no(util.is_only_query)):any(util.is_installed)]]
-        )
+        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[)
+            :filter(function(lang)
+                return not util.is_only_query(lang)
+            end)
+            :any(util.is_installed)]])
     )
     child.wait(languages)
     child.works(languages, "parser")
@@ -26,9 +28,11 @@ T["TSUpdate!"] = function()
     child.cmd("TSUpdate!")
     eq(
         false,
-        child.lua_get(
-            "vim.iter(" .. vim.inspect(languages) .. [[):filter(util.no(util.is_only_query)):any(util.is_installed)]]
-        )
+        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[)
+            :filter(function(lang)
+                return not util.is_only_query(lang)
+            end)
+            :any(util.is_installed)]])
     )
     child.wait(languages)
     child.works(languages, "parser")

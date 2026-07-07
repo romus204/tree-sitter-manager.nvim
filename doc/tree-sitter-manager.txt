@@ -57,10 +57,11 @@ lazy.nvim: >lua
   }
 <
 
-vim-plug: >vim
-  Plug 'romus204/tree-sitter-manager.nvim'
-<
-  Then in your `init.lua`: >lua
+vim.pack: >lua
+  vim.pack.add({
+    { src = "https://github.com/romus204/tree-sitter-manager.nvim" }
+  })
+
   require("tree-sitter-manager").setup({})
 <
 
@@ -84,6 +85,8 @@ vim-plug: >vim
     border           = "rounded",
     min_width        = 78,
     min_height       = 40,
+    -- tree-sitter-manager.util
+    async_size       = 64,
   })
 <
 

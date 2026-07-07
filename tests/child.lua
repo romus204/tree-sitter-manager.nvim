@@ -1,6 +1,6 @@
 local M = MiniTest.new_child_neovim()
 
----@param config tree-sitter-manager.Config
+---@param config tree_sitter_manager.Config
 function M.setup(config)
     M.name = MiniTest.current.case and MiniTest.current.case.desc[1] or "tests/interactive_session"
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), M.name)
@@ -36,15 +36,18 @@ function M.wait(languages, timeout, return_error)
     -- add dependencies
     vim.list.unique(vim.list_extend(languages, vim.iter(languages):map(util.get_requires):flatten():totable()))
     -- don't wait for languages already timed out
-    languages = vim.iter(languages):filter(util.no(util.get(M.timeout))):totable()
+    languages = vim.iter(languages)
+        :filter(function(lang)
+            return not M.timeout[lang]
+        end)
+        :totable()
     timeout = timeout or 60000
     M.lua([[
     success, reason = vim.wait(
         ]] .. timeout .. [[,
         function()
-            return not vim.iter(]] .. vim.inspect(languages) .. [[):any(util.get(installer.installing))
-        end,
-        1000
+            return not vim.iter(]] .. vim.inspect(languages) .. [[):any(util.getter(installer.installing))
+        end
     )
     ]])
 
@@ -52,7 +55,7 @@ function M.wait(languages, timeout, return_error)
     if not M.lua_get("success") then
         local reason = M.lua_get("reason")
         local failed =
-            M.lua_get("vim.iter(" .. vim.inspect(languages) .. "):filter(util.get(installer.installing)):totable()")
+            M.lua_get("vim.iter(" .. vim.inspect(languages) .. "):filter(util.getter(installer.installing)):totable()")
         if reason == -1 then
             for _, lang in ipairs(failed) do
                 M.timeout[lang] = true
@@ -104,9 +107,11 @@ function M.works(languages, query)
             eq(true, M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
         end
     else
-        vim.iter(languages):filter(util.no(util.is_only_query)):each(function(lang)
-            M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-        end)
+        for _, lang in ipairs(languages) do
+            if not util.is_only_query(lang) then
+                M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+            end
+        end
     end
 end
 
@@ -121,11 +126,13 @@ function M.fails(languages, query)
             eq(false, M.lua_get("nil ~= vim.treesitter.query.get('" .. lang .. "', '" .. query .. "')"))
         end
     else
-        vim.iter(languages):filter(util.no(util.is_only_query)):each(function(lang)
-            er(function()
-                M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
-            end, "No parser")
-        end)
+        for _, lang in ipairs(languages) do
+            if not util.is_only_query(lang) then
+                er(function()
+                    M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
+                end, "No parser")
+            end
+        end
     end
 end
 

@@ -41,7 +41,7 @@ T.revision.pre_2_49 = new_set({
                 return system(cmd, ...)
             end
             ]])
-            local version = { child.lua_get('util.run({ "git", "version" }).output'):match("(%d+)%.(%d+)%.(%d+)") }
+            local version = { child.lua_get('util.run({"git","version"}):wait().output'):match("(%d+)%.(%d+)%.(%d+)") }
             local major, minor, patch = unpack(vim.iter(version):map(tonumber):totable())
             eq(true, major < 2 or major == 2 and minor < 49)
         end,
