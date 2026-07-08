@@ -2,6 +2,7 @@ local src = debug.getinfo(1, "S").source
 local abs = src:sub(1, 1) == "@" and vim.fn.fnamemodify(src:sub(2), ":p") or ""
 
 local config = require("tree-sitter-manager.config")
+local invalid = require("tree-sitter-manager.invalid-filetypes")
 
 local M = {}
 
@@ -61,6 +62,12 @@ end
 ---@return string query path
 function M.qpath(lang)
     return vim.fs.joinpath(config.cfg.query_dir, lang)
+end
+
+---Wrapper for vim.treesitter.language.get_filetypes()
+---@return string[] list of filetypes
+function M.get_filetypes(lang)
+    return vim.iter(vim.treesitter.language.get_filetypes(lang)):filter(M.notin(invalid)):totable()
 end
 
 ---Flat dependency tree.
