@@ -88,9 +88,11 @@ local function install(lang, callback)
 
     local info = util.get_repo_info(lang)
     local tmpdir = vim.fn.tempname()
-    local git_args = { "git", "--no-advice", "--work-tree=" .. tmpdir, "--git-dir=" .. tmpdir .. "/.git" }
+    local git_args = { "git", "--work-tree=" .. tmpdir, "--git-dir=" .. tmpdir .. "/.git" }
 
-    if info.revision and (major < 2 or major == 2 and minor < 49) then
+    local has_revision = major > 2 or major == 2 and minor >= 49
+
+    if info.revision and not has_revision then
         -- Git pre 2.49.0 doesn't have --revision flag
         out = util.run(util.concat(git_args, { "init", tmpdir })):wait()
         if out.ok then
