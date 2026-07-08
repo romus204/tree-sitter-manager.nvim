@@ -17,11 +17,7 @@ T.update = function()
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal u")
     eq(
         false,
-        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[)
-            :filter(function(lang)
-                return not util.is_only_query(lang)
-            end)
-            :any(util.is_installed)]])
+        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[):filter(util.not_only_query):any(util.is_installed)]])
     )
     child.wait(languages)
     child.works(languages, "parser")

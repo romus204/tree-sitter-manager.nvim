@@ -108,7 +108,7 @@ function M.works(languages, query)
         end
     else
         for _, lang in ipairs(languages) do
-            if not util.is_only_query(lang) then
+            if util.not_only_query(lang) then
                 M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
             end
         end
@@ -127,7 +127,7 @@ function M.fails(languages, query)
         end
     else
         for _, lang in ipairs(languages) do
-            if not util.is_only_query(lang) then
+            if util.not_only_query(lang) then
                 er(function()
                     M.lua("vim.treesitter.get_string_parser('', '" .. lang .. "')")
                 end, "No parser")

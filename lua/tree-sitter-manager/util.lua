@@ -70,8 +70,7 @@ function M.get_filetypes(lang)
     return vim.iter(vim.treesitter.language.get_filetypes(lang)):filter(M.notin(invalid)):totable()
 end
 
----Flat dependency tree.
----@return string[]
+---@return string[] Flat dependency tree.
 function M.get_requires(lang)
     local entry = config.effective_repos[lang]
     local deps = entry and entry.requires or {}
@@ -85,7 +84,7 @@ function M.get_requires(lang)
     return deps
 end
 
----@return table
+---@return table | nil
 function M.get_repo_info(lang)
     local entry = config.effective_repos[lang]
     if not entry then
@@ -107,13 +106,15 @@ function M.get_repo_info(lang)
     return nil
 end
 
----@return bool
 function M.is_only_query(lang)
     local info = M.get_repo_info(lang)
     return not info or not info.url
 end
 
----@return bool
+function M.not_only_query(lang)
+    return not M.is_only_query(lang)
+end
+
 function M.is_installed(lang)
     if vim.list_contains(config.cfg.assume_installed, lang) then
         return true
@@ -122,6 +123,10 @@ function M.is_installed(lang)
     else
         return nil ~= vim.uv.fs_stat(M.ppath(lang))
     end
+end
+
+function M.not_installed(lang)
+    return not M.is_installed(lang)
 end
 
 ---@class Status
