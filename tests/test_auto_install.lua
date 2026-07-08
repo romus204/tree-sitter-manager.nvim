@@ -16,7 +16,7 @@ T.noauto_install.fail = function(ft)
     child.cmd("se ft=" .. ft)
     local lang = vim.treesitter.language.get_lang(ft)
     er(function()
-        child.wait(lang, 0)
+        child.wait_installed(lang, 0)
     end, "installation not started")
 end
 
@@ -30,7 +30,7 @@ T.auto_install = MiniTest.new_set({
 T.auto_install.pass = function(ft)
     child.cmd("se ft=" .. ft)
     local lang = vim.treesitter.language.get_lang(ft)
-    local err = child.wait(lang, 0, true)
+    local err = child.wait_installed(lang, 0, true)
     eq(false, err ~= nil and not err:match("timeout"))
 end
 
