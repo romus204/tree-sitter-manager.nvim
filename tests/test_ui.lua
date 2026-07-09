@@ -57,7 +57,7 @@ T.filter.all = function()
 end
 
 T.remove = function()
-    child.wait_installed(languages)
+    child.wait_installed(languages, nil, nil, false)
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal x")
     child.wait_removed(languages)
 end

@@ -39,10 +39,13 @@ end
 ---@param languages string[]
 ---@param timeout? number default 60,000 ms
 ---@param return_error? boolean whether to return or throw an error (default false)
-function M.wait_installed(languages, timeout, return_error)
+---@param with_deps? boolean wait for dependencies (default true)
+function M.wait_installed(languages, timeout, return_error, with_deps)
     languages = type(languages) == "string" and { languages } or { unpack(languages) }
     -- add dependencies
-    vim.list.unique(vim.list_extend(languages, vim.iter(languages):map(util.get_requires):flatten():totable()))
+    if with_deps or with_deps == nil then
+        vim.list.unique(vim.list_extend(languages, vim.iter(languages):map(util.get_requires):flatten():totable()))
+    end
     -- don't wait for languages already timed out
     languages = vim.iter(languages):filter(util.notin(M.timeout)):totable()
     timeout = timeout or 60000
