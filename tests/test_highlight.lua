@@ -8,7 +8,9 @@ local T = new_set({
             child.setup({ highlight = true })
         end,
     },
-    parametrize = parametrize(vim.iter(languages):map(util.get_filetypes):flatten():totable()),
+    parametrize = parametrize(
+        vim.iter(languages):filter(util.not_only_query):map(util.get_filetypes):flatten():totable()
+    ),
 })
 
 T.before_install = function(ft)

@@ -1,7 +1,9 @@
 local languages = _G.languages or { "tsv", "tsx" }
 
 local T = new_set({
-    parametrize = parametrize(vim.iter(languages):map(util.get_filetypes):flatten():totable()),
+    parametrize = parametrize(
+        vim.iter(languages):filter(util.not_only_query):map(util.get_filetypes):flatten():totable()
+    ),
 })
 
 T.noauto_install = MiniTest.new_set({
