@@ -1,8 +1,5 @@
-; inherits: html
-
-(element) @fold
-
 [
+  (element)
   (if_block)
   (else_if_clause)
   (else_clause)
@@ -11,4 +8,4 @@
   (await_branch)
   (key_block)
   (snippet_block)
-] @fold
+] @context
