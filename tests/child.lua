@@ -15,7 +15,7 @@ function M.setup(config)
     local parser_dir = vim.fs.joinpath(path, "parser")
     local query_dir = vim.fs.joinpath(path, "queries")
     tsm.setup({ parser_dir = parser_dir, query_dir = query_dir })
-    M.config = config or M.config or {}
+    M.config = config or {}
     M.config.parser_dir = parser_dir
     M.config.query_dir = query_dir
     M.restart({
