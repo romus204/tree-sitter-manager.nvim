@@ -177,7 +177,7 @@ function M.install(languages, callback, update)
                     callback(out)
                 end
             end)
-            if not util.is_only_query(lang) then
+            if util.not_only_query(lang) then
                 M.installing[lang] = true
                 table.insert(installing, lang)
             end

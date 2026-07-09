@@ -21,6 +21,7 @@ util = require("tree-sitter-manager.util")
 -- Parse the list of languages to test
 if vim.env.LANGUAGES == "all" then
     _G.languages = vim.tbl_keys(require("tree-sitter-manager.repos"))
+    table.sort(_G.languages)
 elseif vim.env.LANGUAGES then
     _G.languages = vim.split(vim.env.LANGUAGES, " ")
 end

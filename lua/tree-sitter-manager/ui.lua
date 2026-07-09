@@ -42,7 +42,7 @@ end
 local function get_status(lang)
     if installer.installing[lang] then
         return 4 -- installing
-    elseif not util.is_installed(lang) then
+    elseif util.not_installed(lang) then
         return 3 -- missing
     elseif vim.list_contains(config.cfg.assume_installed, lang) then
         return 1 -- ok
