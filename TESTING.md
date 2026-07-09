@@ -44,38 +44,42 @@ This is necessary to test asynchronous functions (See [mini.nvim#1930](https://g
 - `installer`: `require("tree-sitter-manager.installer")`
 - etc.
 
+### Global Functions
+- `new_set(opts, tbl)`: do `MiniTest.new_set(opts, tbl)`
+  with default hooks for `child.setup()`, `child.cleanup()`. Every test file
+  should `setup` the child process at the start and `cleanup` the child process
+  afterwards.
+- `parametrize(list)`: nest every item into a singleton, i.e. does the following:
+  ```lua
+  vim.iter(list):map(function(x) return { x } end):totable()
+  ```
+
 ### Example
 Create a file `tests/test_install.lua`:
 ```lua
 -- list languages you want to test
 local languages = _G.languages or { "bash", "python", "java" }
 
-local T = MiniTest.new_set({
+local T = new_set({
     hooks = {
-        -- setup will set a unique parent directory to `parser_dir` and `query_dir`
         pre_once = function()
-            child:setup({ highlight = true })
-            child.lua("installer.install(" .. vim.inspect(languages) .. ")")
-            -- wait until bash finishes installation
-            -- if the installation fails within the timeout (default 60.000 ms)
-            -- an error is thrown
-            child:wait(languages)
-        end,
-        post_once = function()
-            child:cleanup()
+            child.setup({ highlight = true })
         end,
     },
-    parametrize = vim.iter(languages)
-        :map(function(lang)
-            return { lang, "highlights" }
-        end)
-        :totable(),
+    parametrize = parametrize(languages),
 })
 
--- test highlights query for every language
-T["test-case"] = function(lang, query)
-    -- verify that treesitter works
-    child:works(lang, query)
+T["test-case"] = function(lang)
+    child.fails(lang, "parser") -- parser isn't installed yet
+
+    -- Parameters:
+    -- languages to be installed
+    -- timeout (default 60,000 ms)
+    -- return_error (default false), whether to return the error message or throw it
+    child.install(languages, 60000, false)
+
+    child.works(lang, "parser") -- checks parser
+    child.works(lang, "highlights") -- check highlights queries
 end
 
 return T

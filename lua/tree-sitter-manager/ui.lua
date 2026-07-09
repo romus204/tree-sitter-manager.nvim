@@ -1,124 +1,230 @@
 local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
 local installer = require("tree-sitter-manager.installer")
+local backport = require("tree-sitter-manager.backport")
+local ns = vim.api.nvim_create_namespace("tree-sitter-manager.spinner")
 
-local glyph_icon = { "*", "🌳" }
-local glyph_ok = { "OK", "✅" }
-local glyph_warn = { "!!", "⚠️" }
-local glyph_fail = { "..", "❌" }
-local glyph_index = 2
+local title_asci = " Tree-sitter Parser Manager "
+local title_nerd = " 🌳 Tree-sitter Parser Manager "
+local title
 
-local title = "Tree-sitter Parser Manager"
-local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [q] Close "
+local status_asci = { "OK", "!!", "..", "  " }
+local status_nerd = { "✅", "⚠️", "❌", "  " }
+local get_status_icon
+local icon_col
+
+local footer = " [i] Install  [x] Remove  [u] Update  [r] Refresh  [f] Filter  [q] Close "
+
+local filter_type = {
+    --            ok    warn  miss  installing
+    util.getter({ true, true, true, true }), --    all
+    util.getter({ true, true, false, true }), --   installed
+    util.getter({ false, true, false, true }), --  warning
+    util.getter({ false, false, true, false }), -- missing
+}
+local filter_idx
+
+local frames = { "⣾ ", "⣽ ", "⣻ ", "⢿ ", "⡿ ", "⣟ ", "⣯ ", "⣷ " }
+local frame_idx
+
+local buf, win, langs, formatter, spinner, content_width
 
 local M = {}
 
-local function get_status_icon(lang)
-    if not util.is_installed(lang) then
-        return glyph_fail[glyph_index]
-    end
+function M.setup()
+    title = config.cfg.nerdfont and title_nerd or title_asci
+    get_status_icon = util.getter(config.cfg.nerdfont and status_nerd or status_asci)
+    local langwidth = vim.iter(config.languages):map(string.len):fold(0, math.max)
+    formatter = "   %-" .. langwidth .. "s  %s%s"
+    icon_col = 3 + langwidth + 2
+end
 
-    for _, dep in ipairs(util.get_requires(lang)) do
-        if not util.is_installed(dep) then
-            return glyph_warn[glyph_index]
-        end
+local function get_status(lang)
+    if installer.installing[lang] then
+        return 4 -- installing
+    elseif util.not_installed(lang) then
+        return 3 -- missing
+    elseif vim.list_contains(config.cfg.assume_installed, lang) then
+        return 1 -- ok
+    elseif vim.iter(util.get_requires(lang)):all(util.is_installed) then
+        return 1 -- ok
+    else
+        return 2 -- warning
     end
-
-    return glyph_ok[glyph_index]
 end
 
 local function get_meta_suffix(lang)
     local info = util.get_repo_info(lang)
     local parts = {}
     if info and info.revision then
-        table.insert(parts, string.sub(info.revision, 1, 7))
+        local rev = #info.revision == 40 and string.sub(info.revision, 1, 7) or info.revision
+        table.insert(parts, string.format("%-7s", rev))
     end
     local reqs = util.get_requires(lang)
     if #reqs > 0 then
-        table.insert(parts, "requires:" .. table.concat(reqs, ","))
+        vim.list_extend(parts, { "requires:", unpack(reqs) })
     end
     return #parts > 0 and "  " .. table.concat(parts, " ") or ""
 end
 
-function M.render(buf)
-    local lines = {}
-    for _, l in ipairs(config.languages) do
-        table.insert(lines, string.format("   %-18s  %s%s", l, get_status_icon(l), get_meta_suffix(l)))
+local function get_langs_filtered()
+    return vim.iter(config.languages)
+        :filter(function(lang)
+            return filter_type[filter_idx](get_status(lang))
+        end)
+        :totable()
+end
+
+local function cycle_filter()
+    local new_langs
+    for idx = 1, 4 do
+        filter_idx = (filter_idx % 4) + 1
+        new_langs = get_langs_filtered()
+        if #new_langs > 0 and not vim.deep_equal(langs, new_langs) then
+            break
+        end
     end
+    langs = new_langs
+    M.render()
+end
+
+local function render_spinner()
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then
+        return
+    end
+
+    vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+    for row, lang in ipairs(langs) do
+        if installer.installing[lang] then
+            vim.api.nvim_buf_set_extmark(buf, ns, row - 1, icon_col, {
+                virt_text = { { frames[frame_idx], "Special" } },
+                virt_text_pos = "overlay",
+            })
+        end
+    end
+end
+
+local act = vim.defaulttable(function(action)
+    return function()
+        local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
+        if lang then
+            installer[action](lang, M.render)
+            M.render(true)
+        end
+    end
+end)
+
+function M.render(out)
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then
+        return 0
+    elseif out then -- update langs on callback
+        table.sort(vim.list.unique(vim.list_extend(langs, get_langs_filtered())))
+    end
+
+    local status = vim.iter(langs):map(get_status):map(get_status_icon)
+    local meta = vim.iter(langs):map(get_meta_suffix)
+    local lines = vim.iter(langs)
+        :map(function(lang)
+            return formatter:format(lang, status:next(), meta:next())
+        end)
+        :totable()
 
     vim.bo[buf].modifiable = true
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
     vim.bo[buf].modifiable = false
+    render_spinner()
+
+    content_width = vim.iter(lines):map(string.len):fold(0, math.max)
 end
 
-function M.open()
-    local max_w = #footer
-    for _, l in ipairs(config.languages) do
-        max_w = math.max(max_w, #("   " .. l .. "  XX  abc1234  requires:x,y"))
+local function close()
+    spinner:stop()
+    vim.api.nvim_win_close(win, true)
+end
+
+local function get_dims()
+    local w = math.max(config.cfg.min_width, #footer + 4, content_width + 3)
+    local h = math.max(config.cfg.min_height, vim.o.lines - 15)
+    local r = math.floor((vim.o.lines - h) / 2 - 1)
+    local c = math.floor((vim.o.columns - w) / 2 - 1)
+
+    return w, h, r, c
+end
+
+local function resize()
+    if not win or not vim.api.nvim_win_is_valid(win) then
+        return
     end
-    local w = math.max(max_w + 4, 40)
-    local h = math.min(#config.languages + 6, vim.o.lines - 15)
 
-    glyph_index = config.cfg.nerdfont and 2 or 1
-
-    local buf = vim.api.nvim_create_buf(false, true)
-    local win = vim.api.nvim_open_win(buf, true, {
+    local w, h, r, c = get_dims()
+    vim.api.nvim_win_set_config(win, {
         relative = "editor",
         width = w,
         height = h,
-        style = "minimal",
-        border = config.cfg.border,
-        row = math.floor((vim.o.lines - h) / 2),
-        col = math.floor((vim.o.columns - w) / 2),
-        title = " " .. glyph_icon[glyph_index] .. " " .. title .. " ",
-        title_pos = "center",
-        footer = footer,
-        footer_pos = "center",
+        row = r,
+        col = c,
     })
-    M.render(buf)
-
-    local close_fn = function()
-        vim.api.nvim_win_close(win, true)
-    end
-    vim.keymap.set("n", "q", close_fn, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "<Esc>", close_fn, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "r", function()
-        M.render(buf)
-    end, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "i", function()
-        M._act("install")
-    end, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "x", function()
-        M._act("remove")
-    end, { buffer = buf, noremap = true, silent = true })
-    vim.keymap.set("n", "u", function()
-        M._act("update")
-    end, { buffer = buf, noremap = true, silent = true })
 end
 
-function M._act(action)
-    local lang = vim.api.nvim_get_current_line():match("^%s*([%w_]+)")
-    if not lang or not config.effective_repos[lang] then
-        return
+function M.open()
+    langs = config.languages
+    filter_idx = 1
+    frame_idx = 1
+
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then
+        buf = vim.api.nvim_create_buf(false, true)
+        local opts = { buf = buf, noremap = true, silent = true }
+        vim.keymap.set("n", "q", close, opts)
+        vim.keymap.set("n", "<Esc>", close, opts)
+        vim.keymap.set("n", "r", M.open, opts)
+        vim.keymap.set("n", "i", act.install, opts)
+        vim.keymap.set("n", "x", act.remove, opts)
+        vim.keymap.set("n", "u", act.update, opts)
+        vim.keymap.set("n", "f", cycle_filter, opts)
+
+        vim.api.nvim_create_autocmd("VimResized", {
+            group = vim.api.nvim_create_augroup("tree-sitter-manager.ui", {}),
+            callback = resize,
+        })
     end
-    local buf = vim.api.nvim_get_current_buf()
-    if action == "install" then
-        installer.install(lang, function(out)
-            if out.ok then
-                M.render(buf)
-            end
-        end)
-    elseif action == "remove" then
-        installer.remove(lang)
-        M.render(buf)
-    elseif action == "update" then
-        installer.remove(lang)
-        installer.install(lang, function(out)
-            if out.ok then
-                M.render(buf)
-            end
-        end)
+
+    M.render()
+
+    if not win or not vim.api.nvim_win_is_valid(win) then
+        local w, h, r, c = get_dims()
+        win = vim.api.nvim_open_win(buf, true, {
+            relative = "editor",
+            width = w,
+            height = h,
+            style = "minimal",
+            border = config.cfg.border,
+            row = r,
+            col = c,
+            title = title,
+            title_pos = "center",
+            footer = footer,
+            footer_pos = "center",
+        })
     end
+
+    if not spinner then
+        spinner = vim.uv.new_timer()
+    end
+
+    spinner:start(
+        0,
+        80,
+        vim.schedule_wrap(function()
+            frame_idx = (frame_idx % #frames) + 1
+            render_spinner()
+        end)
+    )
+end
+
+-- Backward compatibility
+backport.open = M.open
+function backport._act(action)
+    act[action]()
 end
 
 return M

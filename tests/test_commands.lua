@@ -1,47 +1,29 @@
-local languages = _G.languages or { "tsv", "javascript" }
+local languages = _G.languages or { "tsv", "tsx" }
 
-local T = MiniTest.new_set({
-    hooks = {
-        pre_once = function()
-            child:setup()
-        end,
-        post_once = function()
-            child:cleanup()
-        end,
-    },
-})
+local T = new_set()
 
-T["TSInstall"] = function()
+T.TSInstall = function()
+    child.wait_removed(languages)
     child.cmd("TSInstall " .. table.concat(languages, " "))
-    child:wait(languages)
-    child:works(languages)
+    child.wait_installed(languages)
 end
 
-T["TSUpdate"] = function()
-    -- expect everything working before update
-    child:wait(languages)
-    child:works(languages)
-    -- change to invalid branch
-    child:setup({
-        languages = vim.iter(languages):fold({}, function(acc, lang)
-            local info = util.get_repo_info(lang)
-            info.revision = nil
-            info.branch = "not-found"
-            acc[lang] = { install_info = info }
-            return acc
-        end),
-    })
+T.TSUpdate = function()
+    child.wait_installed(languages)
     child.cmd("TSUpdate " .. table.concat(languages, " "))
-    -- expect error after update
-    er(function()
-        child:wait(languages)
-    end, "not found")
+    child.wait_installed(languages)
 end
 
-T["TSUninstall"] = function()
+T["TSUpdate!"] = function()
+    child.wait_installed(languages)
+    child.cmd("TSUpdate!")
+    child.wait_installed(languages)
+end
+
+T.TSUninstall = function()
+    child.wait_installed(languages)
     child.cmd("TSUninstall " .. table.concat(languages, " "))
-    child.restart()
-    child:fails(languages)
+    child.wait_removed(languages)
 end
 
 return T

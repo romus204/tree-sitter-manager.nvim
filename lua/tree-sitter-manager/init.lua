@@ -6,18 +6,10 @@ local ui = require("tree-sitter-manager.ui")
 -- Preserve public API surface for backward compatibility
 local M = require("tree-sitter-manager.backport")
 
-local function get_filetypes(filter)
-    return vim.iter(state.languages)
-        :filter(filter)
-        :map(function(lang)
-            return { lang, unpack(state.filetypes[lang] or {}) }
-        end)
-        :flatten()
-        :totable()
-end
-
-local function iter_startswith(_argLead)
-    return vim.iter(state.languages):filter(function(lang)
+local function iter_startswith(_argLead, _cmdLine)
+    local args = vim.split(_cmdLine, " +")
+    table.remove(args) -- don't include last word
+    return vim.iter(state.languages):filter(util.notin(args)):filter(function(lang)
         return vim.startswith(lang, _argLead)
     end)
 end
@@ -32,18 +24,14 @@ function M.setup(opts)
     -- User entries take precedence, allowing custom forks and new languages.
     state.effective_repos = vim.deepcopy(state.base_repos)
     for lang, info in pairs(state.cfg.languages) do
+        info.install_info = M.backport_use_repo_queries(info.install_info)
         state.effective_repos[lang] = vim.tbl_extend("force", state.effective_repos[lang] or {}, info)
     end
     state.languages = vim.tbl_keys(state.effective_repos)
     table.sort(state.languages)
 
-    -- Reverse filetypes mapping
-    local ft_to_lang = {}
-    for lang, fts in pairs(state.filetypes) do
-        for _, ft in ipairs(fts) do
-            ft_to_lang[ft] = lang
-        end
-    end
+    installer.setup()
+    ui.setup()
 
     vim.fn.mkdir(state.cfg.parser_dir, "p")
     vim.fn.mkdir(state.cfg.query_dir, "p")
@@ -67,82 +55,79 @@ function M.setup(opts)
     end
     installer.install(ensure_list)
 
+    local group = vim.api.nvim_create_augroup("tree-sitter-manager", {})
+
     if state.cfg.auto_install then
-        local filetypes = get_filetypes(function(lang)
-            return not vim.list_contains(state.cfg.noauto_install, lang)
-                and not vim.list_contains(state.cfg.noauto_install, ft_to_lang[lang])
-        end)
-        if #filetypes > 0 then
-            vim.api.nvim_create_autocmd("FileType", {
-                pattern = filetypes,
-                callback = function(a)
-                    installer.install(ft_to_lang[a.match] or a.match)
-                end,
-                desc = "Auto-install treesitter parsers",
-            })
-        end
+        vim.api.nvim_create_autocmd("FileType", {
+            group = group,
+            callback = function(a)
+                local lang = vim.treesitter.language.get_lang(a.match)
+                if vim.list_contains(state.cfg.noauto_install, lang) then
+                elseif vim.list_contains(state.languages, lang) then
+                    installer.install(lang)
+                end
+            end,
+            desc = "Auto-install treesitter parsers",
+        })
     end
 
     if state.cfg.highlight then
-        local filetypes = get_filetypes(function(lang)
-            return not vim.list_contains(state.cfg.nohighlight, lang)
-                and (state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang))
-        end)
-        if #filetypes > 0 then
-            vim.api.nvim_create_autocmd("FileType", {
-                pattern = filetypes,
-                callback = function(a)
+        vim.api.nvim_create_autocmd("FileType", {
+            group = group,
+            callback = function(a)
+                local lang = vim.treesitter.language.get_lang(a.match)
+                if vim.list_contains(state.cfg.nohighlight, lang) then
+                elseif state.cfg.highlight == true or vim.list_contains(state.cfg.highlight, lang) then
                     pcall(vim.treesitter.start)
-                end,
-                desc = "Auto-enable treesitter highlighting",
-            })
-        end
+                end
+            end,
+            desc = "Auto-enable treesitter highlighting",
+        })
     end
 
-    vim.api.nvim_create_user_command("TSManager", function()
-        M.open()
-    end, { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
+    vim.api.nvim_create_user_command("TSManager", ui.open, { nargs = 0, desc = "Open Tree-sitter Parsers Manager" })
 
     vim.api.nvim_create_user_command("TSInstall", function(args)
-        installer.install(args.fargs)
+        installer.install(args.fargs, ui.render)
+        ui.render(true)
     end, {
         nargs = "+",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead)
-                :filter(function(lang)
-                    return not util.is_installed(lang)
-                end)
-                :totable()
+            return iter_startswith(_argLead, _cmdLine):filter(util.not_installed):totable()
         end,
         desc = "Install treesitter parsers",
     })
 
     vim.api.nvim_create_user_command("TSUninstall", function(args)
-        for _, lang in ipairs(args.fargs) do
-            installer.remove(lang)
-        end
+        installer.remove(args.fargs, ui.render)
+        ui.render(true)
     end, {
         nargs = "+",
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead)
-                :filter(function(lang)
-                    return util.is_installed(lang)
-                end)
-                :totable()
+            return iter_startswith(_argLead, _cmdLine):filter(util.is_installed):totable()
         end,
         desc = "Remove treesitter parsers",
     })
 
     vim.api.nvim_create_user_command("TSUpdate", function(args)
-        installer.remove(args.fargs)
-        installer.install(args.fargs)
+        if args.args == "" and args.bang then
+            local installed = vim.iter(state.languages):filter(util.is_installed):totable()
+            installer.update(installed, ui.render)
+            ui.render(true)
+        elseif args.args ~= "" then
+            installer.update(args.fargs, ui.render)
+            ui.render(true)
+        else
+            vim.notify("E471: Argument required", vim.log.levels.ERROR)
+        end
     end, {
-        nargs = "+",
+        nargs = "*",
+        bang = true,
         bar = true,
         complete = function(_argLead, _cmdLine, _cursorPos)
-            return iter_startswith(_argLead):totable()
+            return iter_startswith(_argLead, _cmdLine):totable()
         end,
         desc = "Update treesitter parsers",
     })

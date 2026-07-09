@@ -13,17 +13,12 @@ end
 local T = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child:setup()
+            child.setup()
             cleanup()
-        end,
-        pre_case = function()
-            if _G.languages then
-                MiniTest.skip()
-            end
         end,
         post_once = function()
             cleanup()
-            child:cleanup()
+            child.cleanup()
         end,
     },
 })

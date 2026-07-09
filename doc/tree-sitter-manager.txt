@@ -57,10 +57,11 @@ lazy.nvim: >lua
   }
 <
 
-vim-plug: >vim
-  Plug 'romus204/tree-sitter-manager.nvim'
-<
-  Then in your `init.lua`: >lua
+vim.pack: >lua
+  vim.pack.add({
+    { src = "https://github.com/romus204/tree-sitter-manager.nvim" }
+  })
+
   require("tree-sitter-manager").setup({})
 <
 
@@ -73,14 +74,19 @@ vim-plug: >vim
     languages        = {},
     assume_installed = {},
     ensure_installed = {},
-    border           = "rounded",
     auto_install     = false,
     noauto_install   = {},
     highlight        = true,
     nohighlight      = {},
     parser_dir       = vim.fn.stdpath("data") .. "/site/parser",
     query_dir        = vim.fn.stdpath("data") .. "/site/queries",
+    -- TUI options
     nerdfont         = true,
+    border           = "rounded",
+    min_width        = 78,
+    min_height       = 40,
+    -- tree-sitter-manager.util
+    async_size       = 64,
   })
 <
 
@@ -110,15 +116,6 @@ query_dir ~
   The parent directory is automatically prepended to 'runtimepath'.
 
 ------------------------------------------------------------------------------
-                                           *tree-sitter-manager-opt-languages*
-languages ~
-  Type: `table`
-  Default: `{}`
-
-  Override built-in language definitions or add new ones.
-  See |tree-sitter-manager-custom-repos| for details.
-
-------------------------------------------------------------------------------
                                     *tree-sitter-manager-opt-assume_installed*
 assume_installed ~
   Type: `table`
@@ -144,17 +141,6 @@ ensure_installed ~
     ensure_installed = { "lua", "python", "rust" }
     ensure_installed = "all"
 <
-
-------------------------------------------------------------------------------
-                                              *tree-sitter-manager-opt-border*
-border ~
-  Type: `string|table`
-  Default: `"rounded"`
-
-  Border style for the TUI window. See |nvim_open_win()| for accepted values.
-  Examples: `"rounded"`, `"single"`, `"double"`, `"solid"`, `"none"`.
-
-  To match 'winborder' option set it to `vim.o.winborder` (Neovim 0.11+).
 
 ------------------------------------------------------------------------------
                                         *tree-sitter-manager-opt-auto_install*
@@ -213,6 +199,29 @@ nerdfont ~
   By default, the manager buffer requires Nerd Fonts for emojis and icons. If
   you prefer plain text instead of the glyphs set this to `false`.
 
+------------------------------------------------------------------------------
+                                              *tree-sitter-manager-opt-border*
+border ~
+  Type: `string|table`
+  Default: `"rounded"`
+
+  Border style for the TUI window. See |nvim_open_win()| for accepted values.
+  Examples: `"rounded"`, `"single"`, `"double"`, `"solid"`, `"none"`.
+
+  To match 'winborder' option set it to `vim.o.winborder` (Neovim 0.11+).
+
+------------------------------------------------------------------------------
+                                           *tree-sitter-manager-opt-min-width*
+                                           *tree-sitter-manager-opt-min-height*
+min_width ~
+min_height ~
+  Type: `number`
+
+  Minimum size of the TUI window. Default vales: >lua
+    min_width = 78
+    min_height = 40
+>
+
 ==============================================================================
 6. COMMANDS                                   *tree-sitter-manager-commands*
 
@@ -231,9 +240,11 @@ nerdfont ~
     :TSUninstall cpp java
 <
                                                                  *:TSUpdate*
-:TSUpdate {lang} ...
+:TSUpdate [{lang}] ...
+:TSUpdate!
   Update parsers. >vim
     :TSUpdate rust zsh
+    :TSUpdate! "force update all
 <
 
 ==============================================================================
@@ -251,7 +262,8 @@ These keybindings are active inside the `:TSManager` TUI window.
   `<Esc>`    Close window
 
 ==============================================================================
-8. CUSTOM REPOSITORIES                    *tree-sitter-manager-custom-repos*
+8. CUSTOM REPOSITORIES                     *tree-sitter-manager-custom-repos*
+                                           *tree-sitter-manager-opt-languages*
 
 The `languages` option accepts a table that overrides built-in language
 definitions or adds new ones. This avoids modifying the plugin source.
@@ -260,13 +272,12 @@ Each entry has the following shape: >lua
   languages = {
     <lang> = {
       install_info = {
-        url              = "https://github.com/...",  -- required
-        location         = nil,       -- subdirectory inside the repo (optional)
-        revision         = nil,       -- commit SHA to pin (optional)
-        branch           = nil,       -- branch name (optional)
-        generate         = false,     -- run `tree-sitter generate` before build
-        queries          = "queries", -- folder in the cloned repo containing queries
-        use_repo_queries = false,     -- copy queries/ from cloned repo
+        url      = "https://github.com/...",  -- required
+        location = nil,       -- subdirectory inside the repo (optional)
+        revision = nil,       -- commit SHA to pin (optional)
+        branch   = nil,       -- branch name (optional)
+        generate = false,     -- run `tree-sitter generate` before building
+        queries  = "queries", -- queries folder in the cloned repo (optional)
       },
       requires = {},  -- list of language names that must be installed first
     },
@@ -280,7 +291,7 @@ Override a built-in with a fork: >lua
         install_info = {
           url = "https://github.com/myfork/tree-sitter-cpp",
           revision = "abc1234",
-          use_repo_queries = true,
+          queries = "queries",
         },
       },
     },
@@ -294,25 +305,36 @@ Add a new language: >lua
         install_info = {
           url = "https://github.com/someone/tree-sitter-mylang",
           queries = "queries/subdir",
-          use_repo_queries = true,
         },
       },
     },
   })
 <
 
-`use_repo_queries` behaviour: ~
+If you are only setting the `url` field, there is a shortcut: >lua
+  require("tree-sitter-manager").setup({
+    languages = { mylang = "https://github.com/someone/tree-sitter-mylang" },
+  })
+<
 
-  Value    Query source ~
-  ──────────────────────────────────────────────────────────────────────
-  `false`  Queries bundled in `runtime/queries/<lang>/` of this plugin
-  `true`   `queries/` directory inside the cloned grammar repository
+------------------------------------------------------------------------------
+                                    *tree-sitter-manager-install_info-location*
+languages.<lang>.install_info.location ~
+  Type: `string`
+  Default: `nil`
 
-  If `use_repo_queries = true` but the repo has no `queries/` directory,
-  a warning is shown and the plugin falls back to bundled queries.
+  If `grammar.js` is not located in the repository's root you can configure it
+  with the `location` option.
 
-  The default `queries/` directory can be changed
-  by means of the optional `queries` field.
+------------------------------------------------------------------------------
+                                     *tree-sitter-manager-install_info-queries*
+languages.<lang>.install_info.queries ~
+  Type: `string`
+  Default: `nil`
+
+  If unset, bundled `runtime/queries/<lang>/` will be symlinked to the
+  `query_dir` location. Otherwise, set it to the relative path of the queries
+  directory in the repository, often `"queries"`.
 
 ==============================================================================
 9. HIGHLIGHTING                           *tree-sitter-manager-highlighting*

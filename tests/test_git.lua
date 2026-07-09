@@ -1,86 +1,28 @@
-local T = MiniTest.new_set({
+local T = new_set({ hooks = { pre_case = child.setup, post_case = child.cleanup } })
+
+T.revision = new_set()
+T.revision.pass = function()
+    local install_info = {
+        revision = "64b56832c2cffe41758f28e05c756a3a98d16f41",
+        url = "https://github.com/tree-sitter-grammars/tree-sitter-toml",
+    }
+    child.setup({ languages = { toml = { install_info = install_info } } })
+    child.install("toml")
+end
+T.revision.fail = function()
+    local install_info = {
+        revision = "_",
+        url = "https://github.com/tree-sitter-grammars/tree-sitter-toml",
+    }
+    child.setup({ languages = { toml = { install_info = install_info } } })
+    er(function()
+        child.install("toml")
+    end, "revision _ not found")
+end
+T.revision.pre_2_49 = new_set({
     hooks = {
         pre_case = function()
-            child:setup()
-        end,
-        post_case = function()
-            child:cleanup()
-        end,
-    },
-})
-
-T["revision"] = function()
-    -- check installation with revision
-    local languages = _G.languages or { "tsv" }
-    child.lua("installer.install(" .. vim.inspect(languages) .. ")")
-    child:wait(languages)
-end
-
-T["branch_revision"] = function()
-    if _G.languages then
-        MiniTest.skip()
-    end
-    -- check installation with branch and revision (revision takes priority)
-    local languages = { "perl" }
-    child:setup({
-        ensure_installed = languages,
-        languages = vim.iter(languages):fold({}, function(acc, lang)
-            local info = util.get_repo_info(lang)
-            info.revision = "release"
-            info.branch = "master"
-            info.generate = false
-            acc[lang] = { install_info = info }
-            return acc
-        end),
-    })
-    child:wait(languages, 180000)
-end
-
-T["branch"] = function()
-    if _G.languages then
-        MiniTest.skip()
-    end
-    -- check installation with branch
-    local languages = { "perl" }
-    child:setup({
-        ensure_installed = languages,
-        languages = vim.iter(languages):fold({}, function(acc, lang)
-            local info = util.get_repo_info(lang)
-            info.revision = nil
-            info.branch = "master"
-            info.generate = true
-            acc[lang] = { install_info = info }
-            return acc
-        end),
-    })
-    child:wait(languages, 180000)
-end
-
-T["no_branch_no_rev"] = function()
-    if _G.languages then
-        MiniTest.skip()
-    end
-    -- check installation from HEAD
-    local languages = { "perl" }
-    child:setup({
-        ensure_installed = languages,
-        languages = vim.iter(languages):fold({}, function(acc, lang)
-            local info = util.get_repo_info(lang)
-            info.revision = nil
-            info.branch = nil
-            info.generate = true
-            acc[lang] = { install_info = info }
-            return acc
-        end),
-    })
-    child:wait(languages, 180000)
-end
-
-T["pre_2.49.0"] = MiniTest.new_set({
-    hooks = {
-        pre_once = function()
             -- simulate git pre 2.49
-            child.restart()
             child.lua([[
             system = vim.system
             vim.system = function(cmd, ...)
@@ -99,17 +41,45 @@ T["pre_2.49.0"] = MiniTest.new_set({
                 return system(cmd, ...)
             end
             ]])
-        end,
-        post_once = function()
-            child:cleanup()
+            local version = { child.lua_get('util.run({"git","version"}):wait().output'):match("(%d+)%.(%d+)%.(%d+)") }
+            local major, minor, patch = unpack(vim.iter(version):map(tonumber):totable())
+            eq(true, major < 2 or major == 2 and minor < 49)
         end,
     },
-})
-T["pre_2.49.0"]["revision"] = function()
-    -- check installation with revision pre 2.49
-    local languages = _G.languages or { "tsv" }
-    child.lua("installer.install(" .. vim.inspect(languages) .. ")")
-    child:wait(languages)
+}, { pass = T.revision.pass, fail = T.revision.fail })
+
+T.branch = new_set()
+T.branch.pass = function()
+    local install_info = {
+        branch = "master",
+        url = "https://github.com/tree-sitter-grammars/tree-sitter-toml",
+    }
+    child.setup({ languages = { toml = { install_info = install_info } } })
+    child.install("toml")
+end
+T.branch.fail = function()
+    local install_info = {
+        branch = "_",
+        url = "https://github.com/tree-sitter-grammars/tree-sitter-toml",
+    }
+    child.setup({ languages = { toml = { install_info = install_info } } })
+    er(function()
+        child.install("toml")
+    end, "branch _ not found")
+end
+
+T.norev_nobra = new_set()
+T.norev_nobra.pass = function()
+    local install_info = {
+        url = "https://github.com/tree-sitter-grammars/tree-sitter-toml",
+    }
+    child.setup({ languages = { toml = { install_info = install_info } } })
+    child.install("toml")
+end
+
+T.GIT_WORK_TREE = function()
+    child.cmd("let $GIT_WORK_TREE = '.'")
+    child.install("toml")
 end
 
 return T

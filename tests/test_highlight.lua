@@ -1,61 +1,66 @@
-local languages = _G.languages or { "tsv", "javascript" }
+local languages = _G.languages or { "tsv", "tsx" }
 
-local T = MiniTest.new_set({
+local builtin = require("tree-sitter-manager.built-in-languages")
+
+local T = new_set({
     hooks = {
         pre_once = function()
-            child:setup({ highlight = true })
-        end,
-        post_once = function()
-            child:cleanup()
+            child.setup({ highlight = true })
         end,
     },
-    parametrize = vim.iter(languages):fold({}, function(acc, lang)
-        table.insert(acc, { lang, lang })
-        for _, ft in ipairs(filetypes[lang] or {}) do
-            table.insert(acc, { lang, ft })
-        end
-        return acc
-    end),
+    parametrize = parametrize(
+        vim.iter(languages):filter(util.not_only_query):map(util.get_filetypes):flatten():totable()
+    ),
 })
 
-T["before_install"] = function(lang, ft)
+T.before_install = function(ft)
     -- no highlighter before installation
-    child.cmd("e " .. lang .. "." .. ft .. "|set ft=" .. ft)
-    eq(ft, child.lua_get("vim.o.filetype"))
-    eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+    child.cmd("e name." .. ft .. "|se ft=" .. ft)
+    local lang = vim.treesitter.language.get_lang(ft)
+    eq(
+        vim.list_contains(builtin.languages, lang),
+        child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]")
+    )
 end
 
-T["after_install"] = MiniTest.new_set({
+T.after_install = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child.lua("installer.install(" .. vim.inspect(languages) .. ")")
-            child:wait(languages)
+            child.install(languages)
         end,
     },
 })
-T["after_install"]["new"] = function(lang, ft)
+T.after_install.new = function(ft)
+    if util.is_only_query(vim.treesitter.language.get_lang(ft)) then
+        MiniTest.skip("only query")
+    end
     -- highlighter is active for new buffers
     child.cmd("enew|set ft=" .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
-T["after_install"]["old"] = function(lang, ft)
+T.after_install.old = function(ft)
+    if util.is_only_query(vim.treesitter.language.get_lang(ft)) then
+        MiniTest.skip("only query")
+    end
     -- highlighter is active even for existing buffers
-    child.cmd("b " .. lang .. "." .. ft)
+    child.cmd("b name." .. ft)
     eq(true, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
 end
 
-T["nohighlight"] = MiniTest.new_set({
+T.nohighlight = MiniTest.new_set({
     hooks = {
         pre_once = function()
-            child.stop()
-            child:setup({ highlight = true, nohighlight = languages })
+            child.setup({ highlight = true, nohighlight = languages })
         end,
     },
 })
-T["nohighlight"]["fails"] = function(lang, ft)
+T.nohighlight.fail = function(ft)
     -- expect no highlighting for any languages
     child.cmd("enew|set ft=" .. ft)
-    eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+    eq(
+        vim.list_contains(builtin.highlight, ft),
+        child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]")
+    )
 end
 
 return T
