@@ -1,18 +1,26 @@
 local languages = _G.languages or { "tsv", "tsx" }
 
+local builtin = require("tree-sitter-manager.built-in-languages")
+
 local T = new_set({
     hooks = {
         pre_once = function()
             child.setup({ highlight = true })
         end,
     },
-    parametrize = parametrize(vim.iter(languages):map(util.get_filetypes):flatten():totable()),
+    parametrize = parametrize(
+        vim.iter(languages):filter(util.not_only_query):map(util.get_filetypes):flatten():totable()
+    ),
 })
 
 T.before_install = function(ft)
     -- no highlighter before installation
     child.cmd("e name." .. ft .. "|se ft=" .. ft)
-    eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+    local lang = vim.treesitter.language.get_lang(ft)
+    eq(
+        vim.list_contains(builtin.languages, lang),
+        child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]")
+    )
 end
 
 T.after_install = MiniTest.new_set({
@@ -49,7 +57,10 @@ T.nohighlight = MiniTest.new_set({
 T.nohighlight.fail = function(ft)
     -- expect no highlighting for any languages
     child.cmd("enew|set ft=" .. ft)
-    eq(false, child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]"))
+    eq(
+        vim.list_contains(builtin.highlight, ft),
+        child.lua_get("nil ~= vim.treesitter.highlighter.active[vim.fn.bufnr()]")
+    )
 end
 
 return T

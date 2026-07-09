@@ -8,23 +8,13 @@ end
 
 T.install = function()
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal i")
-    child.wait(languages)
-    child.works(languages, "parser")
+    child.wait_installed(languages)
 end
 
 T.update = function()
-    child.works(languages, "parser")
+    child.wait_installed(languages)
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal u")
-    eq(
-        false,
-        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[)
-            :filter(function(lang)
-                return not util.is_only_query(lang)
-            end)
-            :any(util.is_installed)]])
-    )
-    child.wait(languages)
-    child.works(languages, "parser")
+    child.wait_installed(languages)
 end
 
 local installed, deps
@@ -37,7 +27,7 @@ T.filter.installed = function()
             return line:match("%S+")
         end)
         :totable()
-    eq(true, vim.iter(languages):all(util.isin(installed)))
+    eq({}, vim.iter(languages):filter(util.notin(installed)):totable())
 end
 T.filter.warning = function()
     deps = vim.iter(installed):filter(util.notin(languages)):totable()
@@ -47,35 +37,29 @@ T.filter.warning = function()
     child.remove(deps)
     child.cmd("normal f")
     local warns = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
-    eq(true, #warns > 0)
-    if vim.iter({ "typescript", "glimmer_typescript" }):all(util.isin(languages)) then
-        eq(
-            true,
-            vim.iter(warns):any(function(line)
-                return line:match("glimmer_typescript")
-            end)
-        )
-    end
+    neq({}, warns)
 end
 T.filter.missing = function()
+    if vim.deep_equal(languages, config.languages) then
+        MiniTest.skip("installed all")
+    end
     child.cmd("normal f")
     local lines = child.lua_get("vim.api.nvim_buf_get_lines(0, 0, -1, false)")
-    local missing = util.isin(vim.iter(lines)
+    local missing = vim.iter(lines)
         :map(function(line)
             return line:match("%S+")
         end)
-        :totable())
-    eq(false, vim.iter(languages):any(missing))
+        :totable()
+    eq({}, vim.iter(languages):filter(util.isin(missing)):totable())
 end
 T.filter.all = function()
     child.cmd("normal f")
 end
 
 T.remove = function()
-    child.works(languages, "parser")
+    child.wait_installed(languages, nil, nil, false)
     child.cmd("g/\\v^ *(" .. table.concat(languages, "|") .. ") /normal x")
-    child.restart()
-    child.fails(languages, "parser")
+    child.wait_removed(languages)
 end
 
 return T

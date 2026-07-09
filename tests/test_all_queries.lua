@@ -13,15 +13,17 @@ local T = new_set({
     },
     parametrize = vim.iter(languages)
         :map(function(lang)
+            if util.is_only_query(lang) then
+                return { { lang } }
+            end
             local paths = vim.fn.glob("runtime/queries/" .. lang .. "/*.scm", true, true)
-            local queries = vim.iter(paths):map(function(path)
-                return vim.fn.fnamemodify(path, ":t:r")
-            end)
-            return vim.iter({ "parser", unpack(queries:totable()) })
-                :map(function(query)
-                    return { lang, query }
+            local queries = vim.iter(paths)
+                :map(function(path)
+                    return { lang, vim.fn.fnamemodify(path, ":t:r") }
                 end)
                 :totable()
+            table.insert(queries, 1, { lang, "parser" })
+            return queries
         end)
         :flatten()
         :totable(),
@@ -34,7 +36,7 @@ T.pass = function(lang, query)
         MiniTest.skip("failed parser")
     end
     fail_parser[lang] = query == "parser"
-    child.wait(lang)
+    child.wait_installed(lang)
     child.works(lang, query)
     fail_parser[lang] = false
 end
