@@ -1692,10 +1692,11 @@ return {
     },
     svelte = {
         install_info = {
-            revision = "ae5199db47757f785e43a14b332118a5474de1a2",
-            url = "https://github.com/tree-sitter-grammars/tree-sitter-svelte",
+            generate = true,
+            location = "crates/tree-sitter-svelte",
+            revision = "c9b9cc35709fff494a3a9e41cd9471b633649e45",
+            url = "https://github.com/themixednuts/tree-sitter-htmlx",
         },
-        requires = { "html_tags" },
     },
     sway = {
         install_info = {
