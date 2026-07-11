@@ -1,4 +1,4 @@
----@type nvim-ts.parsers
+---@type tree_sitter_manager.Languages
 return {
     ada = {
         install_info = {
@@ -35,8 +35,8 @@ return {
             revision = "11dd46c9ae25135c473c0003a133bb06a484af0c",
             url = "https://github.com/tree-sitter-grammars/tree-sitter-arduino",
         },
-        tier = 2,
         requires = { "cpp" },
+        tier = 2,
     },
     asm = {
         install_info = {
@@ -164,7 +164,7 @@ return {
             revision = "2686186edb61be47960431c93a204fb249681360",
             url = "https://github.com/opa-oz/tree-sitter-caddy",
         },
-        tier = 3,
+        tier = 1,
     },
     cairo = {
         install_info = {
@@ -570,7 +570,7 @@ return {
             url = "https://github.com/PrestonKnopp/tree-sitter-gdscript",
         },
         readme_note = "Godot",
-        tier = 3,
+        tier = 1,
     },
     gdshader = {
         install_info = {
@@ -2244,7 +2244,7 @@ return {
             revision = "edd6596d4b0f392b87fc345dc26d84a6c32f7059",
             url = "https://github.com/ventojs/tree-sitter-vento",
         },
-        tier = 3,
+        tier = 2,
     },
     vhdl = {
         install_info = {
@@ -2388,7 +2388,7 @@ return {
             revision = "4353b20ef2ac750e35c6d68e4eb2a07c2d7cf901",
             url = "https://github.com/kristoff-it/ziggy",
         },
-        tier = 3,
+        tier = 1,
     },
     ziggy_schema = {
         install_info = {
@@ -2396,7 +2396,7 @@ return {
             revision = "4353b20ef2ac750e35c6d68e4eb2a07c2d7cf901",
             url = "https://github.com/kristoff-it/ziggy",
         },
-        tier = 3,
+        tier = 1,
     },
     zsh = {
         install_info = {
