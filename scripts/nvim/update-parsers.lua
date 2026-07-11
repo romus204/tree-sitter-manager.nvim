@@ -1,111 +1,113 @@
-#!/usr/bin/env -S nvim -l
--- Update parsers to latest version (tier 1, stable) or commit (tier 2, unstable)
---
--- Usage:
--- nvim -l update-parsers.lua            # update all (stable and unstable) parsers
--- nvim -l update-parsers.lua --tier=1   # update stable parsers to latest version
--- nvim -l update-parsers.lua --tier=2   # update unstable parsers to latest commit
+---@type tree_sitter_manager.Languages
+local oldrepos = vim.deepcopy(repos)
 
-local tier = nil ---@type number?
-for i = 1, #_G.arg do
-    if _G.arg[i]:find("^%-%-tier=") then
-        tier = tonumber(_G.arg[i]:match("=(%d+)"))
+---@type table<string, util.AsyncJob>
+local jobs = vim.iter(repos):fold({}, function(jobs, lang, parser)
+    local cmd
+    if parser.tier == 1 then
+        cmd = { "git", "-c", "-versionsort.suffix=-", "ls-remote", "--tags", "--refs", "--sort=v:refname" }
+    elseif parser.tier == 2 then
+        cmd = { "git", "ls-remote" }
+    else
+        return jobs
     end
+    table.insert(cmd, parser.install_info.url)
+    jobs[lang] = util.run(cmd)
+    return jobs
+end)
+
+io.write("Fetch revisions:")
+io.flush()
+
+local updates = vim.iter(jobs):map(function(lang, job)
+    io.write(" " .. lang)
+    io.flush()
+
+    local status = job:wait()
+    if not status.ok then
+        vim.notify(status.error, vim.log.levels.ERROR)
+        return
+    end
+
+    local stdout = vim.split(status.output or "", "\n")
+    local parser = repos[lang]
+    local info = parser.install_info
+    local sha ---@type string?
+    if parser.tier == 1 then
+        sha = stdout[#stdout - 1] and stdout[#stdout - 1]:match("v[%d%.]+$")
+    elseif parser.tier == 2 then
+        sha = vim.split(not info.branch and stdout[1] or vim.iter(stdout):find(function(line)
+            return line:find(vim.pesc(info.branch))
+        end), "\t")[1]
+    end
+
+    if sha and sha ~= "" and info.revision ~= sha then
+        info.revision = sha
+        return lang
+    end
+end)
+updates = updates:totable() ---[=[@as string[]]=]
+table.sort(updates)
+
+io.write("\n\n")
+
+if #updates == 0 then
+    io.write("\nAll parsers up to date!\n")
+    os.exit()
 end
 
-vim.o.rtp = vim.o.rtp .. ",."
-local util = require("tree-sitter-manager.util")
-local parsers = require("tree-sitter-manager.repos")
+local function update_repos()
+    local header = "---@type tree_sitter_manager.Languages\nreturn "
+    local content = header .. vim.inspect(repos)
+    local status = util.run({ "stylua", "-" }, { stdin = content }):wait()
+    if not status.ok then
+        vim.notify(status.error, vim.log.levels.ERROR)
+    else
+        content = status.output
+    end
+    util.write("lua/tree-sitter-manager/repos.lua", content)
+end
 
-local jobs = {} ---@type table<string,vim.SystemObj>
-local updates = {} ---@type string[]
+update_repos()
 
--- check for new revisions
-for k, p in pairs(parsers) do
-    if p.tier and p.tier <= 2 and (tier == nil or p.tier == tier) and p.install_info then
-        print("Updating " .. k)
-        local cmd = p.tier == 1
-                and {
-                    "git",
-                    "-c",
-                    "versionsort.suffix=-",
-                    "ls-remote",
-                    "--tags",
-                    "--refs",
-                    "--sort=v:refname",
-                    p.install_info.url,
-                }
-            or { "git", "ls-remote", p.install_info.url }
-        jobs[k] = vim.system(cmd)
+local reporter = MiniTest.gen_reporter.stdout()
+local finish = reporter.finish
+
+function reporter.finish()
+    io.write("\n\n")
+
+    local reports = vim.defaulttable(function()
+        return ""
+    end)
+    for _, case in ipairs(MiniTest.current.all_cases) do
+        local lang = unpack(case.args)
+        reports[lang] = reports[lang] .. table.concat(case.exec.fails, "\n")
     end
 
-    if #vim.tbl_keys(jobs) % 100 == 0 or next(parsers, k) == nil then
-        for name, job in pairs(jobs) do
-            local stdout = vim.split(job:wait().stdout or "", "\n")
-            jobs[name] = nil
-
-            local parser = parsers[name]
-            if not parser then
-                goto continue
-            end
-            local info = parser.install_info
-            if not info then
-                goto continue
-            end
-
-            local sha ---@type string?
-            if parser.tier == 1 then
-                sha = stdout[#stdout - 1] and stdout[#stdout - 1]:match("v[%d%.]+$")
-            else
-                local branch = info.branch
-                local line = 1
-                if branch then
-                    for j, l in ipairs(stdout) do
-                        if l:find(vim.pesc(branch)) then
-                            line = j
-                            break
-                        end
-                    end
-                end
-                sha = stdout[line] and vim.split(stdout[line], "\t")[1]
-            end
-
-            if sha and sha ~= "" and info.revision ~= sha then
-                info.revision = sha
-                updates[#updates + 1] = name
-            end
-
-            ::continue::
+    local pass, fail = {}, {}
+    for lang, report in pairs(reports) do
+        if report == "" then
+            table.insert(pass, lang)
+        else
+            fail[lang] = report
+            repos[lang].install_info.revision = oldrepos[lang].install_info.revision
         end
     end
-end
 
-if #vim.tbl_keys(jobs) ~= 0 then
-    error("jobs did not complete: " .. #vim.tbl_keys(jobs) .. " remaining")
-end
+    local output = os.getenv("GITHUB_OUTPUT") or "/dev/stdout"
 
-if #updates > 0 then
-    -- write new parser file
-    local header = "---@type nvim-ts.parsers\nreturn "
-    local parser_file = header .. vim.inspect(parsers)
-    if vim.fn.executable("stylua") == 1 then
-        parser_file = vim.system({ "stylua", "-" }, { stdin = parser_file }):wait().stdout --[[@as string]]
+    if pass then
+        table.sort(pass)
+        util.write(output, ("PASS=%s\n"):format(table.concat(pass, " ")))
     end
-    util.write_file("lua/tree-sitter-manager/repos.lua", parser_file)
 
-    table.sort(updates)
-    local update_list = table.concat(updates, ", ")
-    print(string.format("\nUpdated parsers: %s", update_list))
-    -- pass list to workflow
-    local gh_env = os.getenv("GITHUB_ENV")
-    if gh_env then
-        local f = io.open(gh_env, "a")
-        if not f then
-            error("could not open GITHUB_ENV for writing")
-        end
-        f:write(string.format("UPDATED_PARSERS=%s\n", update_list))
-        f:close()
+    if fail then
+        update_repos()
+        util.write(output, ("FAIL=%s\n"):format(vim.json.encode(fail, { sort_keys = true })))
     end
-else
-    print("\nAll parsers up to date!")
+
+    finish()
 end
+
+_G.languages = updates
+MiniTest.run_file("tests/test_all_queries.lua", { execute = { reporter = reporter } })

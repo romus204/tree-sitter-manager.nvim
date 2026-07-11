@@ -23,6 +23,13 @@ $(TEST_MODULES): .env
 	LANGUAGES="$(ARGS)" nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
 .PHONY: $(TEST_MODULES)
 
+# `make update-parsers` to update parsers that pass the tests
+# ${{ steps.<id>.outputs.PASS }} - space separated list of updated parsers
+# ${{ steps.<id>.outputs.FAIL }} - failed tests as json
+update-parsers: .env
+	nvim --headless --noplugin -S scripts/nvim/update-parsers.lua
+.PHONY: Update-parsers
+
 # Use `make nvim` or `make nvim tests/test_xxx.lua`
 nvim: .env
 	nvim --noplugin -o $(ARGS)

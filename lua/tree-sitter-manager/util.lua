@@ -264,7 +264,7 @@ function M.copy_dir(src, dst)
     end
 end
 
-function M.write_file(filename, content)
+function M.write(filename, content)
     local file = io.open(filename, "w")
     if not file then
         error("could not open file for writing: " .. filename)
@@ -272,4 +272,5 @@ function M.write_file(filename, content)
     file:write(content)
     file:close()
 end
+
 return M

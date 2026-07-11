@@ -10,29 +10,6 @@ local T = new_set({
                 child.setup({ ensure_installed = languages })
             end
         end,
-        post_once = function()
-            local reports = vim.defaulttable(function()
-                return ""
-            end)
-            for _, case in ipairs(MiniTest.current.all_cases) do
-                if case.desc[1] == "tests/test_all_queries.lua" then
-                    local lang = unpack(case.args)
-                    reports[lang] = reports[lang] .. table.concat(case.exec.fails, "\n")
-                end
-            end
-
-            local pass, fail = {}, {}
-            for lang, report in pairs(reports) do
-                if report == "" then
-                    table.insert(pass, lang)
-                else
-                    fail[lang] = report
-                end
-            end
-
-            vim.print("\n" .. vim.inspect(pass) .. "\n")
-            vim.print("\n" .. vim.inspect(fail) .. "\n")
-        end,
     },
     parametrize = vim.iter(languages)
         :map(function(lang)
