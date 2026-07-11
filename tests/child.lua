@@ -139,7 +139,7 @@ function M.remove(languages, timeout, return_error)
 end
 
 ---@param languages string[]
----@param query "parser" | "aerial" | "folds" | "highlights" | "indents" | "injections" | "locals" | "tags"
+---@param query string "parser" or a query
 function M.works(languages, query)
     languages = type(languages) == "string" and { languages } or languages
     local condition = query ~= "parser" and "vim.treesitter.query.get(lang, '" .. query .. "')"
@@ -151,7 +151,7 @@ function M.works(languages, query)
 end
 
 ---@param languages string[]
----@param query "parser" | "aerial" | "folds" | "highlights" | "indents" | "injections" | "locals" | "tags"
+---@param query string "parser" or a query
 function M.fails(languages, query)
     languages = type(languages) == "string" and { languages } or languages
     local condition = query ~= "parser" and "vim.treesitter.query.get(lang, '" .. query .. "')"
