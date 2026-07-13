@@ -21,15 +21,22 @@ end
 
 local function copy_queries(lang, source)
     local qpath = util.qpath(lang)
+    local ok, err
     if not source then
         source = vim.fs.joinpath(util.PLUGIN_ROOT, "runtime/queries", lang)
         vim.fs.rm(qpath, { recursive = true, force = true })
         ok, err = vim.uv.fs_symlink(source, qpath, { dir = true })
-        return { ok = ok, error = err and lang .. ": copy_queries\n" .. err }
-    elseif vim.uv.fs_stat(source) then
+    end
+    if err then
+        vim.notify(
+            notify_icon[4] .. "Failed to symlink queries for " .. lang .. ", falling back to copying.\n" .. err,
+            vim.log.levels.WARN
+        )
+    end
+    if not ok and vim.uv.fs_stat(source) then
         return util.copy_dir(source, qpath)
     else
-        return { ok = false, error = lang .. ": invalid queries: " .. source }
+        return { ok = ok or false, error = lang .. ": invalid queries: " .. source }
     end
 end
 
