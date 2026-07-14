@@ -3,7 +3,7 @@ local util = require("tree-sitter-manager.util")
 local backport = require("tree-sitter-manager.backport")
 
 local notify_nerd = { "✕ ", "📦 ", "󰚰 ", "⚠ ", "✓ ", "⚙️ ", "🔨 " }
-local notify_icon
+local notify_icon = vim.fn["repeat"]({ "" }, 7)
 
 ---@class Installer
 ---@field installing table<Lang, boolean>
@@ -16,7 +16,7 @@ local notify_icon
 local M = { installing = {}, status = {} }
 
 function M.setup()
-    notify_icon = config.cfg.nerdfont and notify_nerd or vim.fn["repeat"]({ "" }, 7)
+    notify_icon = config.cfg.nerdfont and notify_nerd or notify_icon
 end
 
 local function copy_queries(lang, source)
