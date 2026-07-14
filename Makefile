@@ -13,22 +13,22 @@ export LANGUAGES := $(ARGS)
 # `make test` to run tests for all modules for a handful of languages
 # `make test python` to run all tests for python
 # `make test all` to run all tests for all languages
+.PHONY: test
 test: deps/mini.nvim
 	nvim --headless --noplugin -c "lua MiniTest.run()"
-.PHONY: test
 
 # `make test_xxx` to run tests for module `tests/test_xxx.lua`
 # `make test_xxx python` will run it for python
 # `make test_xxx all` to run for all languages
 TEST_MODULES = $(basename $(notdir $(wildcard tests/test_*.lua)))
+.PHONY: $(TEST_MODULES)
 $(TEST_MODULES): .env
 	nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
-.PHONY: $(TEST_MODULES)
 
 # Use `make nvim` or `make nvim tests/test_xxx.lua`
+.PHONY: nvim
 nvim: deps/mini.nvim
 	nvim --noplugin -o $(ARGS)
-.PHONY: nvim
 
 ifeq ($(OS),Windows_NT)
   MKDIR = if not exist "$(1)" mkdir "$(1)"
@@ -45,6 +45,23 @@ deps/mini.nvim:
 	git clone --filter=blob:none https://github.com/nvim-mini/mini.nvim $@
 
 # Update 'mini.nvim'
+.PHONY: update
 update: deps/mini.nvim
 	git -C deps/mini.nvim pull
-.PHONY: update
+
+ifeq ($(OS),Windows_NT)
+  RM = rmdir /s /q
+else
+  RM = rm -rf
+endif
+
+# Clean up artifacts
+.PHONY: clean
+clean:
+	$(RM) deps
+	$(RM) scripts/nvim/shada
+	$(RM) scripts/nvim/site
+	$(RM) scripts/nvim/swap
+	$(RM) scripts/nvim/tests
+	$(RM) $(wildcard scripts/nvim/*.json)
+	$(RM) $(wildcard scripts/nvim/*.log)
