@@ -24,7 +24,7 @@ T.revision.pre_2_49 = new_set({
         pre_case = function()
             -- simulate git pre 2.49
             child.lua([[
-            system = vim.system
+            local system = vim.system
             vim.system = function(cmd, ...)
                 if type(cmd) == "table" and cmd[1] == "git" and cmd[2] == "version" then
                     return {

@@ -1,8 +1,8 @@
-.env
-doc/tags
 deps/
+doc/tags
 scripts/nvim/*.log
 scripts/nvim/*lock.json
 scripts/nvim/shada/
 scripts/nvim/site/
+scripts/nvim/swap/
 scripts/nvim/tests/
