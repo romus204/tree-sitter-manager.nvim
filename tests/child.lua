@@ -71,9 +71,10 @@ function M.wait_installed(languages, timeout, return_error, with_deps)
         err = ""
         local status = M.lua_get("installer.status")
         for _, lang in ipairs(languages) do
-            if M.lua_get("util.is_installed('" .. lang .. "')") then
-            elseif not status[lang] then
-                err = err .. lang .. ": installation not started\n"
+            if not status[lang] then
+                if M.lua_get("util.not_installed('" .. lang .. "')") then
+                    err = err .. lang .. ": installation not started\n"
+                end
             elseif not status[lang].ok then
                 local e = status[lang].error
                 err = err .. (vim.startswith(e, lang) and e or lang .. ": " .. e) .. "\n"

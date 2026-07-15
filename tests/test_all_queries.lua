@@ -11,22 +11,7 @@ local T = new_set({
             end
         end,
     },
-    parametrize = vim.iter(languages)
-        :map(function(lang)
-            if util.is_only_query(lang) then
-                return { { lang } }
-            end
-            local paths = vim.fn.glob("runtime/queries/" .. lang .. "/*.scm", true, true)
-            local queries = vim.iter(paths)
-                :map(function(path)
-                    return { lang, vim.fn.fnamemodify(path, ":t:r") }
-                end)
-                :totable()
-            table.insert(queries, 1, { lang, "parser" })
-            return queries
-        end)
-        :flatten()
-        :totable(),
+    parametrize = parametrize_with_queries(languages),
 })
 
 T.pass = function(lang, query)
