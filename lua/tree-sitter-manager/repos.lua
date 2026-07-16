@@ -1567,7 +1567,7 @@ return {
     },
     slint = {
         install_info = {
-            revision = "4d7ad0617c30f865f051bbac04a9826bea29f987",
+            revision = "f94f96ce093ec153f037228ac2fac5f1a3cd9ac6",
             url = "https://github.com/slint-ui/tree-sitter-slint",
         },
     },
