@@ -50,12 +50,8 @@ function M.wait_installed(languages, timeout, return_error, with_deps)
     languages = vim.iter(languages):filter(util.notin(M.timeout)):totable()
     timeout = timeout or 60000
     M.lua([[
-    success, reason = vim.wait(
-        ]] .. timeout .. [[,
-        function()
-            return not vim.iter(]] .. vim.inspect(languages) .. [[):any(util.getter(installer.installing))
-        end
-    )]])
+    success, reason = installer.wait(]] .. vim.inspect(languages) .. [[, ]] .. timeout .. [[)
+    ]])
 
     local err
     if not M.lua_get("success") then

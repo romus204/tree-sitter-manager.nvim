@@ -205,6 +205,16 @@ function M.update(languages, callback)
     M.install(languages, callback, true)
 end
 
+---Block until none of the given languages are still installing.
+---@param languages Lang|Lang[]
+---@param timeout? number default math.huge
+function M.wait(languages, timeout)
+    languages = type(languages) == "string" and { languages } or languages
+    return vim.wait(timeout or math.huge, function()
+        return not vim.iter(languages):any(util.getter(M.installing))
+    end)
+end
+
 -- Backward compatibility
 backport._install_single = install
 

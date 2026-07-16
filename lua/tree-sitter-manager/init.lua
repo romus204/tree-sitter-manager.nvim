@@ -14,14 +14,6 @@ local function iter_startswith(_argLead, _cmdLine)
     end)
 end
 
--- Block until none of the given languages are still installing, so the
--- `Sync` commands can be used synchronously in scripted/headless setups.
-local function wait_installed(languages, timeout)
-    return vim.wait(timeout or math.huge, function()
-        return not vim.iter(languages):any(util.getter(installer.installing))
-    end)
-end
-
 function M.setup(opts)
     state.cfg = vim.tbl_deep_extend("force", state.cfg, opts or {})
 
@@ -110,7 +102,7 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("TSInstallSync", function(args)
         installer.install(args.fargs, ui.render)
         ui.render(true)
-        wait_installed(args.fargs)
+        installer.wait(args.fargs)
     end, {
         nargs = "+",
         bar = true,
@@ -158,11 +150,11 @@ function M.setup(opts)
             local installed = vim.iter(state.languages):filter(util.is_installed):totable()
             installer.update(installed, ui.render)
             ui.render(true)
-            wait_installed(installed)
+            installer.wait(installed)
         elseif args.args ~= "" then
             installer.update(args.fargs, ui.render)
             ui.render(true)
-            wait_installed(args.fargs)
+            installer.wait(args.fargs)
         else
             vim.notify("E471: Argument required", vim.log.levels.ERROR)
         end
