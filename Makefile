@@ -22,7 +22,7 @@ test: deps/mini.nvim
 # `make test_xxx all` to run for all languages
 TEST_MODULES = $(basename $(notdir $(wildcard tests/test_*.lua)))
 .PHONY: $(TEST_MODULES)
-$(TEST_MODULES): .env
+$(TEST_MODULES): deps/mini.nvim
 	nvim --headless --noplugin -c "lua MiniTest.run_file('tests/$@.lua')"
 
 # Use `make nvim` or `make nvim tests/test_xxx.lua`
@@ -32,9 +32,6 @@ nvim: deps/mini.nvim
 
 ifeq ($(OS),Windows_NT)
   MKDIR = if not exist "$(1)" mkdir "$(1)"
-  define WRITE_ENV
-    @echo # Generated using make > .env
-  endef
 else
   MKDIR = mkdir -p "$(1)"
 endif
