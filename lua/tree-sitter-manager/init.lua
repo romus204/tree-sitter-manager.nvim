@@ -14,6 +14,14 @@ local function iter_startswith(_argLead, _cmdLine)
     end)
 end
 
+-- Block until none of the given languages are still installing, so the
+-- `Sync` commands can be used synchronously in scripted/headless setups.
+local function wait_installed(languages, timeout)
+    return vim.wait(timeout or math.huge, function()
+        return not vim.iter(languages):any(util.getter(installer.installing))
+    end)
+end
+
 function M.setup(opts)
     state.cfg = vim.tbl_deep_extend("force", state.cfg, opts or {})
 
@@ -99,6 +107,19 @@ function M.setup(opts)
         desc = "Install treesitter parsers",
     })
 
+    vim.api.nvim_create_user_command("TSInstallSync", function(args)
+        installer.install(args.fargs, ui.render)
+        ui.render(true)
+        wait_installed(args.fargs)
+    end, {
+        nargs = "+",
+        bar = true,
+        complete = function(_argLead, _cmdLine, _cursorPos)
+            return iter_startswith(_argLead, _cmdLine):filter(util.not_installed):totable()
+        end,
+        desc = "Install treesitter parsers, blocking until installation finishes",
+    })
+
     vim.api.nvim_create_user_command("TSUninstall", function(args)
         installer.remove(args.fargs, ui.render)
         ui.render(true)
@@ -130,6 +151,29 @@ function M.setup(opts)
             return iter_startswith(_argLead, _cmdLine):totable()
         end,
         desc = "Update treesitter parsers",
+    })
+
+    vim.api.nvim_create_user_command("TSUpdateSync", function(args)
+        if args.args == "" and args.bang then
+            local installed = vim.iter(state.languages):filter(util.is_installed):totable()
+            installer.update(installed, ui.render)
+            ui.render(true)
+            wait_installed(installed)
+        elseif args.args ~= "" then
+            installer.update(args.fargs, ui.render)
+            ui.render(true)
+            wait_installed(args.fargs)
+        else
+            vim.notify("E471: Argument required", vim.log.levels.ERROR)
+        end
+    end, {
+        nargs = "*",
+        bang = true,
+        bar = true,
+        complete = function(_argLead, _cmdLine, _cursorPos)
+            return iter_startswith(_argLead, _cmdLine):totable()
+        end,
+        desc = "Update treesitter parsers, blocking until the update finishes",
     })
 end
 
