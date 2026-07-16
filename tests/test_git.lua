@@ -96,6 +96,20 @@ T["pre_2.49.0"] = MiniTest.new_set({
                 end
                 return system(cmd, ...)
             end
+
+            -- Ensure Git cannot discover the plugin's own repository.
+            pre_249_cwd = vim.fn.tempname()
+            vim.fn.mkdir(pre_249_cwd, "p")
+            vim.fn.chdir(pre_249_cwd)
+            ]])
+        end,
+        post_once = function()
+            if not child.is_running() then
+                return
+            end
+            child.lua([[
+            vim.fn.chdir(vim.fn.stdpath("config"))
+            vim.fs.rm(pre_249_cwd, { recursive = true, force = true })
             ]])
         end,
     },

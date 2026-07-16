@@ -78,11 +78,11 @@ local function install(lang, callback)
         -- Git pre 2.49.0 doesn't have --revision flag
         out = util.run({ "git", "init", tmpdir })
         if out.ok then
-            out = util.run(util.concat(git_args, { "remote", "add", "origin", info.url }))
+            out = util.run(util.concat(git_args, { "remote", "add", "origin", info.url }), tmpdir)
         end
-        util.run_async(util.concat(git_args, { "fetch", "--depth=1", "origin", info.revision }), nil, out, function(out)
+        util.run_async(util.concat(git_args, { "fetch", "--depth=1", "origin", info.revision }), tmpdir, out, function(out)
             if out.ok then
-                out = util.run(util.concat(git_args, { "checkout", "FETCH_HEAD" }))
+                out = util.run(util.concat(git_args, { "checkout", "FETCH_HEAD" }), tmpdir)
             end
             treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
         end)
