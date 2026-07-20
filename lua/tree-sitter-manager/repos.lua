@@ -1284,16 +1284,16 @@ return {
     problog = {
         install_info = {
             location = "grammars/problog",
-            revision = "d8d415f6a1cf80ca138524bcc395810b176d40fa",
-            url = "https://github.com/foxyseta/tree-sitter-prolog",
+            revision = "c9362273bdec6d3c247ba8628d5a4168ea575051",
+            url = "https://codeberg.org/foxy/tree-sitter-prolog",
         },
         requires = { "prolog" },
     },
     prolog = {
         install_info = {
             location = "grammars/prolog",
-            revision = "d8d415f6a1cf80ca138524bcc395810b176d40fa",
-            url = "https://github.com/foxyseta/tree-sitter-prolog",
+            revision = "c9362273bdec6d3c247ba8628d5a4168ea575051",
+            url = "https://codeberg.org/foxy/tree-sitter-prolog",
         },
     },
     promql = {
