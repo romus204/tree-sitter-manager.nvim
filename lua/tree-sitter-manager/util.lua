@@ -135,7 +135,7 @@ end
 ---@field output? string
 
 ---@class AsyncJob
----@field wait fun(self: AsyncJob, timeout: number): Status
+---@field wait fun(self: AsyncJob, timeout?: number): Status
 ---@field start fun(self: AsyncJob) Start the job immediately.
 ---@field active boolean
 
@@ -177,15 +177,14 @@ end
 M.Queue = Queue
 M.global_queue = Queue:new()
 
----@class runOptions
+---@class runOptions : vim.SystemOpts
 ---@field callback? fun(out: Status) If not given the job skips the queue.
 ---@field status? Status If not status.ok, the job is skipped to the callback.
 ---@field queue? Queue Jobs are queued, by default `global_queue`. Use Queue:new() to skip the queue.
----@field [string] any Additional options are forwarded to vim.system
 
 ---@param args string[]
 ---@param opts? runOptions
----@return AsyncJob
+---@return AsyncJob?
 function M.run(args, opts)
     opts = opts or {}
     local status = opts.status or { ok = true }
@@ -197,7 +196,8 @@ function M.run(args, opts)
         return
     end
 
-    local job = {} ---@type AsyncJob
+    local job = {}
+    ---@cast job AsyncJob
 
     function job:start()
         self.start = function() end -- subsequent calls do nothing
@@ -229,6 +229,8 @@ function M.run(args, opts)
             return self.active
         end) then -- wait until the job finishes
             return self:wait(timeout - (vim.uv.hrtime() - start) / 1e6)
+        else
+            return { ok = false, error = "Timeout before job started." }
         end
     end
 
@@ -246,10 +248,10 @@ function M.copy_dir(src, dst)
             local s = vim.fs.joinpath(src, name)
             local d = vim.fs.joinpath(dst, name)
             if ftype == "directory" then
-                res = M.copy_dir(s, d)
+                local res = M.copy_dir(s, d)
                 ok, err = res.ok, res.error
             else
-                ok, err, errno = vim.uv.fs_copyfile(s, d)
+                ok, err = vim.uv.fs_copyfile(s, d)
             end
             if not ok then
                 break
