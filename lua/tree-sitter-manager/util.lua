@@ -155,9 +155,9 @@ end
 ---@return number The index of the job
 ---@return AsyncJob The job itself
 function Queue:find(job)
-    return vim.iter(ipairs(self)):find(function(_, j)
+    return unpack(vim.iter(ipairs(self)):find(function(_, j)
         return j == job
-    end)
+    end))
 end
 
 Queue.add = table.insert
