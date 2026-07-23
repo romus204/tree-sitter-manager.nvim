@@ -18,8 +18,8 @@ M.check = function()
         if vim.fn.executable(command_name) == 0 then
             vim.health.error(human_readable_name .. " must be installed")
         else
-            local version = util.run({ cmd, "--version" }):wait()
-            local first_line = vim.split(version.stdout, "\n")[1]
+            local version = util.run({ command_name, "--version" }):wait()
+            local first_line = vim.split(version.output, "\n")[1]
             vim.health.ok(human_readable_name .. " is installed: " .. first_line)
         end
     end
