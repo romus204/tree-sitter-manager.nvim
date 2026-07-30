@@ -215,6 +215,13 @@ return {
         },
         requires = { "c" },
     },
+    crystal = {
+        install_info = {
+            queries = "queries/nvim",
+            revision = "50ca9e6fcfb16a2cbcad59203cfd8ad650e25c49",
+            url = "https://github.com/crystal-lang-tools/tree-sitter-crystal",
+        },
+    },
     css = {
         install_info = {
             revision = "dda5cfc5722c429eaba1c910ca32c2c0c5bb1a3f",
