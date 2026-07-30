@@ -1,15 +1,15 @@
 ; inherits: c
 
 (import_declaration
-  name: (module_name (identifier) @type))
+  name: (module_name (identifier) @namespace))
 (module_declaration
-  name: (module_name (identifier) @type))
+  name: (module_name (identifier) @namespace))
 
-"module" @keyword
+"module" @keyword.modifier
 [
   "import"
   "export"
-] @keyword.import
+] @keyword.modifier
 
 ((identifier) @variable.member
   (#lua-match? @variable.member "^m_.*$"))
