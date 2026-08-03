@@ -234,6 +234,12 @@ min_height ~
   Install parsers. >vim
     :TSInstall vim nix
 <
+                                                                 *:TSInstallSync*
+:TSInstallSync {lang} ...
+  Like |:TSInstall|, but blocks until installation finishes. Useful for
+  scripted/headless setups. >vim
+    :TSInstallSync vim nix
+<
                                                                  *:TSUninstall*
 :TSUninstall {lang} ...
   Uninstall parsers. >vim
@@ -245,6 +251,14 @@ min_height ~
   Update parsers. >vim
     :TSUpdate rust zsh
     :TSUpdate! "force update all
+<
+                                                                 *:TSUpdateSync*
+:TSUpdateSync [{lang}] ...
+:TSUpdateSync!
+  Like |:TSUpdate|, but blocks until the update finishes. Useful for
+  scripted/headless setups. >vim
+    :TSUpdateSync rust zsh
+    :TSUpdateSync! "force update all
 <
 
 ==============================================================================
