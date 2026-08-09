@@ -64,19 +64,21 @@ local function install(lang, callback)
         callback({ ok = false, error = "Git not installed" })
         return
     end
-    version = { out.output:match("(%d+)%.(%d+)%.(%d+)") }
-    local major = tonumber(version[1])
-    local minor = tonumber(version[2])
-    local patch = tonumber(version[3])
-
     local info = util.get_repo_info(lang)
     local tmpdir = vim.fn.tempname()
     local build_path = vim.fs.joinpath(tmpdir, info.location)
-    local git_args = { "git", "--no-advice", "--work-tree=" .. tmpdir }
+    local git_args = {
+        "git",
+        "--no-advice",
+        "--git-dir=" .. vim.fs.joinpath(tmpdir, ".git"),
+        "--work-tree=" .. tmpdir,
+    }
 
-    if info.revision and (major < 2 or major == 2 and minor < 49) then
-        -- Git pre 2.49.0 doesn't have --revision flag
-        out = util.run({ "git", "init", tmpdir })
+    if info.revision then
+        -- `git clone --revision` only resolves advertised refs. Parser
+        -- revisions are commit IDs, so fetch the requested commit directly.
+        vim.fn.mkdir(tmpdir, "p")
+        out = util.run(util.concat(git_args, { "init" }))
         if out.ok then
             out = util.run(util.concat(git_args, { "remote", "add", "origin", info.url }))
         end
@@ -87,16 +89,10 @@ local function install(lang, callback)
             treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
         end)
     else
-        local revision = info.revision and "--revision=" .. info.revision
         local branch = info.branch and "--branch=" .. info.branch
-        util.run_async(
-            util.concat(git_args, { "clone", "--depth=1", info.url, tmpdir, revision or branch }),
-            nil,
-            out,
-            function(out)
-                treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
-            end
-        )
+        util.run_async({ "git", "--no-advice", "clone", "--depth=1", info.url, tmpdir, branch }, nil, out, function(out)
+            treesitter_build(lang, info.queries, build_path, info.generate, tmpdir, out, callback)
+        end)
     end
 end
 

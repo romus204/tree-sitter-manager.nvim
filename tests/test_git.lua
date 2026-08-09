@@ -7,6 +7,28 @@ T["revision"] = function()
     child.wait(languages)
 end
 
+T["raw commit revision"] = function()
+    if _G.languages then
+        MiniTest.skip()
+    end
+    -- `git clone --revision` cannot resolve this non-tip commit from GitHub.
+    local languages = { "markdown" }
+    child.setup({
+        ensure_installed = languages,
+        languages = {
+            markdown = {
+                install_info = {
+                    url = "https://github.com/tree-sitter-grammars/tree-sitter-markdown",
+                    revision = "f969cd3ae3f9fbd4e43205431d0ae286014c05b5",
+                    location = "tree-sitter-markdown",
+                    generate = false,
+                },
+            },
+        },
+    })
+    child.wait(languages, 180000)
+end
+
 T["branch_revision"] = function()
     if _G.languages then
         MiniTest.skip()
