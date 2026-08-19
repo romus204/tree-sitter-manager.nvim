@@ -1,4 +1,4 @@
-local languages = _G.languages or { "tsv", "tsx" }
+local languages = languages or { "tsv", "tsx" }
 
 local T = new_set({
     parametrize = parametrize(
