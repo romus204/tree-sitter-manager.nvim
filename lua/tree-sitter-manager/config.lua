@@ -19,17 +19,6 @@ local datapath = vim.fn.stdpath("data")
 ---@field min_height? number Minimum height of the TUI window.
 ---@field async_size? number Maximum number of async jobs.
 
----@class tree_sitter_manager.LanguageSpec
----@field install_info? tree_sitter_manager.InstallInfo Information about how to fetch and build the grammar.
----@field requires? string[] Other languages that are dependencies of this one and must be installed first.
-
----@class tree_sitter_manager.InstallInfo
----@field url string Git URL of the grammar repository.
----@field location? string Sub-directory within the repo where the grammar is stored. Defaults to the name of the language.
----@field revision? string Git revision to check out after cloning. Takes priority over `branch`.
----@field branch? string Git branch to check out after cloning. Ignored if `revision` is set.
----@field generate? boolean Run `tree-sitter generate` before building. Defaults to false.
----@field queries? string Specifies the queries directory in the cloned repo that will be used.
 ---@type tree_sitter_manager.Config
 M.cfg = {
     parser_dir = vim.fs.joinpath(datapath, "site/parser"),

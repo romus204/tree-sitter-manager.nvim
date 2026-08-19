@@ -17,6 +17,10 @@ export LANGUAGES := $(ARGS)
 test: deps/mini.nvim
 	nvim --headless --noplugin -c "lua MiniTest.run()"
 
+.PHONY: update-parsers
+update-parsers: deps/mini.nvim
+	nvim --headless --noplugin -c "lua require('parser-updater').update()"
+
 # `make test_xxx` to run tests for module `tests/test_xxx.lua`
 # `make test_xxx python` will run it for python
 # `make test_xxx all` to run for all languages
