@@ -3,6 +3,7 @@ name: Quality Control
 on:
   pull_request:
     branches: [ "main", "develop" ]
+    types: [opened, labeled, unlabeled, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,6 +13,7 @@ jobs:
   stylua:
     name: Stylua Check
     runs-on: ubuntu-slim
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'automated') }}
     steps:
       - uses: actions/checkout@v4
       - uses: JohnnyMorganz/stylua-action@v4
@@ -23,6 +25,7 @@ jobs:
   detect-changes:
     name: Detect Changes
     runs-on: ubuntu-slim
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'automated') }}
     continue-on-error: true
     outputs:
       code: ${{ steps.filter.outputs.code }}
@@ -40,11 +43,13 @@ jobs:
   test:
     name: Run Tests
     needs: [stylua, detect-changes]
-    if: |
-      ${{ always() &&
-        needs.stylua.result == 'success' &&
-        (needs.detect-changes.outputs.code == 'true' ||
-         needs.detect-changes.result == 'failure') }}
+    if: ${{
+      always() &&
+      !contains(github.event.pull_request.labels.*.name, 'automated') &&
+      needs.stylua.result == 'success' &&
+      (needs.detect-changes.outputs.code == 'true' ||
+       needs.detect-changes.result == 'failure')
+      }}
     runs-on: ubuntu-latest
 
     steps:
@@ -62,4 +67,4 @@ jobs:
           install-lib: false
 
       - name: Run tests
-        run: make test
+        run: make test ${{ join(github.event.pull_request.labels.*.name, ' ') }}
