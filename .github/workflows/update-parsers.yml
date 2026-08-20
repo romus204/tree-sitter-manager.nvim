@@ -8,7 +8,7 @@ on:
 jobs:
   update-parsers:
     name: Update
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
