@@ -222,13 +222,14 @@ function M._push_passed(languages)
     local content = { "--title", "chore(repos): update revisions", "--body", table.concat(languages, " ") }
     status = util.run({ "gh", "pr", "create", "--label", "automated", unpack(content) }):wait()
     if not status.ok and status.error and status.error:match("already exists") then
-        io.write("\nPull request exists! Updating its body\n")
+        io.write("\nPull request exists! Updating its body")
         status = util.run({ "gh", "pr", "edit", "auto-updated-parsers", unpack(content) }):wait()
     end
     if not status.ok then
         error(status.error, nil, true)
         return 1
     end
+    io.write("\n" .. status.output .. "\n")
     return 0
 end
 
