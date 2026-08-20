@@ -1,0 +1,32 @@
+name: Update Parsers
+
+on:
+  schedule:
+    - cron: '30 0 15 * *'
+  workflow_dispatch:
+
+jobs:
+  update-parsers:
+    name: Update
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v2.4.1
+          args: false
+
+      - name: Update Parsers
+        run: make update-parsers
