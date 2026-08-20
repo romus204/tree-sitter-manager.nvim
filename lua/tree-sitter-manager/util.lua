@@ -169,7 +169,7 @@ end
 
 function Queue:start_next_batch()
     local active = #vim.iter(self):filter(M.get("active")):totable()
-    for i = active + 1, math.min(#self, config.cfg.async_size) do
+    for i = active + 1, math.min(#self, vim.env.ASYNC_SIZE or config.cfg.async_size) do
         self[i]:start()
     end
 end

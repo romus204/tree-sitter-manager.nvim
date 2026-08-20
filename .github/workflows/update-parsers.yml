@@ -29,4 +29,7 @@ jobs:
           args: false
 
       - name: Update Parsers
+        env:
+          ASYNC_SIZE: 1
+          TIMEOUT: 60000
         run: make update-parsers
