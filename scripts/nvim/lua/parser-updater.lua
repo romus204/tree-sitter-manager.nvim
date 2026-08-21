@@ -103,7 +103,12 @@ function M._update(languages)
         execute = {
             reporter = {
                 start = reporter.start,
-                update = reporter.update,
+                update = function(...)
+                    if MiniTest.current.case.exec.state == "Executing test" then
+                        io.write("\n" .. table.concat(MiniTest.current.case.args, " ") .. " ")
+                    end
+                    reporter.update(...)
+                end,
                 finish = M._finish,
             },
         },
