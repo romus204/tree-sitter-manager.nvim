@@ -44,4 +44,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ASYNC_SIZE: 8
           TIMEOUT: 60000
+          COMMIT_N_PUSH: 1
         run: make update-parsers

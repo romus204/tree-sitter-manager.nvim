@@ -82,16 +82,18 @@ function M.update()
 end
 
 function M._update(languages)
-    local status
+    if vim.env.COMMIT_N_PUSH then
+        local status
 
-    status = util.run({ "git", "checkout", "-B", "auto-updated-parsers" }):wait()
-    if not status.ok then
-        error(status.error)
-    end
+        status = util.run({ "git", "checkout", "-B", "auto-updated-parsers" }):wait()
+        if not status.ok then
+            error(status.error)
+        end
 
-    status = util.run({ "git", "reset", "main" }):wait()
-    if not status.ok then
-        error(status.error)
+        status = util.run({ "git", "reset", "main" }):wait()
+        if not status.ok then
+            error(status.error)
+        end
     end
 
     M._write_repos(parsers)
@@ -178,13 +180,14 @@ function M._finish()
         parsers[language] = old_parsers[language]
     end
 
-    M._write_repos(parsers)
-
-    local exit_code = 0
+    if vim.env.COMMIT_N_PUSH then
+        M._write_repos(parsers)
+    end
 
     io.write("\n")
 
-    if #passed > 0 then
+    local exit_code = 0
+    if #passed > 0 and vim.env.COMMIT_N_PUSH then
         table.sort(passed)
         io.write("\nPushing passed parsers:\n" .. table.concat(passed, " ") .. "\n")
         exit_code = M._push_passed(passed)

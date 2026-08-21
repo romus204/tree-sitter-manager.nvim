@@ -28,6 +28,22 @@
     `LANGUAGES` to a space-separated list of languages. This is what `make test`
     does under the hood.
 
+## Updating Parsers
+
+```sh
+make update-parsers
+```
+
+This will fetch and update all parsers to their newest versions and run test
+on them.
+
+> [!WARNING]
+> If `$COMMIT_N_PUSH` environment variable is set. Successful parser updates
+> will be committed to the `auto-updated-parsers` branch, force pushed and
+> a PR will be created via `gh pr create`.
+>
+> This is reserved for Github Workflows. Don't set this variable.
+
 ## Writing Tests
 
 Get familiar with [MiniTest](https://github.com/nvim-mini/mini.nvim/blob/main/TESTING.md).
