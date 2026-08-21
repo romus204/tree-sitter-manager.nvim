@@ -27,9 +27,34 @@ elseif vim.env.LANGUAGES then
 end
 
 -- Set up 'mini.test'
-require("mini.test").setup({
+MiniTest = require("mini.test")
+
+local no_tree_sitter = false
+if vim.fn.executable("tree-sitter") == 0 then
+    no_tree_sitter = true
+    local orig_collect = MiniTest.collect
+    MiniTest.collect = function(...)
+        local cases = orig_collect(...)
+        table.insert(cases, 1, {
+            args = {},
+            desc = { "tree-sitter executable" },
+            data = {},
+            hooks = { pre = {}, post = {}, pre_source = {}, post_source = {} },
+            test = function()
+                error("tree-sitter is not installed")
+            end,
+            n_retry = 1,
+        })
+        return cases
+    end
+end
+
+MiniTest.setup({
     collect = {
         filter_cases = function(case)
+            if no_tree_sitter then
+                return false
+            end
             local skip_smoke_tests = { "tests/test_git.lua", "tests/test_custom_repos.lua", "tests/test_vimpack.lua" }
             if _G.languages and vim.list_contains(skip_smoke_tests, case.desc[1]) then
                 return false

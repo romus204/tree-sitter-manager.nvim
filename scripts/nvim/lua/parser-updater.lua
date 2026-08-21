@@ -74,6 +74,7 @@ function M.update()
 
     if #updates == 0 then
         io.write("\nAll parsers up to date!\n")
+        os.exit()
     else
         io.write("\nUpdates: " .. table.concat(updates, " ") .. "\n")
         M._update(updates)
@@ -153,7 +154,7 @@ function M._finish()
 
     for _, case in ipairs(cases) do
         local language = case.args[1]
-        if not case.exec then
+        if not case.exec or not language then
         elseif case.exec.state == "Pass" and parser_state[language] ~= false then
             parser_state[language] = true
         elseif case.exec.state == "Fail" then
@@ -180,6 +181,8 @@ function M._finish()
     M._write_repos(parsers)
 
     local exit_code = 0
+
+    io.write("\n")
 
     if #passed > 0 then
         table.sort(passed)
