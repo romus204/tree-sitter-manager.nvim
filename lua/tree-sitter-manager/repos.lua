@@ -1904,14 +1904,12 @@ return {
             location = "ucdocs",
             revision = "v0.6.1",
             url = "https://github.com/m00qek/tree-sitter-ucode",
-            use_repo_queries = true,
         },
     },
     ucode = {
         install_info = {
             revision = "v0.6.1",
             url = "https://github.com/m00qek/tree-sitter-ucode",
-            use_repo_queries = true,
         },
         requires = { "ucode_tmpl", "ucdocs" },
     },
@@ -1920,7 +1918,6 @@ return {
             location = "markup",
             revision = "v0.6.1",
             url = "https://github.com/m00qek/tree-sitter-ucode",
-            use_repo_queries = true,
         },
         requires = { "ucdocs" },
     },
