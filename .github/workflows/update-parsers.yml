@@ -41,6 +41,7 @@ jobs:
 
       - name: Update Parsers
         env:
+          GH_TOKEN: ${{ github.token }}
           ASYNC_SIZE: 1
           TIMEOUT: 60000
         run: make update-parsers
