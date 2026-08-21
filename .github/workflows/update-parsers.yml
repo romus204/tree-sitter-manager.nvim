@@ -22,11 +22,17 @@ jobs:
           neovim: true
           version: stable
 
-      - uses: JohnnyMorganz/stylua-action@v4
+      - name: Setup Stylua
+        uses: JohnnyMorganz/stylua-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: v2.4.1
           args: false
+
+      - name: Setup Tree-sitter
+        uses: tree-sitter/setup-action@v2
+        with:
+          install-lib: false
 
       - name: Update Parsers
         env:
