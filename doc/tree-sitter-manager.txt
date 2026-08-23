@@ -17,6 +17,8 @@ CONTENTS                                      *tree-sitter-manager-contents*
   8. Custom Repositories ....... |tree-sitter-manager-custom-repos|
   9. Highlighting .............. |tree-sitter-manager-highlighting|
  10. API ....................... |tree-sitter-manager-api|
+ 10.1 Installer ................ |tree-sitter-manager-api-installer|
+ 10.2 Util ..................... |tree-sitter-manager-api-util|
  11. Known Limitations ......... |tree-sitter-manager-limitations|
 
 ==============================================================================
@@ -377,20 +379,190 @@ Disable completely: >lua
 ==============================================================================
 10. API                                            *tree-sitter-manager-api*
 
-These functions are exposed on the module returned by `require()`.
+The main module is loaded via `require("tree-sitter-manager")`. Sub-modules
+are available as: >lua
+  local installer = require("tree-sitter-manager.installer")
+  local util      = require("tree-sitter-manager.util")
+<
 
-                                                   *tree-sitter-manager.open()*
-`require("tree-sitter-manager").open()`
-  Open the `:TSManager` TUI window programmatically.
+------------------------------------------------------------------------------
+10.1 INSTALLER                           *tree-sitter-manager-api-installer*
+                                         *tree-sitter-manager-installer*
 
-                                        *tree-sitter-manager._install_single()*
-`require("tree-sitter-manager")._install_single(lang, silent)`
-  Install a single parser by language name.
-  `lang`   - `string`: language identifier (e.g. `"lua"`)
-  `silent` - `boolean`: suppress notifications if `true`
+------------------------------------------------------------------------------
+                                         *tree-sitter-manager-installer-install*
+`installer.install(languages, callback)`
+  Install one or more parsers asynchronously.
 
-  Note: This is a low-level function. Prefer `:TSManager` for interactive
-  use or `ensure_installed` for declarative installation.
+  `languages` - `string|string[]`: language name(s) to install
+  `callback`  - `fun(out: Status)`: called for each language with its
+                result. `Status` is `{ ok: boolean, error?: string }`.
+
+  Dependencies listed in `requires` are resolved and installed
+  automatically. Languages in `assume_installed` are skipped.
+
+  >lua
+    installer.install("lua")
+    installer.install({ "python", "rust" }, function(out)
+      if out.ok then
+        print("done")
+      end
+    end)
+<
+
+------------------------------------------------------------------------------
+                                          *tree-sitter-manager-installer-remove*
+`installer.remove(languages, callback)`
+  Remove one or more parsers.
+
+  `languages` - `string|string[]`: language name(s) to remove
+  `callback`  - `fun(out: Status)`: called once after all removals complete.
+
+  >lua
+    installer.remove("cpp")
+    installer.remove({ "java", "kotlin" })
+<
+
+------------------------------------------------------------------------------
+                                          *tree-sitter-manager-installer-update*
+`installer.update(languages, callback)`
+  Update one or more parsers (remove + reinstall).
+
+  `languages` - `string|string[]`: language name(s) to update
+  `callback`  - `fun(out: Status)`: called for each language.
+
+  >lua
+    installer.update("lua")
+    installer.update({ "python", "rust" })
+<
+
+------------------------------------------------------------------------------
+                                            *tree-sitter-manager-installer-wait*
+`installer.wait(languages, timeout)`
+  Block the main loop until none of the given languages are still
+  installing.
+
+  `languages` - `string|string[]`: language name(s) to wait for
+  `timeout`   - `number`: max time in ms (default: `math.huge`)
+
+  Returns `true` if all finished, `false` on timeout.
+
+  >lua
+    installer.install("lua")
+    installer.wait("lua", 30000) -- wait up to 30s
+<
+
+------------------------------------------------------------------------------
+                                      *tree-sitter-manager-installer-installing*
+`installer.installing`
+  Type: `table<string, boolean>`
+
+  Tracks languages currently being installed. A key is present while the
+  install is in progress and removed when it completes.
+
+------------------------------------------------------------------------------
+                                          *tree-sitter-manager-installer-status*
+`installer.status`
+  Type: `table<string, Status>`
+
+  Tracks the last known status for each language.
+  `Status` = `{ ok: boolean, error?: string }`
+
+------------------------------------------------------------------------------
+10.2 UTIL                                     *tree-sitter-manager-api-util*
+
+------------------------------------------------------------------------------
+                                         *tree-sitter-manager-util-is_installed*
+`util.is_installed(lang)`
+  Returns `true` if the parser for `lang` is installed, `false` otherwise.
+  Languages in `assume_installed` always return `true`.
+
+------------------------------------------------------------------------------
+                                        *tree-sitter-manager-util-not_installed*
+`util.not_installed(lang)`
+  Negation of |tree-sitter-manager-util-is_installed|.
+
+------------------------------------------------------------------------------
+                                        *tree-sitter-manager-util-get_filetypes*
+`util.get_filetypes(lang)`
+  Returns `string[]` of filetypes associated with `lang`, excluding
+  invalid/ambiguous filetypes.
+
+------------------------------------------------------------------------------
+                                         *tree-sitter-manager-util-get_requires*
+`util.get_requires(lang)`
+  Returns `string[]` of all transitive dependencies for `lang`.
+
+------------------------------------------------------------------------------
+                                        *tree-sitter-manager-util-get_repo_info*
+`util.get_repo_info(lang)`
+  Returns the resolved `install_info` table for `lang`, or `nil` if the
+  language is not in the effective repos.
+
+------------------------------------------------------------------------------
+                                                *tree-sitter-manager-util-ppath*
+`util.ppath(lang)`
+  Returns the absolute path to the compiled parser file for `lang`.
+
+------------------------------------------------------------------------------
+                                                *tree-sitter-manager-util-qpath*
+`util.qpath(lang)`
+  Returns the absolute path to the queries directory for `lang`.
+
+------------------------------------------------------------------------------
+                                                  *tree-sitter-manager-util-ext*
+`util.ext()`
+  Returns the platform-specific parser extension:
+  `".so"`, `".dylib"`, or `".dll"`.
+
+------------------------------------------------------------------------------
+                                                  *tree-sitter-manager-util-run*
+`util.run(args, opts)`
+  Run a system command asynchronously with queue support.
+
+  `args` - `string[]`: command and arguments
+  `opts` - `table`:
+    - `callback` - `fun(out: Status)`: called when the job finishes
+    - `status`   - `Status`: if `status.ok` is `false`, the job is skipped
+    - `queue`    - `Queue`: job queue (default: `util.global_queue`)
+    - Other keys are passed through to |vim.system()|
+
+  Returns an `AsyncJob` with:
+    - `:wait(timeout?)` - block until the job finishes, returns `Status`
+    - `:start()`        - start the job immediately
+    - `.active`         - `boolean`, whether the job is running
+
+  >lua
+    local job = util.run({ "tree-sitter", "--version" }, {
+      callback = function(out)
+        print(out.output)
+      end,
+    })
+    -- or block:
+    local out = util.run({ "git", "version" }):wait()
+<
+
+------------------------------------------------------------------------------
+                                             *tree-sitter-manager-util-copy_dir*
+`util.copy_dir(src, dst)`
+  Recursively copy a directory.
+
+  Returns `{ ok = true }` on success, `{ ok = false, error = string }` on
+  failure.
+
+------------------------------------------------------------------------------
+                                                *tree-sitter-manager-util-Queue*
+`util.Queue`
+  A job queue class that limits concurrent jobs to `async_size`.
+
+  Methods:
+    - `Queue:new()`          - create a new queue
+    - `:add(job)`            - add a job
+    - `:remove(job)`         - remove a job
+    - `:find(job)`           - find a job, returns index and job
+    - `:start_next_batch()`  - start queued jobs up to `async_size`
+
+  `util.global_queue` is the default queue used by |tree-sitter-manager-util-run|.
 
 ==============================================================================
 11. KNOWN LIMITATIONS                      *tree-sitter-manager-limitations*
