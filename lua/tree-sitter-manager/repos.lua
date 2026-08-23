@@ -30,7 +30,7 @@ return {
             revision = "11dd46c9ae25135c473c0003a133bb06a484af0c",
             url = "https://github.com/tree-sitter-grammars/tree-sitter-arduino",
         },
-        requires = { "cpp" },
+        requires = { "cpp", "c" },
     },
     asm = {
         install_info = {
