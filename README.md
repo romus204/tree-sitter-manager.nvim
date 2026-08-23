@@ -17,6 +17,7 @@ Although Neovim 0.12 integrated Tree-sitter into the core, it still lacks a buil
 - Works with any plugin manager (lazy, packer, vim-plug, native packages)
 - **Custom/fork repositories**: Override any language or add new ones via `setup()`
 - **Repository queries**: Set `queries` to the relative path of the queries directory in the repo
+- **TUI filter**: Cycle through installed, warning, missing, and all parsers with a single keypress
 
 ## Requirements
 ### Mandatory
@@ -155,6 +156,7 @@ require("tree-sitter-manager").setup({
 `x` - Remove parser under cursor<br/>
 `u` - Update parser under cursor<br/>
 `r` - Refresh installation status<br/>
+`f` - Cycle filter (installed → warning → missing → all)<br/>
 `q / <Esc>` - Close window<br/>
 
 ## Queries
