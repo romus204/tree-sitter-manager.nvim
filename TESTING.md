@@ -46,7 +46,9 @@ This is necessary to test asynchronous functions (See [mini.nvim#1930](https://g
 
 ### Global Functions
 - `new_set(opts, tbl)`: do `MiniTest.new_set(opts, tbl)`
-  with default hooks for `child.setup()`, `child.cleanup()`.
+  with default hooks for `child.setup()`, `child.cleanup()`. Every test file
+  should `setup` the child process at the start and `cleanup` the child process
+  afterwards.
 - `parametrize(list)`: nest every item into a singleton, i.e. does the following:
   ```lua
   vim.iter(list):map(function(x) return { x } end):totable()
@@ -60,23 +62,24 @@ local languages = _G.languages or { "bash", "python", "java" }
 
 local T = new_set({
     hooks = {
-        -- setup will set a unique parent directory to `parser_dir` and `query_dir`
         pre_once = function()
             child.setup({ highlight = true })
-            child.lua("installer.install(" .. vim.inspect(languages) .. ")")
-            -- wait until bash finishes installation
-            -- if the installation fails within the timeout (default 60.000 ms)
-            -- an error is thrown
-            child.wait(languages)
         end,
     },
     parametrize = parametrize(languages),
 })
 
 T["test-case"] = function(lang)
-    -- verify that highlighting works for each lang
-    -- second argument is optional, default: highlights
-    child.works(lang, "highlights")
+    child.fails(lang, "parser") -- parser isn't installed yet
+
+    -- Parameters:
+    -- languages to be installed
+    -- timeout (default 60,000 ms)
+    -- return_error (default false), whether to return the error message or throw it
+    child.install(languages, 60000, false)
+
+    child.works(lang, "parser") -- checks parser
+    child.works(lang, "highlights") -- check highlights queries
 end
 
 return T

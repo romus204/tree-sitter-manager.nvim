@@ -215,6 +215,13 @@ return {
         },
         requires = { "c" },
     },
+    crystal = {
+        install_info = {
+            queries = "queries/nvim",
+            revision = "50ca9e6fcfb16a2cbcad59203cfd8ad650e25c49",
+            url = "https://github.com/crystal-lang-tools/tree-sitter-crystal",
+        },
+    },
     css = {
         install_info = {
             revision = "dda5cfc5722c429eaba1c910ca32c2c0c5bb1a3f",
@@ -1284,16 +1291,16 @@ return {
     problog = {
         install_info = {
             location = "grammars/problog",
-            revision = "d8d415f6a1cf80ca138524bcc395810b176d40fa",
-            url = "https://github.com/foxyseta/tree-sitter-prolog",
+            revision = "c9362273bdec6d3c247ba8628d5a4168ea575051",
+            url = "https://codeberg.org/foxy/tree-sitter-prolog",
         },
         requires = { "prolog" },
     },
     prolog = {
         install_info = {
             location = "grammars/prolog",
-            revision = "d8d415f6a1cf80ca138524bcc395810b176d40fa",
-            url = "https://github.com/foxyseta/tree-sitter-prolog",
+            revision = "c9362273bdec6d3c247ba8628d5a4168ea575051",
+            url = "https://codeberg.org/foxy/tree-sitter-prolog",
         },
     },
     promql = {
@@ -1567,7 +1574,7 @@ return {
     },
     slint = {
         install_info = {
-            revision = "4d7ad0617c30f865f051bbac04a9826bea29f987",
+            revision = "f94f96ce093ec153f037228ac2fac5f1a3cd9ac6",
             url = "https://github.com/slint-ui/tree-sitter-slint",
         },
     },
@@ -1692,10 +1699,11 @@ return {
     },
     svelte = {
         install_info = {
-            revision = "ae5199db47757f785e43a14b332118a5474de1a2",
-            url = "https://github.com/tree-sitter-grammars/tree-sitter-svelte",
+            generate = true,
+            location = "crates/tree-sitter-svelte",
+            revision = "c9b9cc35709fff494a3a9e41cd9471b633649e45",
+            url = "https://github.com/themixednuts/tree-sitter-htmlx",
         },
-        requires = { "html_tags" },
     },
     sway = {
         install_info = {

@@ -57,10 +57,11 @@ lazy.nvim: >lua
   }
 <
 
-vim-plug: >vim
-  Plug 'romus204/tree-sitter-manager.nvim'
-<
-  Then in your `init.lua`: >lua
+vim.pack: >lua
+  vim.pack.add({
+    { src = "https://github.com/romus204/tree-sitter-manager.nvim" }
+  })
+
   require("tree-sitter-manager").setup({})
 <
 
@@ -84,6 +85,8 @@ vim-plug: >vim
     border           = "rounded",
     min_width        = 78,
     min_height       = 40,
+    -- tree-sitter-manager.util
+    async_size       = 64,
   })
 <
 
@@ -111,15 +114,6 @@ query_dir ~
 
   Directory where query files (`highlights.scm`, etc.) are stored.
   The parent directory is automatically prepended to 'runtimepath'.
-
-------------------------------------------------------------------------------
-                                           *tree-sitter-manager-opt-languages*
-languages ~
-  Type: `table`
-  Default: `{}`
-
-  Override built-in language definitions or add new ones.
-  See |tree-sitter-manager-custom-repos| for details.
 
 ------------------------------------------------------------------------------
                                     *tree-sitter-manager-opt-assume_installed*
@@ -240,6 +234,12 @@ min_height ~
   Install parsers. >vim
     :TSInstall vim nix
 <
+                                                                 *:TSInstallSync*
+:TSInstallSync {lang} ...
+  Like |:TSInstall|, but blocks until installation finishes. Useful for
+  scripted/headless setups. >vim
+    :TSInstallSync vim nix
+<
                                                                  *:TSUninstall*
 :TSUninstall {lang} ...
   Uninstall parsers. >vim
@@ -251,6 +251,14 @@ min_height ~
   Update parsers. >vim
     :TSUpdate rust zsh
     :TSUpdate! "force update all
+<
+                                                                 *:TSUpdateSync*
+:TSUpdateSync [{lang}] ...
+:TSUpdateSync!
+  Like |:TSUpdate|, but blocks until the update finishes. Useful for
+  scripted/headless setups. >vim
+    :TSUpdateSync rust zsh
+    :TSUpdateSync! "force update all
 <
 
 ==============================================================================
@@ -268,8 +276,8 @@ These keybindings are active inside the `:TSManager` TUI window.
   `<Esc>`    Close window
 
 ==============================================================================
-8. CUSTOM REPOSITORIES                    *tree-sitter-manager-custom-repos*
-                                          *tree-sitter-manager-languages*
+8. CUSTOM REPOSITORIES                     *tree-sitter-manager-custom-repos*
+                                           *tree-sitter-manager-opt-languages*
 
 The `languages` option accepts a table that overrides built-in language
 definitions or adds new ones. This avoids modifying the plugin source.
@@ -282,7 +290,7 @@ Each entry has the following shape: >lua
         location = nil,       -- subdirectory inside the repo (optional)
         revision = nil,       -- commit SHA to pin (optional)
         branch   = nil,       -- branch name (optional)
-        generate = false,     -- run `tree-sitter generate` before build
+        generate = false,     -- run `tree-sitter generate` before building
         queries  = "queries", -- queries folder in the cloned repo (optional)
       },
       requires = {},  -- list of language names that must be installed first
@@ -316,7 +324,24 @@ Add a new language: >lua
     },
   })
 <
-                                                  *tree-sitter-manager-queries*
+
+If you are only setting the `url` field, there is a shortcut: >lua
+  require("tree-sitter-manager").setup({
+    languages = { mylang = "https://github.com/someone/tree-sitter-mylang" },
+  })
+<
+
+------------------------------------------------------------------------------
+                                    *tree-sitter-manager-install_info-location*
+languages.<lang>.install_info.location ~
+  Type: `string`
+  Default: `nil`
+
+  If `grammar.js` is not located in the repository's root you can configure it
+  with the `location` option.
+
+------------------------------------------------------------------------------
+                                     *tree-sitter-manager-install_info-queries*
 languages.<lang>.install_info.queries ~
   Type: `string`
   Default: `nil`

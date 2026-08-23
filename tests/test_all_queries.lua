@@ -1,4 +1,5 @@
 local languages = _G.languages or { "tsv", "tsx" }
+local fail_parser = {}
 
 local T = new_set({
     hooks = {
@@ -10,26 +11,19 @@ local T = new_set({
             end
         end,
     },
-    parametrize = vim.iter(languages)
-        :map(function(lang)
-            local paths = vim.fn.glob("runtime/queries/" .. lang .. "/*.scm", true, true)
-            local queries = vim.iter(paths):map(function(path)
-                return vim.fn.fnamemodify(path, ":t:r")
-            end)
-            return queries
-                :map(function(query)
-                    return { lang, query }
-                end)
-                :totable()
-        end)
-        :flatten()
-        :totable(),
+    parametrize = parametrize_with_queries(languages),
 })
 
-T["ensure_installed"] = function(lang, query)
-    -- wait for the parser to successfully install
-    child.wait(lang, 120000)
+T.pass = function(lang, query)
+    if util.is_only_query(lang) then
+        MiniTest.skip("query dependency")
+    elseif fail_parser[lang] then
+        MiniTest.skip("failed parser")
+    end
+    fail_parser[lang] = query == "parser"
+    child.wait_installed(lang)
     child.works(lang, query)
+    fail_parser[lang] = false
 end
 
 return T

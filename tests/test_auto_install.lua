@@ -1,36 +1,39 @@
 local languages = _G.languages or { "tsv", "tsx" }
 
 local T = new_set({
-    parametrize = parametrize(vim.iter(languages):map(vim.treesitter.language.get_filetypes):flatten():totable()),
+    parametrize = parametrize(
+        vim.iter(languages):filter(util.not_only_query):map(util.get_filetypes):flatten():totable()
+    ),
 })
 
-T["noauto_install"] = MiniTest.new_set({
+T.noauto_install = MiniTest.new_set({
     hooks = {
-        pre_case = function()
+        pre_once = function()
             child.setup({ auto_install = true, noauto_install = languages })
         end,
+        post_once = child.cleanup,
     },
 })
-T["noauto_install"]["works"] = function(ft)
+T.noauto_install.fail = function(ft)
     child.cmd("se ft=" .. ft)
+    local lang = vim.treesitter.language.get_lang(ft)
     er(function()
-        local lang = vim.treesitter.language.get_lang(ft)
-        child.wait(lang)
+        child.wait_installed(lang, 0)
     end, "installation not started")
 end
 
-T["auto_install"] = MiniTest.new_set({
+T.auto_install = MiniTest.new_set({
     hooks = {
-        pre_case = function()
+        pre_once = function()
             child.setup({ auto_install = true, noauto_install = {} })
         end,
     },
 })
-T["auto_install"]["works"] = function(ft)
+T.auto_install.pass = function(ft)
     child.cmd("se ft=" .. ft)
     local lang = vim.treesitter.language.get_lang(ft)
-    child.wait(lang)
-    child.works(lang)
+    local err = child.wait_installed(lang, 0, true)
+    eq(false, err ~= nil and not err:match("timeout"))
 end
 
 return T

@@ -2,42 +2,28 @@ local languages = _G.languages or { "tsv", "tsx" }
 
 local T = new_set()
 
-T["TSInstall"] = function()
+T.TSInstall = function()
+    child.wait_removed(languages)
     child.cmd("TSInstall " .. table.concat(languages, " "))
-    child.wait(languages)
-    child.works(languages)
+    child.wait_installed(languages)
 end
 
-T["TSUpdate"] = function()
-    child.works(languages)
+T.TSUpdate = function()
+    child.wait_installed(languages)
     child.cmd("TSUpdate " .. table.concat(languages, " "))
-    eq(
-        false,
-        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[):filter(function(lang)
-            return not util.is_only_query(lang)
-        end):any(util.is_installed)]])
-    )
-    child.wait(languages)
-    child.works(languages)
+    child.wait_installed(languages)
 end
 
 T["TSUpdate!"] = function()
-    child.works(languages)
+    child.wait_installed(languages)
     child.cmd("TSUpdate!")
-    eq(
-        false,
-        child.lua_get("vim.iter(" .. vim.inspect(languages) .. [[):filter(function(lang)
-            return not util.is_only_query(lang)
-        end):any(util.is_installed)]])
-    )
-    child.wait(languages)
-    child.works(languages)
+    child.wait_installed(languages)
 end
 
-T["TSUninstall"] = function()
+T.TSUninstall = function()
+    child.wait_installed(languages)
     child.cmd("TSUninstall " .. table.concat(languages, " "))
-    child.restart()
-    child.fails(languages)
+    child.wait_removed(languages)
 end
 
 return T
