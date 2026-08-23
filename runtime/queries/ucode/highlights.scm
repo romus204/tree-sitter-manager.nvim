@@ -119,6 +119,12 @@
 ["import" "export"] @keyword.import
 ["as" "from"] @keyword.import
 
+; 'default' in export context is a module keyword, not a conditional.
+; These patterns are more specific than the generic ["switch" "case" "default"]
+; below, so they take priority for 'default' tokens inside export constructs.
+(export_statement "default" @keyword.import)
+(export_specifier "default" @keyword.import)
+
 ; -------------------------------------------------------------------------
 ; Keywords — storage / operators
 ; -------------------------------------------------------------------------

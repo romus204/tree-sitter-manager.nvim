@@ -5,6 +5,7 @@
 ; Scopes
 ; -------------------------------------------------------------------------
 
+(program) @local.scope
 (function_declaration) @local.scope
 (function_expression) @local.scope
 (arrow_function) @local.scope
@@ -24,6 +25,13 @@
 
 ; Function declaration names belong to the enclosing scope so that
 ; callers outside the function body can resolve them.
+;
+; NOTE: tree-sitter does not evaluate #set! predicates — it has no built-in
+; concept of "place this definition one scope level up." This annotation is
+; metadata only; the consumer must detect it (predicate name and args) and
+; implement the scope-parent walk itself. A consumer that builds a
+; scope -> definitions map by structural nesting alone will misplace this
+; definition: it will end up invisible to callers outside the function body.
 (function_declaration
   name: (identifier) @local.definition.function
   (#set! definition.function.scope parent))

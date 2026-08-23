@@ -1,5 +1,19 @@
 ; Tags queries for ucode.
 ; Used by GitHub code navigation and tools that index symbol definitions.
+;
+; NOTE on #strip! and #select-adjacent!: these are non-standard predicates with
+; no tree-sitter runtime support — tree-sitter only evaluates #eq?/#match?/
+; #not-match?-family predicates and filters non-matching captures; everything
+; else (including these two) passes through as metadata for the consumer to
+; act on. A consumer that reads @doc captures verbatim gets raw `/** ... */`
+; text with leading `*` characters intact (no #strip!), and may associate a
+; comment from several lines above with the wrong definition (no
+; #select-adjacent!). Expected semantics:
+;   #strip! @capture <regex>        — strip text matching <regex> from the
+;                                      start/end of @capture's text.
+;   #select-adjacent! @a @b         — only keep this match if @a is on a line
+;                                      immediately preceding @b (no blank
+;                                      lines or other statements between).
 
 ; -------------------------------------------------------------------------
 ; Function definitions — named declarations (brace body or endfunction body)
@@ -87,5 +101,4 @@
 
 (call_expression
   function: (member_expression
-    property: (property_identifier) @name)
-  arguments: (_) @reference.call)
+    property: (property_identifier) @name)) @reference.call

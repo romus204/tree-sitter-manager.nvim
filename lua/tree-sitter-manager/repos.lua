@@ -1907,19 +1907,27 @@ return {
             url = "https://github.com/ColinKennedy/tree-sitter-usd",
         },
     },
-    ucode = {
+    ucdocs = {
         install_info = {
-            revision = "v0.3.0",
+            location = "ucdocs",
+            revision = "v0.6.1",
             url = "https://github.com/m00qek/tree-sitter-ucode",
         },
-        requires = { "ucode_tmpl" },
+    },
+    ucode = {
+        install_info = {
+            revision = "v0.6.1",
+            url = "https://github.com/m00qek/tree-sitter-ucode",
+        },
+        requires = { "ucode_tmpl", "ucdocs" },
     },
     ucode_tmpl = {
         install_info = {
-            location = "tmpl",
-            revision = "v0.3.0",
+            location = "markup",
+            revision = "v0.6.1",
             url = "https://github.com/m00qek/tree-sitter-ucode",
         },
+        requires = { "ucdocs" },
     },
     uxntal = {
         install_info = {
