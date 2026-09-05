@@ -1,4 +1,4 @@
-local languages = _G.languages or { "tsv", "typescript", "glimmer_typescript" }
+local languages = languages or { "tsv", "typescript", "glimmer_typescript" }
 
 local T = new_set()
 

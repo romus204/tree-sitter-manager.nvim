@@ -1,0 +1,48 @@
+name: Update Parsers
+
+on:
+  schedule:
+    - cron: '30 0 15 * *'
+  workflow_dispatch:
+
+jobs:
+  update-parsers:
+    name: Update
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Setup Stylua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v2.4.1
+          args: false
+
+      - name: Setup Tree-sitter
+        uses: tree-sitter/setup-action@v2
+        with:
+          install-lib: false
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update Parsers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASYNC_SIZE: 8
+          TIMEOUT: 60000
+          COMMIT_N_PUSH: 1
+        run: make update-parsers

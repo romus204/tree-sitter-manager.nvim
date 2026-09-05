@@ -28,6 +28,22 @@
     `LANGUAGES` to a space-separated list of languages. This is what `make test`
     does under the hood.
 
+## Updating Parsers
+
+```sh
+make update-parsers
+```
+
+This will fetch and update all parsers to their newest versions and run test
+on them.
+
+> [!WARNING]
+> If `$COMMIT_N_PUSH` environment variable is set. Successful parser updates
+> will be committed to the `auto-updated-parsers` branch, force pushed and
+> a PR will be created via `gh pr create`.
+>
+> This is reserved for Github Workflows. Don't set this variable.
+
 ## Writing Tests
 
 Get familiar with [MiniTest](https://github.com/nvim-mini/mini.nvim/blob/main/TESTING.md).
@@ -36,7 +52,7 @@ There is a helper module at `tests/child.lua` to spawn and run tests in an isola
 This is necessary to test asynchronous functions (See [mini.nvim#1930](https://github.com/nvim-mini/mini.nvim/issues/1930)).
 
 ### Global Variables
-- `_G.languages`: a list of languages passed to `make test ...`
+- `languages`: a list of languages passed to `make test ...`
 - `eq`, `neq`, `er`, `ner`: aliases to `MiniTest.expect.equality`, `no_equality`, `error`, `no_error`
 - `child`: `require("tests.child")`
 - `tsm`: `require("tree-sitter-manager")`
@@ -58,7 +74,7 @@ This is necessary to test asynchronous functions (See [mini.nvim#1930](https://g
 Create a file `tests/test_install.lua`:
 ```lua
 -- list languages you want to test
-local languages = _G.languages or { "bash", "python", "java" }
+local languages = languages or { "bash", "python", "java" }
 
 local T = new_set({
     hooks = {

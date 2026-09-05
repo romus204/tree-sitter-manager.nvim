@@ -1,4 +1,4 @@
-local languages = _G.languages or { "c", "markdown" }
+local languages = languages or { "c", "markdown" }
 
 local T = new_set({
     hooks = {
