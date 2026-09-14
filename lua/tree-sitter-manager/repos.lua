@@ -2270,7 +2270,8 @@ return {
     },
     vhdl = {
         install_info = {
-            revision = "c2d9be3d5ab7fb2cae8ad5ae604cd3606a4af0f2",
+            queries = "queries/Neovim",
+            revision = "a7cf493d07dbcf52ca287596451ae3fb8b12099f",
             url = "https://github.com/jpt13653903/tree-sitter-vhdl",
         },
         tier = 2,
