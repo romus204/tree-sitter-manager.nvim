@@ -59,3 +59,5 @@
 (razor_rendermode) @property
 
 (razor_attribute_name) @function
+
+
