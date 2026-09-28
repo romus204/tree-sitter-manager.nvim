@@ -27,6 +27,7 @@
   (subprogram_definition)
   (subprogram_head)
   (procedure_specification)
+  (sequential_block)
   (loop_statement)
   (if_statement_block)
   (if_statement)
