@@ -272,6 +272,7 @@ These keybindings are active inside the `:TSManager` TUI window.
   `x`        Remove parser under cursor
   `u`        Update parser under cursor
   `r`        Refresh installation status
+  `f`        Cycle filter (installed → warning → missing → all)
   `q`        Close window
   `<Esc>`    Close window
 
