@@ -1,6 +1,6 @@
 return {
     angular = { "htmlangular" },
-    bash = { "sh" },
+    bash = { "sh", "PKGBUILD" },
     bibtex = { "bib" },
     c_sharp = { "cs", "csharp" },
     commonlisp = { "lisp" },
