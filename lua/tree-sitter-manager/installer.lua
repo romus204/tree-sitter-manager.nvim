@@ -1,5 +1,6 @@
 local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
+local lock = require("tree-sitter-manager.lock")
 local backport = require("tree-sitter-manager.backport")
 
 local notify_nerd = { "✕ ", "📦 ", "󰚰 ", "⚠ ", "✓ ", "⚙️ ", "🔨 " }
@@ -8,8 +9,8 @@ local notify_icon
 ---@class Installer
 ---@field installing table<Lang, boolean>
 ---@field status     table<Lang, Status>
----@field remove  fun(lang:Lang|Lang[], callback:fun(out:Status)) Remove languages and run callback.
----@field install fun(lang:Lang|Lang[], callback:fun(out:Status)) Install languages and run callback on every language.
+---@field remove  fun(lang:Lang|Lang[], callback:fun(out:Status), update?:boolean) Remove languages and run callback.
+---@field install fun(lang:Lang|Lang[], callback?:fun(out:Status), update?:boolean) Install languages and run callback on every language.
 ---@field update  fun(lang:Lang|Lang[], callback:fun(out:Status)) Update languages and run callback on every language.
 ---
 ---@alias Lang string
@@ -46,6 +47,9 @@ local function build(lang, info, tmpdir, status, callback)
         status = { ok = false, error = lang .. ": invalid location: " .. info.location }
     end
 
+    if info.revision then
+        lock.lock_set(lang, info.revision)
+    end
     local _status = { ok = status.ok and info.generate, error = status.error }
     if _status.ok then
         vim.notify(notify_icon[6] .. "Generating " .. lang)
@@ -139,6 +143,8 @@ function M.remove(languages, callback, update)
             table.insert(uninstalled, lang)
         end
     end
+
+    lock.lock_remove_langs(uninstalled)
 
     if not update and #uninstalled > 0 then
         vim.notify(notify_icon[1] .. "Removed " .. table.concat(uninstalled, " "))
