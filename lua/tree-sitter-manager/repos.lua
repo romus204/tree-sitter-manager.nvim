@@ -2195,20 +2195,33 @@ return {
         },
         tier = 2,
     },
-    ucode = {
+    ucdocs = {
         install_info = {
-            revision = "v0.3.0",
+            location = "ucdocs",
+            queries = "queries",
+            revision = "v0.9.0",
             url = "https://github.com/m00qek/tree-sitter-ucode",
         },
-        requires = { "ucode_tmpl" },
         tier = 1,
     },
-    ucode_tmpl = {
+    ucode = {
         install_info = {
-            location = "tmpl",
-            revision = "v0.3.0",
+            location = "ucode",
+            queries = "queries",
+            revision = "v0.9.0",
             url = "https://github.com/m00qek/tree-sitter-ucode",
         },
+        requires = { "ucdocs", "ucode_markup" },
+        tier = 1,
+    },
+    ucode_markup = {
+        install_info = {
+            location = "ucode_markup",
+            queries = "queries",
+            revision = "v0.9.0",
+            url = "https://github.com/m00qek/tree-sitter-ucode",
+        },
+        requires = { "ucdocs" },
         tier = 1,
     },
     udev = {
