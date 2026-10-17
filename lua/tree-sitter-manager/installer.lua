@@ -1,5 +1,6 @@
 local config = require("tree-sitter-manager.config")
 local util = require("tree-sitter-manager.util")
+local lock = require("tree-sitter-manager.lock")
 local backport = require("tree-sitter-manager.backport")
 
 local notify_nerd = { "✕ ", "📦 ", "󰚰 ", "⚠ ", "✓ ", "⚙️ ", "🔨 " }
@@ -47,7 +48,7 @@ local function build(lang, info, tmpdir, status, callback)
     end
 
     if info.revision then
-        util.lock_set(lang, info.revision)
+        lock.lock_set(lang, info.revision)
     end
     local _status = { ok = status.ok and info.generate, error = status.error }
     if _status.ok then
@@ -143,7 +144,7 @@ function M.remove(languages, callback, update)
         end
     end
 
-    util.lock_remove_langs(uninstalled)
+    lock.lock_remove_langs(uninstalled)
 
     if not update and #uninstalled > 0 then
         vim.notify(notify_icon[1] .. "Removed " .. table.concat(uninstalled, " "))
