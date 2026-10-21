@@ -3,7 +3,7 @@ local abs = src:sub(1, 1) == "@" and vim.fn.fnamemodify(src:sub(2), ":p") or ""
 
 local config = require("tree-sitter-manager.config")
 local invalid = require("tree-sitter-manager.invalid-filetypes")
-
+local lock = require("tree-sitter-manager.lock")
 local M = {}
 
 M.PLUGIN_ROOT = abs ~= "" and vim.fn.fnamemodify(abs, ":h:h:h") or vim.fn.stdpath("config")
@@ -123,6 +123,29 @@ function M.is_installed(lang)
     else
         return nil ~= vim.uv.fs_stat(M.ppath(lang))
     end
+end
+
+---@param lang string
+---@return boolean
+function M.is_outdated(lang)
+    if not M.is_installed(lang) then
+        return false
+    end
+    local entry = config.effective_repos[lang]
+    if not entry then
+        return false
+    end
+    if type(entry) == "string" then
+        return false
+    end
+    if not entry.install_info or not entry.install_info.revision then
+        return false
+    end
+    local sha = lock.lock_get(lang)
+    if sha == entry.install_info.revision then
+        return false
+    end
+    return true
 end
 
 function M.not_installed(lang)
