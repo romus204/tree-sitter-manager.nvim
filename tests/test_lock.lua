@@ -7,3 +7,5 @@ T.TSLocalPass = function()
     cpp = lock.lock_get("cpp", true)
     eq(cpp, "abcd7b9s")
 end
+
+return T

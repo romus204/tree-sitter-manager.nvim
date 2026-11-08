@@ -67,7 +67,7 @@ end
 ---@param sha string
 ---@param dry? boolean
 function M.lock_set(lang, sha, dry)
-    local data = M.lock_data()
+    local data = M.lock_data(dry)
     data[lang] = sha
     if not dry then
         M.lock_write(data)
