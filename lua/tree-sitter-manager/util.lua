@@ -1,5 +1,5 @@
-local src = debug.getinfo(1, "S").source
-local abs = src:sub(1, 1) == "@" and vim.fn.fnamemodify(src:sub(2), ":p") or ""
+local debug_src = debug.getinfo(1, "S").source
+local abs = debug_src:sub(1, 1) == "@" and vim.fn.fnamemodify(debug_src:sub(2), ":p") or ""
 
 local config = require("tree-sitter-manager.config")
 local invalid = require("tree-sitter-manager.invalid-filetypes")
@@ -84,7 +84,8 @@ function M.get_requires(lang)
     return deps
 end
 
----@return table | nil
+---@param lang string
+---@return tree_sitter_manager.InstallInfo | nil
 function M.get_repo_info(lang)
     local entry = config.effective_repos[lang]
     if not entry then
@@ -106,15 +107,20 @@ function M.get_repo_info(lang)
     return nil
 end
 
+---@param lang string
 function M.is_only_query(lang)
     local info = M.get_repo_info(lang)
     return not info or not info.url
 end
 
+
+---@param lang string
 function M.not_only_query(lang)
     return not M.is_only_query(lang)
 end
 
+---@param lang string
+---@return boolean
 function M.is_installed(lang)
     if vim.list_contains(config.cfg.assume_installed, lang) then
         return true
@@ -148,6 +154,8 @@ function M.is_outdated(lang)
     return true
 end
 
+---@param lang string
+---@return boolean
 function M.not_installed(lang)
     return not M.is_installed(lang)
 end
@@ -263,6 +271,9 @@ function M.run(args, opts)
     return job
 end
 
+---@param src string
+---@param dst string
+---@return Status
 function M.copy_dir(src, dst)
     local ok, err = pcall(vim.fn.mkdir, dst, "p")
 
