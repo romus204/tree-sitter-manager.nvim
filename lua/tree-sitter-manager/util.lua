@@ -113,7 +113,6 @@ function M.is_only_query(lang)
     return not info or not info.url
 end
 
-
 ---@param lang string
 function M.not_only_query(lang)
     return not M.is_only_query(lang)

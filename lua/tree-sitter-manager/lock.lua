@@ -1,12 +1,21 @@
 local M = {}
 
+---data is just used to make unit test
+---when used, it will always read the file and get the content again
+---@type table<string, string>
+M.data = {}
+
 ---@return string
 local function lock_path()
     return vim.fn.stdpath("state") .. "/tsm-lock.json"
 end
 
 --- @return table
-function M.lock_read()
+---@param dry? boolean
+function M.lock_data(dry)
+    if dry then
+        return M.data
+    end
     local path = lock_path()
     local fd = io.open(path, "r")
     if not fd then
@@ -56,32 +65,43 @@ end
 
 ---@param lang string
 ---@param sha string
-function M.lock_set(lang, sha)
-    local data = M.lock_read()
+---@param dry? boolean
+function M.lock_set(lang, sha, dry)
+    local data = M.lock_data()
     data[lang] = sha
-    M.lock_write(data)
+    if not dry then
+        M.lock_write(data)
+    end
 end
 
 ---@param lang string
-function M.lock_remove(lang)
-    local data = M.lock_read()
+---@param dry? boolean
+function M.lock_remove(lang, dry)
+    local data = M.lock_data()
     data[lang] = nil
-    M.lock_write(data)
+    if not dry then
+        M.lock_write(data)
+    end
 end
 
 ---@param langs string[]
-function M.lock_remove_langs(langs)
-    local data = M.lock_read()
+---@param dry? boolean
+function M.lock_remove_langs(langs, dry)
+    local data = M.lock_data()
     for _, lang in ipairs(langs) do
         data[lang] = nil
     end
-    M.lock_write(data)
+
+    if not dry then
+        M.lock_write(data)
+    end
 end
 
 ---@param lang string
+---@param dry? boolean
 ---@return string|nil
-function M.lock_get(lang)
-    return M.lock_read()[lang]
+function M.lock_get(lang, dry)
+    return M.lock_data(dry)[lang]
 end
 
 return M

@@ -17,6 +17,7 @@ _G.installer = require("tree-sitter-manager.installer")
 _G.repos = require("tree-sitter-manager.repos")
 _G.ui = require("tree-sitter-manager.ui")
 _G.util = require("tree-sitter-manager.util")
+_G.lock = require("tree-sitter-manager.lock")
 
 -- Parse the list of languages to test
 if vim.env.LANGUAGES == "all" then
