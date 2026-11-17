@@ -1,22 +1,29 @@
-local M = {}
-
----data is just used to make unit test
----when used, it will always read the file and get the content again
----@type table<string, string>
-M.data = {}
+local M = {
+    unit_test = false,
+}
 
 ---@return string
-local function lock_path()
+local function temp_path()
+    return vim.fn.stdpath("cache") .. "/tsm-lock.json"
+end
+
+function M.set_test()
+    M.unit_test = true
+    os.remove(temp_path())
+end
+
+---@param unit_test boolean
+---@return string
+local function lock_path(unit_test)
+    if unit_test then
+        return temp_path()
+    end
     return vim.fn.stdpath("state") .. "/tsm-lock.json"
 end
 
 --- @return table
----@param dry? boolean
-function M.lock_data(dry)
-    if dry then
-        return M.data
-    end
-    local path = lock_path()
+function M.lock_data()
+    local path = lock_path(M.unit_test)
     local fd = io.open(path, "r")
     if not fd then
         return {}
@@ -32,7 +39,7 @@ end
 
 --- @param data table
 function M.lock_write(data)
-    local path = lock_path()
+    local path = lock_path(M.unit_test)
     vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
     local fd = io.open(path, "w")
     if not fd then
@@ -65,43 +72,33 @@ end
 
 ---@param lang string
 ---@param sha string
----@param dry? boolean
-function M.lock_set(lang, sha, dry)
-    local data = M.lock_data(dry)
+function M.lock_set(lang, sha)
+    local data = M.lock_data()
     data[lang] = sha
-    if not dry then
-        M.lock_write(data)
-    end
+    M.lock_write(data)
 end
 
 ---@param lang string
----@param dry? boolean
-function M.lock_remove(lang, dry)
+function M.lock_remove(lang)
     local data = M.lock_data()
     data[lang] = nil
-    if not dry then
-        M.lock_write(data)
-    end
+    M.lock_write(data)
 end
 
 ---@param langs string[]
----@param dry? boolean
-function M.lock_remove_langs(langs, dry)
+function M.lock_remove_langs(langs)
     local data = M.lock_data()
     for _, lang in ipairs(langs) do
         data[lang] = nil
     end
 
-    if not dry then
-        M.lock_write(data)
-    end
+    M.lock_write(data)
 end
 
 ---@param lang string
----@param dry? boolean
 ---@return string|nil
-function M.lock_get(lang, dry)
-    return M.lock_data(dry)[lang]
+function M.lock_get(lang)
+    return M.lock_data()[lang]
 end
 
 return M
