@@ -133,7 +133,12 @@ function M.setup(opts)
             installer.update(args.fargs, ui.render)
             ui.render(true)
         else
-            vim.notify("E471: Argument required", vim.log.levels.ERROR)
+            local toupdated = vim.iter(state.languages):filter(util.is_outdated):totable()
+            if #toupdated == 0 then
+                vim.notify("Congratulation! All your parsers are updated!", vim.log.levels.INFO)
+            end
+            installer.update(toupdated, ui.render)
+            ui.render(true)
         end
     end, {
         nargs = "*",
